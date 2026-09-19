@@ -1,0 +1,13 @@
+import puppeteer from 'puppeteer-core'
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox']})
+const page=await browser.newPage()
+await page.setViewport({width:1440,height:1120,deviceScaleFactor:1})
+const errors=[]; page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())})
+await page.goto('http://127.0.0.1:5179/#dashboard',{waitUntil:'networkidle0'})
+await new Promise(r=>setTimeout(r,1800))
+await page.screenshot({path:'qa/dashboard-desktop.png',fullPage:true})
+console.log(JSON.stringify({title:await page.title(),errors,body:(await page.$eval('body',el=>el.innerText)).slice(0,300)}))
+await page.setViewport({width:390,height:844,deviceScaleFactor:1})
+await new Promise(r=>setTimeout(r,400))
+await page.screenshot({path:'qa/dashboard-mobile.png',fullPage:true})
+await browser.close()

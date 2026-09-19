@@ -19,6 +19,11 @@ export type PageKey =
   | 'inventory'
   | 'team'
   | 'settings'
+  | 'soil'
+  | 'history'
+  | 'alerts'
+  | 'inspection'
+  | 'harvest'
 
 export type TaskType = '日常任务' | '灌溉施肥' | '会议' | '植保' | '采收' | '农机'
 export type TaskStatus = 'pending' | 'in-progress' | 'done'
@@ -314,7 +319,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [persisted, setPersisted] = useState<PersistedState>(loadState)
   const [page, setPageState] = useState<PageKey>(() => {
     const h = window.location.hash.replace('#', '') as PageKey
-    const valid: PageKey[] = ['dashboard', 'map', 'tasks', 'devices', 'crops', 'analytics', 'inventory', 'team', 'settings']
+    const valid: PageKey[] = ['dashboard', 'map', 'tasks', 'devices', 'crops', 'analytics', 'inventory', 'team', 'settings', 'soil', 'history', 'alerts', 'inspection', 'harvest']
     return valid.includes(h) ? h : 'dashboard'
   })
   const setPage = (p: PageKey) => {
@@ -326,7 +331,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onHash = () => {
       const h = window.location.hash.replace('#', '') as PageKey
-      const valid: PageKey[] = ['dashboard', 'map', 'tasks', 'devices', 'crops', 'analytics', 'inventory', 'team', 'settings']
+      const valid: PageKey[] = ['dashboard', 'map', 'tasks', 'devices', 'crops', 'analytics', 'inventory', 'team', 'settings', 'soil', 'history', 'alerts', 'inspection', 'harvest']
       if (valid.includes(h)) setPageState(h)
     }
     window.addEventListener('hashchange', onHash)

@@ -1,73 +1,60 @@
-# React + TypeScript + Vite
+# 惠农 · 智慧农业协作平台
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+在原有 digital-agri 九大模块上升级，继续使用原 GitHub Pages 地址与 hash 路由。
 
-Currently, two official plugins are available:
+## 运行
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Node.js 22+，推荐 pnpm 11：
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+pnpm install --frozen-lockfile
+pnpm dev
+pnpm build
+pnpm preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+源码：React + TypeScript + Vite。图表使用 Recharts，图标使用 Lucide。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 参考功能核对
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| 参考 | 原站情况 | 本次实现 |
+| --- | --- | --- |
+| 图 1 · 运营总览、预警趋势、成熟度、机器人 | 有普通工作台、地图和气象演示，缺少专题功能 | 重做总览；增加多源病虫害曲线、成熟度分布、巡检路线与扫描演示、预警处置、采摘排期 |
+| 图 2 · 分区、采样、预警、定位、移动导航 | 有地块与设备读数、通知，无采样专题 | 村庄/地块关联，土壤采样摘要，预警筛选、分派与完成闭环，浏览器定位及失败提示，移动底部导航 |
+| 图 3 · 7 天 / 30 天 / 全部土壤复盘 | 只有月度经营分析 | 新增 EC、水分、温度历史曲线；7/30/60 天切换；地块筛选；CSV 导出 |
+| 图 4 · 八项土壤报告与评估 | 仅有湿度、pH 等零散指标 | 独立八项报告、示例阈值状态、评分说明、复核任务、CSV 导出、打印样式 |
+| 视频 · 背景与界面动效 | 大多静态，经营图表禁用了动画 | 田野视频、玻璃气象层、分层入场、数值缓动、曲线和环图、任务进度、弹窗、扫描光带、机器人路径 |
+
+保留任务、地图、设备、作物、经营分析、物资、团队和设置全部原有模块及 agri-platform-state-v1 存储，旧数据不会被清空。
+
+## 数据与交互边界
+
+- GitHub Pages 静态前端。气象、传感器、土壤、机器人、病虫害与成熟度均为明确标注的演示数据，未接入真实硬件、AI 识别服务或后端。
+- 地块沿用原站 A1/A2/B1/B2/C1；图片中的村名作为演示分组，不代表完成了真实村庄地理配准。
+- 新建任务、预警关联任务、完成状态、采摘排期、库存、生长记录等保存在本机浏览器 localStorage，不在不同用户之间同步。
+- 预警通过唯一的 [A01] 等编号关联任务，任务完成后预警同步解决；删除该任务后预警恢复待处置。
+- 土壤参考范围、综合评分及采摘日期均为演示规则，应按真实作物、土质、现场检测校准。
+- 定位需用户通过浏览器授权，仅在界面显示坐标，不上传；未授权有反馈。
+- 巡检仿真只在巡检页面且标签页可见时推进，支持暂停/继续，进度单独保存在 huinong-inspection。
+- 支持 prefers-reduced-motion 与右上角动画开关。视频离屏和后台暂停，媒体播放失败时显示静态田野海报。
+
+## 视觉与素材
+
+森林绿、浅荧绿、薄荷绿、温暖琥珀色组成统一界面。动态田野素材复用用户工作区已有 field-opening/field-rows.mp4 与 field-rows.jpg，经过裁剪压缩；没有将用户参考视频或含浏览器界面的截图直接塞进产品界面。路径示意、植物扫描、Logo 与装饰均由前端 SVG/CSS 构成。
+
+## 验证
+
+```sh
+pnpm build
+# 先启动本地预览。可设置 TEST_BASE 和 CHROME_PATH。
+node scripts/verify-huinong.mjs
 ```
+
+验证脚本覆盖 14 条路由在 1440/768/390px 下的横向溢出、原有任务和灌溉、生长记录、预警派单闭环、土壤报告、CSV 内容、打印、采摘计划、巡检暂停/继续、通知、动画偏好、移动导航及减少动态效果。QA 输出在 qa/，不随生产包发布。
+
+## 发布与回退
+
+- main 保存源码，gh-pages 保存 dist 生产构建。
+- 修改前 main：b84ee64153cfac6729bea2b4fff8b39e59958d5d。
+- 修改前 gh-pages：f7c8c8ff7eeb10e50ca3bd9e4b4a126a19d03ba7。
+- 恢复时可将对应历史构建内容提交到 gh-pages；不要清空用户浏览器存储。

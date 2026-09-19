@@ -18,6 +18,7 @@ import {
 } from 'recharts'
 import { PageCard, PageHeader } from '../components/bits'
 import { FIELDS } from '../store'
+import { useMotion } from '../components/motion-context'
 
 type RangeKey = '3m' | '6m' | '12m'
 const RANGES: { key: RangeKey; label: string; months: number; weeks: number }[] = [
@@ -74,6 +75,7 @@ const tooltipStyle = {
 }
 
 export default function AnalyticsPage() {
+  const { enabled } = useMotion()
   const [range, setRange] = useState<RangeKey>('6m')
   const months = RANGES.find((r) => r.key === range)!.months
   const weeks = RANGES.find((r) => r.key === range)!.weeks
@@ -116,7 +118,7 @@ export default function AnalyticsPage() {
               <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#8aa398' }} interval={Math.floor(weeks / 8)} />
               <YAxis tick={{ fontSize: 11, fill: '#8aa398' }} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Line type="monotone" dataKey="yield" name="产量" stroke="#1fa756" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="yield" name="产量" stroke="#1fa756" strokeWidth={2.5} dot={false} isAnimationActive={enabled} />
             </LineChart>
           </ResponsiveContainer>
         </PageCard>
@@ -131,8 +133,8 @@ export default function AnalyticsPage() {
               <YAxis tick={{ fontSize: 11, fill: '#8aa398' }} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="water" name="灌溉用水 (m³)" fill="#2196e8" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-              <Bar dataKey="fertilizer" name="肥料 (kg)" fill="#1fa756" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="water" name="灌溉用水 (m³)" fill="#2196e8" radius={[4, 4, 0, 0]} isAnimationActive={enabled} />
+              <Bar dataKey="fertilizer" name="肥料 (kg)" fill="#1fa756" radius={[4, 4, 0, 0]} isAnimationActive={enabled} />
             </BarChart>
           </ResponsiveContainer>
         </PageCard>
@@ -149,7 +151,7 @@ export default function AnalyticsPage() {
                 innerRadius={55}
                 outerRadius={90}
                 paddingAngle={3}
-                isAnimationActive={false}
+                isAnimationActive={enabled}
                 label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 fontSize={11}
               >
@@ -177,7 +179,7 @@ export default function AnalyticsPage() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8aa398' }} />
               <YAxis domain={[40, 100]} tick={{ fontSize: 11, fill: '#8aa398' }} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Area type="monotone" dataKey="completion" name="完成率" stroke="#1fa756" strokeWidth={2.5} fill="url(#compGrad)" isAnimationActive={false} />
+              <Area type="monotone" dataKey="completion" name="完成率" stroke="#1fa756" strokeWidth={2.5} fill="url(#compGrad)" isAnimationActive={enabled} />
             </AreaChart>
           </ResponsiveContainer>
         </PageCard>

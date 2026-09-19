@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useId, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 /* 通用页面卡片 */
 export function PageCard({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -37,19 +38,44 @@ export function Modal({
   children: ReactNode
   width?: string
 }) {
+  const dialog = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  const closeRef = useRef(onClose)
+  useEffect(() => { closeRef.current = onClose }, [onClose])
+  useEffect(() => {
+    if (!open) return
+    const previous = document.activeElement as HTMLElement | null
+    const focusable = () => [...(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]') ?? [])]
+    focusable()[0]?.focus()
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); closeRef.current(); return }
+      if (e.key !== 'Tab') return
+      const items = focusable(), first = items[0], last = items[items.length - 1]
+      if (!first) { e.preventDefault(); return }
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', key)
+    return () => { document.removeEventListener('keydown', key); previous?.focus() }
+  }, [open])
   if (!open) return null
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,41,30,0.35)] p-4"
+      className="agri-modal fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,41,30,0.35)] p-4"
       onClick={onClose}
     >
       <div
+        ref={dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`${width} max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-[17px] font-bold text-[#17352a]">{title}</h3>
+          <h3 id={titleId} className="text-[17px] font-bold text-[#17352a]">{title}</h3>
           <button
+            aria-label="关闭弹窗"
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8aa398] hover:bg-[#f2f9f5]"
           >
@@ -58,7 +84,7 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>, document.body
   )
 }
 
@@ -86,6 +112,9 @@ export function Switch({ on, onChange }: { on: boolean; onChange: () => void }) 
   return (
     <button
       onClick={onChange}
+      role="switch"
+      aria-checked={on}
+      aria-label="切换状态"
       className={`relative h-6 w-11 rounded-full transition-colors ${on ? 'bg-[#1fa756]' : 'bg-[#d3e4da]'}`}
     >
       <span
