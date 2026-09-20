@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useStore, DEVICES, type Device } from '../store'
 import { PageCard, PageHeader, Switch } from '../components/bits'
+import { SceneMedia } from '../components/SceneMedia'
 
 const KIND_ICONS: Record<Device['kind'], typeof Radar> = {
   soil: Gauge,
@@ -27,6 +28,7 @@ function DeviceCard({ device }: { device: Device }) {
 
   return (
     <PageCard className="flex flex-col">
+      <SceneMedia image={`./media/glass/${device.kind === 'soil' ? 'soil' : device.kind === 'weather' ? 'hero-field' : device.kind === 'pest' ? 'leaf-disease' : 'rover-real'}.jpg`} label={`${device.name}功能示意`} className="device-photo" />
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div

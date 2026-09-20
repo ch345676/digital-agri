@@ -5,6 +5,7 @@ import { useStore, FIELDS, todayStr } from '../store'
 import { ALERTS, alertTaskTitle, HARVEST, SAMPLES, soilHistory } from '../agronomy'
 import { Count } from '../components/Motion'
 import { useMotion } from '../components/motion-context'
+import { FeatureGallery } from '../components/SceneMedia'
 
 const colors = ['#507555', '#aad866', '#49c9a0', '#d9a166']
 const maturity = [{ name: '未成熟', value: HARVEST.filter(h => h.maturity < 50).length }, { name: '接近成熟', value: HARVEST.filter(h => h.maturity >= 50 && h.maturity < 85).length }, { name: '成熟', value: HARVEST.filter(h => h.maturity >= 85 && h.maturity < 98).length }, { name: '过熟', value: HARVEST.filter(h => h.maturity >= 98).length }]
@@ -43,6 +44,7 @@ export default function Dashboard() {
       <aside className="weather-glass"><div className="weather-top"><span>田间微气候</span><CloudSun size={23} /></div><div className="weather-value"><Count value={weather?.v1 ?? 26} decimals={1} /><sup>°C</sup></div><p>多云间晴 · 适宜田间作业</p><div className="weather-details"><span><Droplets size={14} />湿度 <b>{Math.round(weather?.v2 ?? 65)}%</b></span><span><Wind size={14} />东南风 <b>2 级</b></span></div><div className="hourly">{['现在','12:00','14:00','16:00'].map((h,i) => <div key={h}><small>{h}</small><Sun size={15} /><b>{[26,28,29,27][i]}°</b></div>)}</div><small className="weather-note">气象演示 · 非实时天气预报</small></aside>
       <div className="hero-coordinate">FIELD / 01 <span>PRECISION AGRICULTURE</span></div>
     </section>
+    <FeatureGallery />
     <div className="kpi-grid">
       {[{ title:'管理面积',value:total,unit:'亩',sub:`${FIELDS.length} 个地块 · 全域覆盖`,icon:ScanLine,decimal:1 },{title:'今日农事',value:today.length-done,unit:'项',sub:`已完成 ${done} / ${today.length} 项`,icon:Leaf},{title:'巡检机器人',value:3,unit:'台',sub:'3 台在线 · 1 台待机（演示）',icon:Bot},{title:'待处置预警',value:pending.length,unit:'条',sub:`${pending.filter(a=>a.level==='高风险').length} 条高风险 · 优先关注`,icon:ShieldAlert},{title:'可采摘面积',value:harvestArea,unit:'亩',sub:'B2 蔬菜 · 建议明日采收',icon:Cherry,decimal:1}].map((k,i) => <button className={`metric-card metric-${i}`} key={k.title} onClick={() => setPage((['map','tasks','inspection','alerts','harvest'] as const)[i])}><div className="metric-top"><span>{k.title}</span><k.icon size={18} /></div><div className="metric-number"><Count value={k.value} decimals={k.decimal ?? 0} /><small>{k.unit}</small></div><div className="metric-bottom"><span>{k.sub}</span><ArrowUpRight size={14} /></div><svg className="mini-spark" viewBox="0 0 120 24" aria-hidden="true"><path d="M0 20 L15 16 L28 18 L45 8 L57 13 L70 5 L85 9 L98 3 L120 0" /></svg></button>)}
     </div>

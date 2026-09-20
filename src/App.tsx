@@ -19,6 +19,8 @@ import AlertsPage from './pages/AlertsPage'
 import InspectionPage from './pages/InspectionPage'
 import HarvestPage from './pages/HarvestPage'
 import './theme.css'
+import './glass.css'
+import ButtonMotion from './components/ButtonMotion'
 
 const NAV: { key: PageKey; icon: LucideIcon; label: string; group: string }[] = [
   { key: 'dashboard', icon: LayoutDashboard, label: '农场总览', group: '智 慧 农 场' },
@@ -63,6 +65,9 @@ function Shell() {
     navigator.geolocation.getCurrentPosition(p => { setLocation(`当前位置 ${p.coords.latitude.toFixed(4)}°N, ${p.coords.longitude.toFixed(4)}°E`); setLocating(false) }, e => { setLocation(e.code === 1 ? '定位未授权，继续使用示范农场' : '暂时无法定位，请稍后重试'); setLocating(false) }, { timeout: 10000 })
   }
   return <div className="agri-shell">
+    <div className="landscape-backdrop" aria-hidden="true" />
+    <div className="landscape-mist" aria-hidden="true" />
+    <ButtonMotion />
     {menu && <button className="mobile-scrim" aria-label="关闭菜单" onClick={() => setMenu(false)} />}
     <aside className={`sidebar ${menu ? 'is-open' : ''}`}>
       <button className="brand" onClick={() => go('dashboard')}><span className="brand-mark"><Sprout size={28} /></span><span><b>惠农<span className="brand-dot">.</span></b><small>HUINONG · SMART AGRI</small></span></button>

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Wheat, ChevronDown, ImagePlus, Trash2, NotebookPen, ArrowRight } from 'lucide-react'
 import { useStore, FIELDS, todayStr, type FieldInfo } from '../store'
 import { PageCard, PageHeader, inputCls, btnPrimary } from '../components/bits'
+import { CROP_IMAGES } from '../media'
+import { SceneMedia } from '../components/SceneMedia'
 
 function CropCard({ field }: { field: FieldInfo }) {
   const { growthRecords, addGrowthRecord } = useStore()
@@ -21,6 +23,7 @@ function CropCard({ field }: { field: FieldInfo }) {
 
   return (
     <PageCard className="!p-0 overflow-hidden">
+      <SceneMedia image={CROP_IMAGES[field.id]} label={`${field.crop}种植示意`} className="crop-photo" />
       <button onClick={() => setOpen((v) => !v)} className="w-full p-5 text-left">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">

@@ -58,3 +58,9 @@ node scripts/verify-huinong.mjs
 - 修改前 main：b84ee64153cfac6729bea2b4fff8b39e59958d5d。
 - 修改前 gh-pages：f7c8c8ff7eeb10e50ca3bd9e4b4a126a19d03ba7。
 - 恢复时可将对应历史构建内容提交到 gh-pages；不要清空用户浏览器存储。
+
+## 2026-09-20 玻璃与影像升级
+
+按用户新的玻璃卡片参考升级为青绿雾山背景、透光描边、毛玻璃模糊与悬浮影像卡。新增 13 个内页场景题图、功能卡片缩略图、3 段轻量循环视频和按钮光波/回弹/键盘反馈。所有原有业务流程保留。
+
+素材来源与图像生成提示词见 [ASSET-NOTES.md](ASSET-NOTES.md)。
