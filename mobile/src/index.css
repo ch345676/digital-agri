@@ -1,0 +1,358 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.625rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+/* ================= 智慧农业移动端 · 白色科技主题 ================= */
+body {
+  background: #f5f7f8;
+  color: #1a2b23;
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  /* 细网格科技纹理 */
+  background-image:
+    linear-gradient(rgba(22, 80, 55, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 80, 55, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* 扫描线（识别取景框） */
+@keyframes scan-y {
+  0% { top: 6%; }
+  50% { top: 90%; }
+  100% { top: 6%; }
+}
+.scan-line {
+  animation: scan-y 3.2s ease-in-out infinite;
+}
+.scan-line-fast {
+  animation: scan-y 0.7s linear infinite;
+}
+
+/* LIVE 红点闪烁 */
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+.live-dot {
+  animation: blink-dot 1.2s ease-in-out infinite;
+}
+
+/* LIVE 画面缓慢平移 */
+@keyframes pan-bg {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+.pan-bg {
+  animation: pan-bg 26s linear infinite alternate;
+}
+
+/* 画面扫描线滚动 */
+@keyframes sweep-y {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(400%); }
+}
+.sweep {
+  animation: sweep-y 4s linear infinite;
+}
+
+/* 脉冲圆环（状态点/异常点） */
+@keyframes pulse-ring {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+.pulse-ring {
+  position: relative;
+}
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+
+/* 减弱动画偏好降级 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 隐藏横滑滚动条 */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ================= v2 高级感：动效降噪覆盖层 ================= */
+body {
+  font-variant-numeric: tabular-nums;
+}
+h1, h2 {
+  letter-spacing: -0.02em;
+}
+
+/* 扫描线：放慢、降低透明度 */
+@keyframes scan-y {
+  0% { top: 6%; }
+  50% { top: 90%; }
+  100% { top: 6%; }
+}
+.scan-line {
+  animation: scan-y 6s ease-in-out infinite;
+  opacity: 0.55;
+}
+.scan-line-fast {
+  animation: scan-y 1.4s linear infinite;
+  opacity: 0.7;
+}
+
+/* 红点/状态点：3.5s 缓慢呼吸，不再扩张脉冲 */
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.live-dot {
+  animation: breathe 3.5s ease-in-out infinite;
+}
+.pulse-ring {
+  animation: breathe 3.5s ease-in-out infinite;
+}
+.pulse-ring::after {
+  display: none;
+}
+
+/* LIVE 画面：平移减慢 */
+.pan-bg {
+  animation: pan-bg 45s linear infinite alternate;
+}
+.sweep {
+  animation: sweep-y 8s linear infinite;
+  opacity: 0.6;
+}
+
+/* ================= Leaflet 暗色卫星地图覆盖物 ================= */
+
+.lm-dark {
+  background: #0a0f0c;
+  font-family: inherit;
+  outline: none;
+}
+.lm-dark .leaflet-control-attribution {
+  background: rgba(10, 15, 11, 0.6);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 9px;
+  padding: 1px 5px;
+}
+.lm-dark .leaflet-control-attribution a {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* divIcon 容器去默认样式 */
+.lm-pin {
+  background: none;
+  border: none;
+}
+
+/* 巡田：途经点 */
+.lm-wp {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(217, 249, 157, 0.85);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+/* 巡田：异常点（红/黄，呼吸） */
+.lm-anom {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  position: relative;
+}
+.lm-anom::before {
+  content: '';
+  position: absolute;
+  inset: 4.5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* 巡田：H 返航点 */
+.lm-home {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(163, 230, 53, 0.12);
+  border: 1px solid rgba(163, 230, 53, 0.6);
+  color: #a3e635;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 协作页：任务地图地块标签 */
+.lm-tfield {
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  font-weight: 500;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* 协作页：任务地图图钉 */
+.lm-mpin {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50% 50% 50% 3px;
+  transform: rotate(-45deg);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
+}
+
+/* ================= v3 设计感层 ================= */
+
+/* 极轻胶片噪点（覆盖全局，不拦截交互） */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 窄体数字（大数字统一字体性格） */
+.font-num {
+  font-family: 'DIN Alternate', 'Bahnschrift', 'Arial Narrow', 'PingFang SC', sans-serif;
+  font-stretch: condensed;
+  letter-spacing: -0.01em;
+}
+
+/* 小号标签加宽字距 */
+.label-caps {
+  letter-spacing: 0.08em;
+}
+
+/* 1px 渐变描边（翠绿→透明），全场最多 2 处 */
+.grad-border {
+  position: relative;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(135deg, rgba(22, 163, 74, 0.5), rgba(22, 163, 74, 0.08) 55%, transparent) border-box;
+}
+
+/* LIVE 真图缓慢推移 */
+@keyframes pan-img {
+  from { transform: scale(1.02) translateX(-1%); }
+  to { transform: scale(1.1) translateX(1.5%); }
+}
+.pan-img {
+  animation: pan-img 45s ease-in-out infinite alternate;
+}
+
+/* ================= 巡检小车 v2：真实硬件功能动画 ================= */
+/* 土壤检测：检测头下降贴土 */
+@keyframes probe-drop {
+  0% { transform: translateY(-16px); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.probe-drop { animation: probe-drop 1.3s cubic-bezier(0.22, 0.9, 0.28, 1) forwards; }
+
+/* 环形照明呼吸（光谱采集中） */
+@keyframes ring-glow {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.ring-glow { animation: ring-glow 1.4s ease-in-out infinite; }
+
+/* 扫描作物：蓝色粒子流 */
+@keyframes particle-x {
+  0% { transform: translateX(-6%); opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateX(106%); opacity: 0; }
+}
+.scan-particle { animation: particle-x 1.7s linear infinite; }
