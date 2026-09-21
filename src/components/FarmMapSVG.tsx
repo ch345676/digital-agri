@@ -1,225 +1,58 @@
-const GREEN_DEEP = '#178a45'
+import { FIELDS } from '../store'
+import { FARM_IMAGERY } from '../real-media'
 
-/** 监测点标记：白色圆形图钉 + 绿色信号塔 */
-function MonitorPin({ x, y }: { x: number; y: number }) {
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <path d="M0 14 L-7 -2 A 15 15 0 1 1 7 -2 Z" fill="#ffffff" opacity="0.95" />
-      <circle cx="0" cy="-4" r="11" fill="#ffffff" />
-      <g stroke={GREEN_DEEP} strokeWidth="2" fill="none" strokeLinecap="round">
-        <path d="M0 -1 L-4.5 -10 M0 -1 L4.5 -10 M-3 -7.5 L3 -7.5" />
-        <path d="M-3.2 -13 A 4.5 4.5 0 0 1 3.2 -13" />
-        <path d="M-5.4 -15.4 A 8 8 0 0 1 5.4 -15.4" transform="translate(0,1.6)" />
-      </g>
-      <circle cx="0" cy="-11" r="1.8" fill={GREEN_DEEP} />
-    </g>
-  )
-}
-
-/** 取水点：蓝色水滴图钉 */
-function WaterPin({ x, y }: { x: number; y: number }) {
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <path d="M0 16 L-8 -1 A 16 16 0 1 1 8 -1 Z" fill="#1e8fe0" />
-      <circle cx="0" cy="-3" r="12" fill="#1e8fe0" />
-      <path
-        d="M0 -10 C 3.4 -5, 5 -2.6, 5 -0.4 A 5 5 0 1 1 -5 -0.4 C -5 -2.6, -3.4 -5, 0 -10 Z"
-        fill="#ffffff"
-      />
-    </g>
-  )
-}
-
-function FieldLabel({ x, y, name, area }: { x: number; y: number; name: string; area: string }) {
-  return (
-    <g
-      transform={`translate(${x},${y})`}
-      textAnchor="middle"
-      fill="#ffffff"
-      style={{ paintOrder: 'stroke' }}
-      stroke="rgba(23,53,42,0.35)"
-      strokeWidth="3"
-      fontWeight={700}
-      pointerEvents="none"
-    >
-      <text fontSize="24">{name}</text>
-      <text y="34" fontSize="22">
-        {area}
-        <tspan fontSize="15" dx="6">
-          亩
-        </tspan>
-      </text>
-    </g>
-  )
-}
-
-/** 地块多边形定义（与标注坐标） */
-const FIELD_POLYGONS: { id: string; points: string; fill: string; lx: number; ly: number }[] = [
-  { id: 'A1', points: '70,160 300,140 330,290 90,310', fill: '#69bb5e', lx: 195, ly: 215 },
-  { id: 'A2', points: '630,110 940,140 950,320 660,300', fill: '#8ecf78', lx: 790, ly: 205 },
-  { id: 'B1', points: '70,340 340,320 370,470 90,490', fill: '#7cc46a', lx: 215, ly: 400 },
-  { id: 'B2', points: '600,390 930,410 920,545 590,530', fill: '#97d584', lx: 760, ly: 465 },
-  { id: 'C1', points: '380,300 610,290 620,430 390,440', fill: '#5cb454', lx: 500, ly: 360 },
+// Delineated against actual image field edges; IDs and crop data are demo overlays.
+const PLOTS = [
+  { id: 'A1', points: '158,80 243,70 242,378 157,380', x: 200, y: 217 },
+  { id: 'A2', points: '249,70 329,66 330,377 247,378', x: 289, y: 217 },
+  { id: 'B1', points: '335,66 421,66 421,376 335,377', x: 378, y: 217 },
+  { id: 'C1', points: '427,66 511,67 515,376 426,376', x: 470, y: 217 },
+  { id: 'B2', points: '582,185 875,186 863,327 810,318 792,333 582,315', x: 721, y: 255 },
 ]
-
-export interface MapLayers {
-  fields: boolean
-  monitors: boolean
-  irrigation: boolean
+const ROUTE = [[196,358],[196,91],[286,91],[286,358],[378,358],[378,91],[468,91],[468,365],[520,365],[520,175],[863,175],[863,300],[590,300]]
+const ROUTE_PATH = ROUTE.map(([x,y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ')
+function routePosition(progress: number) {
+  const lengths = ROUTE.slice(1).map(([x,y], i) => Math.hypot(x-ROUTE[i][0], y-ROUTE[i][1]))
+  let distance = lengths.reduce((a,b) => a+b, 0) * Math.max(0, Math.min(100, progress)) / 100
+  for (let i=0;i<lengths.length;i++) {
+    if (distance <= lengths[i]) {
+      const fraction = distance / lengths[i]
+      return [ROUTE[i][0] + (ROUTE[i+1][0]-ROUTE[i][0])*fraction, ROUTE[i][1] + (ROUTE[i+1][1]-ROUTE[i][1])*fraction]
+    }
+    distance -= lengths[i]
+  }
+  return ROUTE[ROUTE.length-1]
 }
+export interface MapLayers { fields: boolean; monitors: boolean; irrigation: boolean }
 
-export function FarmMapSVG({
-  layers,
-  zoom = 1,
-  selectedField,
-  onFieldClick,
-}: {
+export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol }: {
   layers: MapLayers
   zoom?: number
   selectedField?: string | null
-  onFieldClick?: (fieldId: string) => void
+  onFieldClick?: (id:string) => void
+  patrol?: { progress:number; running:boolean }
 }) {
-  return (
-    <svg viewBox="0 0 1000 560" className="h-full w-full" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="mapBg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#e3f1dc" />
-          <stop offset="100%" stopColor="#cfe8cf" />
-        </linearGradient>
-        <linearGradient id="river" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8fd2f0" />
-          <stop offset="100%" stopColor="#63bce8" />
-        </linearGradient>
-      </defs>
-
-      <g transform={`translate(500 280) scale(${zoom}) translate(-500 -280)`}>
-        {/* 底色 */}
-        <rect x={-500 * (zoom - 1) - 200} y={-280 * (zoom - 1) - 200} width={1000 * zoom + 400} height={560 * zoom + 400} fill="url(#mapBg)" />
-
-        {/* 远处零散田地 */}
-        <g opacity="0.55">
-          <polygon points="40,60 220,40 260,140 60,150" fill="#bfe0ae" />
-          <polygon points="700,30 950,50 930,140 720,120" fill="#c4e3b3" />
-          <polygon points="60,470 300,500 280,560 40,560" fill="#c8e5b6" />
-          <polygon points="880,420 1000,430 1000,560 900,560" fill="#bcdcad" />
+  const [rx,ry] = routePosition(patrol?.progress ?? 0)
+  return <svg viewBox="0 0 1000 560" className="real-farm-map h-full w-full" preserveAspectRatio="xMidYMid meet" aria-label={patrol ? '真实农田遥感照片上的仿真巡航路线' : '真实农田卫星影像演示地图'}>
+    <rect width="1000" height="560" fill="#18342e"/>
+    <g transform={`translate(500 280) scale(${zoom}) translate(-500 -280)`}>
+      <image className="satellite-photo" href={FARM_IMAGERY.image} width="1000" height="560" preserveAspectRatio="none"/>
+      <rect width="1000" height="560" fill="#092b22" opacity=".12" pointerEvents="none"/>
+      {PLOTS.map(p => {
+        const field=FIELDS.find(f=>f.id===p.id)!
+        return <g key={p.id}>
+          <polygon className="real-field" data-field={p.id} points={p.points} fill={selectedField===p.id ? '#daff854d' : '#bde99408'} stroke={selectedField===p.id ? '#f6ffd9' : '#d9efad'} strokeWidth={selectedField===p.id ? 3 : 1.3} strokeOpacity={layers.fields ? .85 : 0} role={onFieldClick?'button':undefined} tabIndex={onFieldClick?0:undefined} aria-label={onFieldClick?`选择 ${p.id} ${field.crop} 演示地块`:undefined} aria-pressed={onFieldClick?selectedField===p.id:undefined} onClick={()=>onFieldClick?.(p.id)} onKeyDown={e=>{if(onFieldClick && (e.key==='Enter'||e.key===' ')){e.preventDefault();onFieldClick(p.id)}}}/>
+          {layers.fields && <g transform={`translate(${p.x} ${p.y})`} pointerEvents="none" textAnchor="middle">
+            <rect x="-36" y="-23" width="72" height="59" rx="7" fill="#102e29d9" stroke="#e0f7bc77" strokeWidth=".7"/>
+            <text y="-7" fill="#f4ffdb" fontSize="14" fontWeight="700">{p.id} {p.id==='C1'?'试验田':field.crop}</text>
+            <text y="10" fill="#e8efd8" fontSize="11">{field.area} 亩</text>
+            <text y="25" fill="#c3d3b8" fontSize="8">演示地块</text>
+          </g>}
         </g>
-
-        {/* 河流 */}
-        <path
-          d="M520 -10 C 500 80, 560 150, 540 230 C 525 300, 590 340, 640 380 C 700 430, 760 460, 850 480 C 920 495, 960 520, 980 570"
-          fill="none"
-          stroke="#a8dcf4"
-          strokeWidth="46"
-          strokeLinecap="round"
-        />
-        <path
-          d="M520 -10 C 500 80, 560 150, 540 230 C 525 300, 590 340, 640 380 C 700 430, 760 460, 850 480 C 920 495, 960 520, 980 570"
-          fill="none"
-          stroke="url(#river)"
-          strokeWidth="32"
-          strokeLinecap="round"
-        />
-
-        {/* 地块 */}
-        <g stroke="#ffffff" strokeWidth="3" strokeLinejoin="round">
-          {FIELD_POLYGONS.map((f) => (
-            <polygon
-              key={f.id}
-              points={f.points}
-              fill={f.fill}
-              onClick={onFieldClick ? () => onFieldClick(f.id) : undefined}
-              style={onFieldClick ? { cursor: 'pointer' } : undefined}
-              opacity={selectedField && selectedField !== f.id ? 0.75 : 1}
-            />
-          ))}
-          <polygon points="330,150 500,140 520,230 360,250" fill="#a5d98d" />
-          <polygon points="420,450 580,440 590,540 430,550" fill="#aadca0" />
-        </g>
-
-        {/* 选中高亮 */}
-        {selectedField && (
-          <polygon
-            points={FIELD_POLYGONS.find((f) => f.id === selectedField)?.points ?? ''}
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="6"
-            strokeLinejoin="round"
-            opacity="0.9"
-            pointerEvents="none"
-          />
-        )}
-
-        {/* 田埂纹理 */}
-        <g stroke="#ffffff" strokeWidth="1.2" opacity="0.45" pointerEvents="none">
-          <line x1="110" y1="165" x2="130" y2="305" />
-          <line x1="160" y1="160" x2="180" y2="300" />
-          <line x1="210" y1="155" x2="230" y2="297" />
-          <line x1="260" y1="150" x2="280" y2="293" />
-          <line x1="680" y1="115" x2="690" y2="300" />
-          <line x1="740" y1="120" x2="750" y2="305" />
-          <line x1="800" y1="125" x2="810" y2="310" />
-          <line x1="860" y1="132" x2="870" y2="315" />
-          <line x1="110" y1="345" x2="130" y2="485" />
-          <line x1="170" y1="340" x2="190" y2="482" />
-          <line x1="230" y1="335" x2="250" y2="478" />
-          <line x1="290" y1="330" x2="310" y2="474" />
-          <line x1="640" y1="395" x2="630" y2="530" />
-          <line x1="700" y1="398" x2="690" y2="533" />
-          <line x1="760" y1="402" x2="750" y2="536" />
-          <line x1="820" y1="405" x2="810" y2="540" />
-          <line x1="420" y1="305" x2="430" y2="437" />
-          <line x1="470" y1="302" x2="480" y2="435" />
-          <line x1="520" y1="298" x2="530" y2="432" />
-        </g>
-
-        {/* 灌溉管线图层 */}
-        {layers.irrigation && (
-          <g>
-            <g fill="none" stroke="#2196e8" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="540,230 430,255 330,270 190,285 100,292" />
-              <polyline points="540,230 560,330 640,380 760,410 900,420" />
-              <polyline points="640,380 600,470 590,530" />
-              <polyline points="330,270 350,380 370,470" />
-              <polyline points="760,410 850,350 940,335" />
-            </g>
-            <g fill="#2196e8" stroke="#ffffff" strokeWidth="3">
-              <circle cx="430" cy="255" r="8" />
-              <circle cx="330" cy="270" r="8" />
-              <circle cx="190" cy="285" r="8" />
-              <circle cx="560" cy="330" r="8" />
-              <circle cx="760" cy="410" r="8" />
-              <circle cx="600" cy="470" r="8" />
-              <circle cx="350" cy="380" r="8" />
-              <circle cx="850" cy="350" r="8" />
-            </g>
-            <WaterPin x={640} y={368} />
-          </g>
-        )}
-
-        {/* 监测点图层 */}
-        {layers.monitors && (
-          <g>
-            <MonitorPin x={140} y={150} />
-            <MonitorPin x={340} y={250} />
-            <MonitorPin x={180} y={470} />
-            <MonitorPin x={500} y={320} />
-            <MonitorPin x={880} y={160} />
-            <MonitorPin x={950} y={380} />
-            <MonitorPin x={700} y={500} />
-          </g>
-        )}
-
-        {/* 地块标注图层 */}
-        {layers.fields && (
-          <g>
-            <FieldLabel x={195} y={215} name="A1 水稻" area="32.6" />
-            <FieldLabel x={790} y={205} name="A2 玉米" area="28.4" />
-            <FieldLabel x={215} y={400} name="B1 大豆" area="26.7" />
-            <FieldLabel x={760} y={465} name="B2 蔬菜" area="18.3" />
-            <FieldLabel x={500} y={360} name="C1 试验田" area="15.2" />
-          </g>
-        )}
-      </g>
-    </svg>
-  )
+      })}
+      {layers.irrigation && <g className="irrigation-overlay" pointerEvents="none"><path d="M150 62H523V386H151M246 62V386M332 62V386M424 62V386M523 175H882" stroke="#153c48" strokeWidth="7" fill="none"/><path d="M150 62H523V386H151M246 62V386M332 62V386M424 62V386M523 175H882" stroke="#8ddaf5" strokeWidth="2.5" fill="none"/>{[[150,62],[246,62],[332,386],[424,62],[523,175],[882,175]].map(([x,y])=><circle key={`${x}-${y}`} cx={x} cy={y} r="5" fill="#80daf8" stroke="#fff" strokeWidth="1.5"/>)}</g>}
+      {layers.monitors && <g className="monitor-overlay" pointerEvents="none">{[[180,95],[310,340],[395,100],[490,340],[805,220]].map(([x,y],i)=><g key={i} transform={`translate(${x} ${y})`}><circle r="11" fill="#ecffda" stroke="#285941" strokeWidth="2"/><circle r="3" fill="#2b7955"/><path d="M-6-5Q0-11 6-5M-4-2Q0-6 4-2" stroke="#2b7955" strokeWidth="1.5" fill="none"/></g>)}</g>}
+      {patrol && <g pointerEvents="none"><path d={ROUTE_PATH} fill="none" stroke="#143626" strokeWidth="7" strokeLinejoin="round"/><path className="patrol-route" d={ROUTE_PATH} fill="none" stroke="#dcff92" strokeWidth="2.5" strokeDasharray="8 6"/><path className="patrol-completed" d={ROUTE_PATH} fill="none" stroke="#dcff92" strokeWidth="3" pathLength="100" strokeDasharray={`${Math.max(0,Math.min(100,patrol.progress))} 100`}/><g className="rover-position" transform={`translate(${rx} ${ry})`}><circle r="25" fill="#d4ff7c44" className={patrol.running?'scan-pulse':''}/><circle r="13" fill="#e2ff9d" stroke="#24402b" strokeWidth="2"/><rect x="-8" y="-6" width="16" height="12" rx="4" fill="#24402b"/><circle cx="-3" cy="0" r="2" fill="#ecffd8"/><circle cx="3" cy="0" r="2" fill="#ecffd8"/></g></g>}
+    </g>
+  </svg>
 }

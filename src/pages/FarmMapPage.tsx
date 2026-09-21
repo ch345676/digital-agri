@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useStore, FIELDS, nowTimeStr, todayStr } from '../store'
 import { FarmMapSVG, type MapLayers } from '../components/FarmMapSVG'
+import { ImageryCredit } from '../components/ImageryCredit'
 import { PageHeader, btnPrimary, btnGhost } from '../components/bits'
 
 const LAYER_ITEMS: { key: keyof MapLayers; label: string }[] = [
@@ -31,7 +32,7 @@ export default function FarmMapPage() {
   const field = FIELDS.find((f) => f.id === selected) ?? null
 
   const zoomIn = () => setZoom((z) => Math.min(2, Math.round((z + 0.2) * 10) / 10))
-  const zoomOut = () => setZoom((z) => Math.max(0.6, Math.round((z - 0.2) * 10) / 10))
+  const zoomOut = () => setZoom((z) => Math.max(1, Math.round((z - 0.2) * 10) / 10))
   const reset = () => {
     setZoom(1)
     setSelected(null)
@@ -53,7 +54,7 @@ export default function FarmMapPage() {
     <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title="农场地图"
-        desc="点击地块查看详情，支持图层开关与缩放"
+        desc="真实农田遥感影像 · 点击演示地块查看详情，支持图层开关与缩放"
         extra={
           <div className="flex items-center gap-2">
             {LAYER_ITEMS.map((l) => (
@@ -73,9 +74,9 @@ export default function FarmMapPage() {
         }
       />
 
-      <div className="flex min-h-0 flex-1 gap-5">
+      <div className="map-workspace flex min-h-0 flex-1 gap-5">
         {/* 地图 */}
-        <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_rgba(23,53,42,0.05)]">
+        <div className="satellite-map-frame relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_rgba(23,53,42,0.05)]">
           <FarmMapSVG
             layers={layers}
             zoom={zoom}
@@ -87,14 +88,14 @@ export default function FarmMapPage() {
           />
 
           {/* 缩放控件 */}
-          <div className="absolute left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1 rounded-2xl bg-white/95 p-2 shadow-[0_4px_16px_rgba(23,53,42,0.15)]">
-            <button onClick={zoomIn} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
+          <div className="map-zoom-controls absolute left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1 rounded-2xl bg-white/95 p-2 shadow-[0_4px_16px_rgba(23,53,42,0.15)]">
+            <button onClick={zoomIn} aria-label="放大地图" disabled={zoom>=2} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
               <Plus className="h-[18px] w-[18px]" strokeWidth={2.2} />
             </button>
-            <button onClick={zoomOut} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
+            <button onClick={zoomOut} aria-label="缩小地图" disabled={zoom<=1} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
               <Minus className="h-[18px] w-[18px]" strokeWidth={2.2} />
             </button>
-            <button onClick={reset} title="复位" className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
+            <button onClick={reset} title="复位" aria-label="复位地图" className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
               <LocateFixed className="h-[18px] w-[18px]" strokeWidth={2.2} />
             </button>
           </div>
@@ -176,6 +177,8 @@ export default function FarmMapPage() {
           </div>
         )}
       </div>
+      <div className="map-field-picker" aria-label="选择演示地块">{FIELDS.map(f=><button key={f.id} className={selected===f.id?'active':''} onClick={()=>{setSelected(f.id);setIrrigated(null)}}>{f.id} {f.crop}</button>)}</div>
+      <ImageryCredit/>
     </div>
   )
 }

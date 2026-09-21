@@ -20,6 +20,7 @@ import InspectionPage from './pages/InspectionPage'
 import HarvestPage from './pages/HarvestPage'
 import './theme.css'
 import './glass.css'
+import './real-media.css'
 import ButtonMotion from './components/ButtonMotion'
 
 const NAV: { key: PageKey; icon: LucideIcon; label: string; group: string }[] = [
