@@ -17,6 +17,7 @@ try{
    await go(route)
    assert.equal(await page.$eval('main',e=>e.scrollWidth>e.clientWidth+2),false,route+' overflow '+width)
    if(route==='alerts'){
+    for(const img of await page.$$('.alert-photo')){await img.evaluate(e=>e.scrollIntoView({block:'center'}));await img.evaluate(e=>e.decode())}
     const sources=await page.$$eval('.alert-photo',imgs=>imgs.map(i=>({src:i.currentSrc,width:i.naturalWidth,alt:i.alt})))
     assert.equal(new Set(sources.map(i=>i.src)).size,5)
     assert.ok(sources.every(i=>i.width>0))
