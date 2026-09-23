@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LayoutDashboard, MapPin, ClipboardList, Radar, Wheat, BarChart3, Package, Users, Settings, Sprout, ChevronRight, FlaskConical, History, ShieldAlert, Bot, Cherry, Bell, Menu, X, Pause, Play, LocateFixed, ArrowUpRight, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, MapPin, ClipboardList, Radar, Wheat, BarChart3, Package, Users, Settings, ChevronRight, FlaskConical, History, ShieldAlert, Bot, Cherry, Bell, Menu, X, Pause, Play, LocateFixed, ArrowUpRight, type LucideIcon } from 'lucide-react'
 import { StoreProvider, useStore, type PageKey } from './store'
 import { MotionProvider } from './components/Motion'
 import { useMotion } from './components/motion-context'
@@ -24,6 +24,9 @@ import './real-media.css'
 import './photo-layout.css'
 import './fresh.css'
 import './motion.css'
+import './refinement.css'
+import BrandMark from './components/BrandMark'
+import FeedbackHost, {SaveIndicator} from './components/FeedbackHost'
 import MotionRuntime from './components/MotionRuntime'
 import { usePresence } from './components/use-presence'
 import ButtonMotion from './components/ButtonMotion'
@@ -75,10 +78,10 @@ function Shell() {
     <div className="landscape-backdrop" aria-hidden="true" />
     <div className="landscape-mist" aria-hidden="true" />
     <ButtonMotion />
-    <MotionRuntime />
+    <MotionRuntime /><FeedbackHost/>
     {menu && <button className="mobile-scrim" aria-label="关闭菜单" onClick={() => setMenu(false)} />}
     <aside className={`sidebar ${menu ? 'is-open' : ''}`}>
-      <button className="brand" onClick={() => go('dashboard')}><span className="brand-mark"><Sprout size={28} /></span><span><b>惠农<span className="brand-dot">.</span></b><small>HUINONG · SMART AGRI</small></span></button>
+      <button className="brand" onClick={() => go('dashboard')}><span className="brand-mark"><BrandMark/></span><span><b>惠农<span className="brand-dot">.</span></b><small>HUINONG · SMART AGRI</small></span></button>
       <nav aria-label="平台导航">{NAV.map(n => <div key={n.key}>{n.group && <div className="nav-group">{n.group}</div>}<button className={`nav-item ${page === n.key ? 'active' : ''}`} title={n.label} aria-label={n.label} aria-current={page === n.key ? 'page' : undefined} onClick={() => go(n.key)}><n.icon size={20} strokeWidth={1.6} /><span>{n.label}</span>{n.key === 'alerts' && pending > 0 ? <i>{pending}</i> : page === n.key ? <ChevronRight size={14} /> : null}</button></div>)}</nav>
       <div className="sidebar-foot"><div className="connection"><span className="status-dot" />农业数字孪生 · 演示空间</div><button className="profile" onClick={() => go('settings')}><span className="avatar">{settings.displayName.slice(0, 1)}</span><span><b>{settings.displayName}</b><small>农场管理者</small></span><Settings size={16} /></button></div>
     </aside>
@@ -93,7 +96,7 @@ function Shell() {
         <div className="farm-context"><span><MapPin size={13} />{settings.farmName}<span className="context-divider">/</span>数字农业协作平台</span><button onClick={locate} disabled={locating}><LocateFixed size={13} />{locating ? '定位中…' : '获取位置'}</button></div>
         {location && <div className="location-message" role="status">{location}</div>}
         <div key={page} className={`page-stage page-${page}`}><Page /></div>
-        <footer className="site-footer"><span>HUINONG <i>让每一寸土地，都被悉心照料。</i></span><span>演示模式 · 数据与操作保存在当前浏览器</span></footer>
+        <footer className="site-footer"><span>HUINONG <i>让每一寸土地，都被悉心照料。</i></span><SaveIndicator/></footer>
       </main>
       <nav className="mobile-bottom" aria-label="快捷导航">{NAV.filter(n => ['dashboard','tasks','map','history'].includes(n.key)).map(n => <button key={n.key} className={page === n.key ? 'active' : ''} onClick={() => go(n.key)}><n.icon size={19} /><span>{n.key === 'dashboard' ? '首页' : n.key === 'tasks' ? '作业' : n.key === 'map' ? '地图' : '复盘'}</span></button>)}<button onClick={() => setMenu(true)}><Menu size={19} /><span>更多</span></button></nav>
     </div>

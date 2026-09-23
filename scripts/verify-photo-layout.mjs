@@ -6,7 +6,7 @@ await fs.mkdir('qa/photo-layout',{recursive:true})
 const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox']})
 const page=await browser.newPage(),errors=[],results=[]
 page.on('pageerror',e=>errors.push(String(e)))
-const go=async route=>{await page.goto(base+'#'+route,{waitUntil:'networkidle0'});await page.waitForSelector('main')}
+const go=async route=>{await page.goto(base+'#'+route,{waitUntil:'networkidle0'});await page.waitForSelector('.page-'+route);await new Promise(r=>setTimeout(r,700))}
 try{
 for(const width of [1440,390,768]){
  await page.setViewport({width,height:1000})
@@ -39,7 +39,7 @@ await page.setViewport({width:1440,height:1000});await go('crops')
 for(const button of await page.$$('.crop-reference')){
  await button.click();await page.waitForSelector('.photo-reference img');await page.$eval('.photo-reference img',e=>e.decode())
  assert.ok((await page.$eval('.photo-reference',e=>e.innerText)).includes('原图来源'))
- await page.keyboard.press('Escape')
+ await page.keyboard.press('Escape');await page.waitForSelector('.agri-modal',{hidden:true})
 }
 await go('soil');await page.$$eval('.field-tabs button',b=>b[1].click())
 assert.ok((await page.$eval('.recommendation',e=>e.innerText)).includes('A2'))

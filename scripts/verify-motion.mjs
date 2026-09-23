@@ -16,7 +16,9 @@ const go=async route=>{await page.goto(base+'#'+route,{waitUntil:'networkidle0'}
 const button=async(text,scope='main')=>page.evaluate((text,scope)=>{const b=[...document.querySelectorAll(scope+' button')].find(b=>b.textContent.includes(text));if(!b)throw Error('missing '+text);b.click()},text,scope)
 try{
  await page.setViewport({width:1440,height:1000});await go('dashboard')
- assert.ok(await page.evaluate(()=>window.motionAudit.animations>5))
+ assert.ok(await page.evaluate(()=>window.motionAudit.animations>=3))
+ assert.equal(await page.$eval('.twin-primary',e=>e.dataset.motionRevealed),'true')
+ assert.equal(await page.$eval('.environment-card',e=>e.dataset.motionRevealed),'true')
  await page.$eval('.inspection-banner',e=>e.scrollIntoView({block:'center'}));await wait(700)
  assert.equal(await page.$eval('.inspection-banner',e=>e.dataset.motionRevealed),'true')
  checks.push('Cards reveal on first scroll exposure; chart and metric entrances execute')

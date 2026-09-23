@@ -1,3 +1,4 @@
+import {feedback,reportSave} from './feedback'
 import {
   createContext,
   useContext,
@@ -357,8 +358,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
+      reportSave(true)
     } catch {
-      /* 存储满等情况忽略 */
+      reportSave(false)
+      feedback('本次修改未能保存；请释放浏览器存储空间后重试。',{error:true,id:'storage-error'})
     }
   }, [persisted])
 
@@ -400,46 +403,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       page,
       setPage,
       readings,
-      addTask: (t) =>
-        setPersisted((p) => ({
+      addTask: (t) => { setPersisted((p) => ({
           ...p,
           tasks: [...p.tasks, { ...t, id: uid('t'), status: 'pending' as TaskStatus }],
-        })),
-      setTaskStatus: (id, s) =>
-        setPersisted((p) => ({
+        })); feedback("任务已创建"); },
+      setTaskStatus: (id, s) => { setPersisted((p) => ({
           ...p,
           tasks: p.tasks.map((t) => (t.id === id ? { ...t, status: s } : t)),
-        })),
-      deleteTask: (id) =>
-        setPersisted((p) => ({ ...p, tasks: p.tasks.filter((t) => t.id !== id) })),
-      markAllRead: () =>
-        setPersisted((p) => ({
+        })); feedback(s === 'done' ? '农事已完成，辛苦了' : '任务状态已更新'); },
+      deleteTask: (id) => { setPersisted((p) => ({ ...p, tasks: p.tasks.filter((t) => t.id !== id) })); feedback("任务已删除"); },
+      markAllRead: () => { setPersisted((p) => ({
           ...p,
           notifications: p.notifications.map((n) => ({ ...n, read: true })),
-        })),
-      markRead: (id) =>
-        setPersisted((p) => ({
+        })); feedback("通知已全部标为已读"); },
+      markRead: (id) => { setPersisted((p) => ({
           ...p,
           notifications: p.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
-        })),
-      toggleValve: (id) =>
-        setPersisted((p) => ({
+        })); feedback("通知已读"); },
+      toggleValve: (id) => { setPersisted((p) => ({
           ...p,
           valves: { ...p.valves, [id]: !p.valves[id] },
-        })),
-      adjustInventory: (id, delta) =>
-        setPersisted((p) => ({
+        })); feedback("演示阀门状态已更新"); },
+      adjustInventory: (id, delta) => { setPersisted((p) => ({
           ...p,
           inventory: p.inventory.map((it) =>
             it.id === id ? { ...it, quantity: Math.max(0, it.quantity + delta) } : it,
           ),
-        })),
-      addMember: (m) => setPersisted((p) => ({ ...p, members: [...p.members, { ...m, id: uid('m') }] })),
-      addAnnouncement: (a) =>
-        setPersisted((p) => ({ ...p, announcements: [{ ...a, id: uid('a') }, ...p.announcements] })),
-      addGrowthRecord: (r) =>
-        setPersisted((p) => ({ ...p, growthRecords: [{ ...r, id: uid('g') }, ...p.growthRecords] })),
-      saveSettings: (s) => setPersisted((p) => ({ ...p, settings: s })),
+        })); feedback("库存已更新"); },
+      addMember: (m) => { setPersisted((p) => ({ ...p, members: [...p.members, { ...m, id: uid('m') }] })); feedback("成员已添加"); },
+      addAnnouncement: (a) => { setPersisted((p) => ({ ...p, announcements: [{ ...a, id: uid('a') }, ...p.announcements] })); feedback("公告已添加"); },
+      addGrowthRecord: (r) => { setPersisted((p) => ({ ...p, growthRecords: [{ ...r, id: uid('g') }, ...p.growthRecords] })); feedback("生长记录已添加"); },
+      saveSettings: (s) => { setPersisted((p) => ({ ...p, settings: s })); feedback("设置已应用"); },
     }),
     [persisted, page, readings, setPage],
   )

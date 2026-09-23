@@ -1,3 +1,4 @@
+import BrandMark from '../components/BrandMark'
 import { useMemo, useState } from 'react'
 import { Plus, Search, Play, Check, Trash2, CalendarDays, User } from 'lucide-react'
 import {
@@ -177,7 +178,7 @@ export default function TasksPage() {
       {/* 任务列表 */}
       <PageCard className="!p-2">
         {list.length === 0 && (
-          <div className="py-12 text-center text-[13px] text-[#a4bcb1]">没有符合条件的任务</div>
+          <div className="guided-empty"><BrandMark/><h3>没有符合条件的任务</h3><p>清除筛选，重新看看今天的农事安排。</p><button className="secondary-btn" onClick={()=>{setKeyword('');setFilter('all')}}>清除筛选</button></div>
         )}
         <ul className="divide-y divide-[#f0f6f3]">
           {list.map((t) => (

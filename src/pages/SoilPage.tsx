@@ -6,7 +6,7 @@ import { Count } from '../components/Motion'
 import { useStore, todayStr, nowTimeStr } from '../store'
 
 export default function SoilPage() {
-  const [id,setId]=useState('A1')
+  const [id,setId]=useState(()=>{try{const chosen=sessionStorage.getItem('huinong-soil-field');return SAMPLES.some(s=>s.id===chosen)?chosen!:'A1'}catch{return 'A1'}})
   const {addTask,tasks,setPage,settings}=useStore()
   const sample=SAMPLES.find(s=>s.id===id)!
   const metrics=soilMetrics(sample)

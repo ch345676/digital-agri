@@ -1,7 +1,8 @@
-import { ArrowUpRight, ArrowRight, Leaf, ScanLine, Bot, ShieldAlert, Cherry, CloudSun, Waves, Check, ChevronRight, ClipboardList } from 'lucide-react'
+import { ArrowUpRight, ArrowRight, Leaf, ScanLine, Bot, ShieldAlert, Cherry, Waves, Check, ChevronRight, ClipboardList } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
 import { useStore, FIELDS, todayStr } from '../store'
 import { ALERTS, alertTaskTitle, HARVEST, SAMPLES, soilHistory } from '../agronomy'
+import DigitalTwinOverview from '../components/DigitalTwinOverview'
 import { Count } from '../components/Motion'
 import { useMotion } from '../components/motion-context'
 
@@ -10,21 +11,17 @@ const maturity = [{ name: '未成熟', value: HARVEST.filter(h => h.maturity < 5
 import { chartTooltip } from '../components/chart-theme'
 
 export default function Dashboard() {
-  const { settings, setPage, tasks, setTaskStatus, readings } = useStore()
+  const { settings, setPage, tasks, setTaskStatus } = useStore()
   const { enabled } = useMotion()
   const pending = ALERTS.filter(a => !tasks.some(t => t.title === alertTaskTitle(a) && t.status === 'done'))
   const total = FIELDS.reduce((s, f) => s + f.area, 0)
   const harvestArea = HARVEST.filter(h => h.maturity >= 85).reduce((s, h) => s + h.area, 0)
   const today = tasks.filter(t => t.date === todayStr())
   const done = today.filter(t => t.status === 'done').length
-  const weather = readings.D4
   const trends = soilHistory('A1', 7)
   return <div className="overview">
     <div className="overview-heading"><div><div className="eyebrow">YOUR FARM, IN FOCUS</div><h1>你好，{settings.displayName}<span> ☀</span></h1><p>新的一天，让每一份生长都被看见。</p></div><button className="primary-btn" onClick={() => setPage('tasks')}>安排农事 <ArrowUpRight size={17} /></button></div>
-    <div className="fresh-hero-grid">
-      <section className="fresh-welcome"><div className="fresh-welcome-copy"><span className="fresh-label">HUINONG / 智慧农场</span><h2>美好丰收，<br/>从今天开始。</h2><p>连接土地、作物与每一个你。<br/>你的田间日常，现在一目了然。</p><div className="fresh-hero-bottom"><span className="fresh-farm-count"><Leaf size={17}/><b>{FIELDS.length} 个地块</b><small>正在生长</small></span><button onClick={()=>setPage('map')}>探索我的农场 <ArrowUpRight size={17}/></button></div></div><div className="fresh-hero-photo"><img src="./media/crops/bok-choy.jpg" alt="田间生长的青菜实拍参考"/><span><i/> ROOTED IN NATURE</span></div><span className="fresh-orbit" aria-hidden="true"/></section>
-      <section className="fresh-weather"><div className="fresh-weather-heading"><div><span className="fresh-label">FIELD CONDITIONS</span><h3>田间好时光</h3><p>多云间晴 · 适宜田间作业</p></div><CloudSun size={42} strokeWidth={1.2}/></div><div className="fresh-weather-bars" aria-hidden="true">{Array.from({length:24},(_,i)=><i key={i} className={i<16?'filled':''}/>)}</div><div className="fresh-weather-bottom"><button onClick={()=>setPage('devices')}>查看环境 <ArrowUpRight size={14}/></button><div><b><Count value={weather?.v1??26} decimals={1}/><small>°C</small></b><span>湿度 {Math.round(weather?.v2??65)}% · 东南风 2 级</span></div></div><small className="fresh-weather-note">气象演示数据</small></section>
-    </div>
+    <DigitalTwinOverview/>
     <div className="kpi-grid">
       {[{ title:'管理面积',value:total,unit:'亩',sub:`${FIELDS.length} 个地块 · 全域覆盖`,icon:ScanLine,decimal:1 },{title:'今日农事',value:today.length-done,unit:'项',sub:`已完成 ${done} / ${today.length} 项`,icon:Leaf},{title:'巡检机器人',value:3,unit:'台',sub:'3 台在线 · 1 台待机（演示）',icon:Bot},{title:'待处置预警',value:pending.length,unit:'条',sub:`${pending.filter(a=>a.level==='高风险').length} 条高风险 · 优先关注`,icon:ShieldAlert},{title:'可采摘面积',value:harvestArea,unit:'亩',sub:'B2 蔬菜 · 建议明日采收',icon:Cherry,decimal:1}].map((k,i) => <button className={`metric-card metric-${i}`} key={k.title} onClick={() => setPage((['map','tasks','inspection','alerts','harvest'] as const)[i])}><div className="metric-top"><span>{k.title}</span><k.icon size={18} /></div><div className="metric-number"><Count value={k.value} decimals={k.decimal ?? 0} /><small>{k.unit}</small></div><div className="metric-bottom"><span>{k.sub}</span><ArrowUpRight size={14} /></div><svg className="mini-spark" viewBox="0 0 120 24" aria-hidden="true"><path d="M0 20 L15 16 L28 18 L45 8 L57 13 L70 5 L85 9 L98 3 L120 0" /></svg></button>)}
     </div>

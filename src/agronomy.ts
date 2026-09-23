@@ -1,3 +1,4 @@
+import {feedback} from './feedback'
 import { FIELDS, todayStr } from './store'
 
 // Demonstration fixtures, never presented as connected sensor measurements.
@@ -49,9 +50,18 @@ export const HARVEST = FIELDS.map((field, i) => ({ ...field,
   maturity: [38, 76, 61, 94, 12][i], days: [15, 5, 8, 1, 45][i],
   quality: [82, 88, 85, 92, 70][i], yieldPerMu: [560, 610, 190, 1800, 420][i],
 }))
-export function downloadCSV(name: string, rows: (string | number)[][]) {
-  const text = '\uFEFF' + rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n')
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }))
-  const a = document.createElement('a'); a.href = url; a.download = name; a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+export async function downloadCSV(name: string, rows: (string | number)[][]) {
+ const id=feedback('正在整理导出数据…',{progress:0})
+ try {
+  const lines:string[]=[]
+  for(let offset=0;offset<rows.length;offset+=25){
+   lines.push(...rows.slice(offset,offset+25).map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')))
+   feedback('正在生成 CSV · '+Math.min(offset+25,rows.length)+' / '+rows.length+' 行',{id,progress:Math.round(Math.min(offset+25,rows.length)/rows.length*90)})
+   await new Promise(resolve=>setTimeout(resolve,0))
+  }
+  const url=URL.createObjectURL(new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}))
+  const a=document.createElement('a');a.href=url;a.download=name;a.click()
+  setTimeout(()=>URL.revokeObjectURL(url),1000)
+  feedback('文件已生成，已请求浏览器下载',{id,progress:100})
+ }catch{feedback('导出失败，请重试',{id,error:true})}
 }

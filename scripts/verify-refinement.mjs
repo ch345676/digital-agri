@@ -1,0 +1,15 @@
+import puppeteer from 'puppeteer-core';import assert from 'node:assert/strict';import fs from 'node:fs/promises';
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox']});const page=await browser.newPage();const base=process.env.TEST_BASE||'http://localhost:5184/';const errors=[];page.on('pageerror',e=>errors.push(e.message));const wait=ms=>new Promise(r=>setTimeout(r,ms));
+try{
+await page.setViewport({width:1440,height:1100});await page.goto(base+'#dashboard',{waitUntil:'networkidle0'});await wait(750);await wait(1000);
+assert.equal(await page.$eval('.twin-primary',e=>e.dataset.motionRevealed),'true');
+await page.click('.twin-fields button:nth-child(4)');await wait(900);assert.match(await page.$eval('.environment-field',e=>e.textContent),/B2/);assert.match(await page.$eval('.twin-field-info',e=>e.textContent),/B2/);
+await page.screenshot({path:'qa/refined-home.png'});
+await page.$eval('.twin-field-info button',e=>e.click());await page.waitForSelector('.page-soil');assert.match(await page.$eval('.field-tabs .active',e=>e.textContent),/B2/);await page.goto(base+'#dashboard',{waitUntil:'networkidle0'});await wait(750);
+await page.click('[aria-label="关闭动画"]');await page.waitForFunction(()=>document.documentElement.dataset.motion==='off');await wait(150);const pos=await page.$eval('.rover-position',e=>e.getAttribute('transform'));await wait(900);assert.equal(await page.$eval('.rover-position',e=>e.getAttribute('transform')),pos);
+await page.goto(base+'#tasks',{waitUntil:'networkidle0'});await wait(750);await page.type('input[placeholder="搜索任务或负责人…"]','nonexistentxyz');await wait(300);await page.$eval('.guided-empty button',e=>e.click());assert.equal(await page.$eval('input[placeholder="搜索任务或负责人…"]',e=>e.value),'');
+await page.goto(base+'#history',{waitUntil:'networkidle0'});await wait(750);await page.evaluate(()=>{window.exports=[];window.addEventListener('huinong-feedback',e=>window.exports.push(e.detail))});await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.textContent.includes('导出数据')).click());await wait(600);assert.ok(await page.evaluate(()=>window.exports.some(e=>e.progress===100)));assert.match(await page.$eval('.feedback-stack',e=>e.textContent),/文件已生成/);
+await page.setViewport({width:390,height:844});await page.goto(base+'#dashboard',{waitUntil:'networkidle0'});await wait(750);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:'qa/refined-mobile.png',fullPage:true});
+const failure=await browser.newPage();await failure.evaluateOnNewDocument(()=>{Storage.prototype.setItem=()=>{throw new Error('quota')}});await failure.goto(base+'#dashboard',{waitUntil:'networkidle0'});await wait(750);assert.match(await failure.$eval('.save-indicator',e=>e.textContent),/未能保存/);assert.match(await failure.$eval('.feedback-stack',e=>e.textContent),/未能保存/);
+assert.deepEqual(errors,[]);console.log('PASS: field/environment linkage, reveal, pause, clear filters, CSV progress, mobile fit and actual storage failure feedback');
+}finally{await browser.close()}
