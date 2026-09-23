@@ -14,7 +14,9 @@ const PLOTS = [
 ]
 export interface MapLayers { fields: boolean; monitors: boolean; irrigation: boolean }
 
-export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol, markers = [] }: {
+export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol, markers = [], fieldMoisture, fieldValves }: {
+  fieldMoisture?: Record<string,number>
+  fieldValves?: Record<string,boolean>
   layers: MapLayers
   zoom?: number
   selectedField?: string | null
@@ -35,7 +37,7 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
       {PLOTS.map(p => {
         const field=FIELDS.find(f=>f.id===p.id)!
         return <g key={p.id}>
-          <polygon className="real-field" data-field={p.id} points={p.points} fill={selectedField===p.id ? '#d4eabc26' : '#bde99405'} stroke={selectedField===p.id ? '#f4ffe4' : '#d2dfbb'} strokeWidth={selectedField===p.id ? 2 : 1} strokeOpacity={layers.fields ? .85 : 0} role={onFieldClick?'button':undefined} tabIndex={onFieldClick?0:undefined} aria-label={onFieldClick?`选择 ${p.id} ${field.crop} 演示地块`:undefined} aria-pressed={onFieldClick?selectedField===p.id:undefined} onClick={()=>onFieldClick?.(p.id)} onKeyDown={e=>{if(onFieldClick && (e.key==='Enter'||e.key===' ')){e.preventDefault();onFieldClick(p.id)}}}/>
+          <polygon className="real-field" data-field={p.id} points={p.points} fill={fieldMoisture ? ({A1:'#b8d68d55',A2:'#d6b35b55',B1:'#6dc2a855',B2:'#74b6d855',C1:'#dc947155'}[p.id]) : selectedField===p.id ? '#d4eabc26' : '#bde99405'} stroke={selectedField===p.id ? '#f4ffe4' : '#d2dfbb'} strokeWidth={selectedField===p.id ? 2 : 1} strokeOpacity={layers.fields ? .85 : 0} role={onFieldClick?'button':undefined} tabIndex={onFieldClick?0:undefined} aria-label={onFieldClick?`选择 ${p.id} ${field.crop} 演示地块`:undefined} aria-pressed={onFieldClick?selectedField===p.id:undefined} onClick={()=>onFieldClick?.(p.id)} onKeyDown={e=>{if(onFieldClick && (e.key==='Enter'||e.key===' ')){e.preventDefault();onFieldClick(p.id)}}}/>
 
         </g>
       })}
@@ -47,9 +49,9 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
       {PLOTS.map(p=>{const field=FIELDS.find(f=>f.id===p.id)!;return <g key={'label-'+p.id}>{layers.fields && <g className={`field-map-label ${selectedField===p.id?'selected':''}`} transform={`translate(${p.x} ${p.y})`} pointerEvents="none" textAnchor="middle">
             <rect className="field-label-box" x="-73" y="-29" width="146" height="64" rx="6" fill="#16392eef" stroke="#e0efcf88" strokeWidth=".7"/>
             <text className="field-label-title" y="-2" fill="#f7f8ef" fontSize="25" fontWeight="600"><tspan className="field-label-id">{p.id}</tspan><tspan className="field-label-crop"> {p.id==='C1'?'试验田':field.crop}</tspan></text>
-            <text className="field-label-area" y="23" fill="#d2dfc9" fontSize="19">{field.area} 亩</text>
+            <text className="field-label-area" y="23" fill="#d2dfc9" fontSize="19">{fieldMoisture?`${fieldMoisture[p.id].toFixed(0)}% · ${fieldValves?.[p.id]?'灌溉中':'阀门关'}`:`${field.area} 亩`}</text>
           </g>}</g>})}
-      {selected&&info&&<g key={'info-'+selected.id} className="field-map-callout" transform={'translate('+selected.x+' '+(selected.id==='B2'?375:423)+')'} pointerEvents="none"><path d="M0-12V-30" stroke="#e8f1dc" strokeWidth="1"/><rect x="-83" y="-11" width="166" height="50" rx="7" fill="#f7f9ef" stroke="#d3dfc4"/><text y="8" textAnchor="middle" fill="#365b42" fontSize="13" fontWeight="600">{selected.id} · 土壤采样</text><text y="27" textAnchor="middle" fill="#55744e" fontSize="12">水分 {info.soilMoisture}% · pH {info.ph}</text></g>}
+      {selected&&info&&<g key={'info-'+selected.id} className="field-map-callout" transform={'translate('+selected.x+' '+(selected.id==='B2'?375:423)+')'} pointerEvents="none"><path d="M0-12V-30" stroke="#e8f1dc" strokeWidth="1"/><rect x="-83" y="-11" width="166" height="50" rx="7" fill="#f7f9ef" stroke="#d3dfc4"/><text y="8" textAnchor="middle" fill="#365b42" fontSize="13" fontWeight="600">{selected.id} · 土壤采样</text><text y="27" textAnchor="middle" fill="#55744e" fontSize="12">水分 {(fieldMoisture?.[selected.id]??info.soilMoisture).toFixed(0)}% · pH {info.ph}</text></g>}
       {markers.map(p=><g key={p.id} transform={`translate(${p.x} ${p.y})`} pointerEvents="none"><circle r="12" fill={p.kind==='soil'?'#e8f1cc':'#f5b558'} stroke="#fff" strokeWidth="2"/><text y="4" textAnchor="middle" fontSize="12" fill="#203a2d">{p.kind==='soil'?'S':'!'}</text></g>)}
       {patrol&&<g className="rover-position" transform={`translate(${rx} ${ry})`}><circle r="20" fill="#d4ff7c12" className={patrol.running?'scan-pulse':''}/><g transform="scale(.85)"><ProjectRoverMarker heading={heading}/></g></g>}
     </g>

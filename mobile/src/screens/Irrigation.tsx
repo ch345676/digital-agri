@@ -1,5 +1,7 @@
+import FarmMap from '../components/FarmMap'
+import { FIELDS } from '../farm-data'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, MoreHorizontal, LayoutGrid, Gauge, Droplets, CalendarClock, Sparkles, ArrowRight, CheckCircle2, X, Sun, CloudSun, CloudFog, CloudRain, CloudLightning, Snowflake } from 'lucide-react'
+import { ChevronLeft, MoreHorizontal, Droplets, CalendarClock, Sparkles, ArrowRight, CheckCircle2, Sun, CloudSun, CloudFog, CloudRain, CloudLightning, Snowflake } from 'lucide-react'
 import { AnimatePresence, animate, motion } from 'framer-motion'
 import { Glass, SectionTitle, Toggle, DrawnLine, CountUp, stagger, fadeUp, EASE } from '../components/anim'
 import { useStore, nowHM } from '../store'
@@ -11,25 +13,7 @@ import { LiveBadge } from './Overview'
 
 const WX_ICONS = { sunny: Sun, cloudy: CloudSun, fog: CloudFog, rain: CloudRain, snow: Snowflake, storm: CloudLightning }
 
-/* 颜色插值：偏低(橙) → 适宜(绿) */
-function lerpColor(t: number): string {
-  // t: 0 (18%) → 1 (30%+)
-  const c1 = [217, 119, 6] // 橙
-  const c2 = [202, 165, 45] // 黄
-  const c3 = [101, 163, 13] // 绿
-  const mix = (a: number[], b: number[], k: number) => a.map((v, i) => Math.round(v + (b[i] - v) * k))
-  const rgb = t < 0.5 ? mix(c1, c2, t * 2) : mix(c2, c3, (t - 0.5) * 2)
-  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
-}
-
-const moistureToT = (m: number) => Math.max(0, Math.min(1, (m - 16) / 16))
-
-const ZONES = [
-  { id: 0, name: '1区', crop: '南瓜', base: 18 },
-  { id: 1, name: '2区', crop: '南瓜', base: 24 },
-  { id: 2, name: '3区', crop: '南瓜', base: 26 },
-  { id: 3, name: '4区', crop: '南瓜', base: 30 },
-]
+const ZONES = FIELDS.map((f,i)=>({id:i,fieldId:f.id,name:f.id,crop:f.crop,base:f.soilMoisture}))
 
 export default function Irrigation() {
   const { setScreen, valves, setValve, planEnabled, setPlanEnabled, addChat } = useStore()
@@ -59,7 +43,6 @@ export default function Irrigation() {
   const [water, setWater] = useState(28.6)
   const [running, setRunning] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
-  const [activeZone, setActiveZone] = useState<number | null>(null)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
@@ -73,7 +56,7 @@ export default function Irrigation() {
     })
     // 墒情逐渐上升到适宜
     moisture.forEach((m, i) => {
-      const target = 30 + i * 1.5
+      const target = Math.max(m, Math.min(90, ZONES[i].base + 4))
       animate(m, target, {
         duration: 3.2,
         delay: 0.4 + i * 0.25,
@@ -96,9 +79,9 @@ export default function Irrigation() {
     timers.current.push(
       setTimeout(() => {
         setRunning(false)
-        setToast('一键灌溉完成，分区墒情已达适宜区间')
+        setToast('五地块灌溉演示完成')
         timers.current.push(setTimeout(() => setToast(null), 2400))
-      }, 3900),
+      }, 4800),
     )
   }
 
@@ -147,60 +130,24 @@ export default function Irrigation() {
           </Glass>
         </motion.div>
 
-        {/* 地块分区墒情（主角卡，加大留白） */}
         <motion.div variants={fadeUp}>
-          <Glass className="p-5">
-            <div className="flex items-center justify-between">
-              <SectionTitle title="地块分区墒情" sub="土壤体积含水率 %" />
-              <div className="flex items-center gap-1 text-[10px] text-black/40">
-                偏低
-                <span className="inline-block h-1.5 w-14 rounded-full" style={{ background: 'linear-gradient(90deg,#d97706,#caa52d,#65a30d)' }} />
-                适宜
-              </div>
-            </div>
-            <div className="mt-2 flex gap-4">
-              <svg viewBox="0 0 220 168" className="min-w-0 flex-1">
-                {ZONES.map((z, i) => {
-                  const x = (i % 2) * 108 + 2
-                  const y = Math.floor(i / 2) * 82 + 2
-                  const m = moisture[i]
-                  return (
-                    <g key={z.id} onClick={() => setActiveZone(i)} style={{ cursor: 'pointer' }}>
-                      <rect x={x} y={y} width={104} height={78} rx={10} fill={lerpColor(moistureToT(m))} opacity={0.75} stroke={activeZone === i ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.18)'} strokeWidth={activeZone === i ? 1.5 : 1} />
-                      <text x={x + 52} y={y + 34} textAnchor="middle" fontSize="14" fontWeight="500" fill="rgba(255,255,255,0.92)">
-                        {z.name}
-                      </text>
-                      <text x={x + 52} y={y + 56} textAnchor="middle" fontSize="16" fontWeight="600" fill="#ffffff">
-                        {m.toFixed(0)}%
-                      </text>
-                    </g>
-                  )
-                })}
-              </svg>
-              <div className="flex w-[64px] flex-col gap-2">
-                <button className="flex flex-1 flex-col items-center justify-center gap-1 rounded-[10px] border border-black/[0.08] bg-black/[0.05] text-[10px] text-black/55">
-                  <LayoutGrid className="h-4 w-4 text-black/60" strokeWidth={1.5} />
-                  分区管理
-                </button>
-                <button className="flex flex-1 flex-col items-center justify-center gap-1 rounded-[10px] border border-black/[0.08] bg-black/[0.05] text-[10px] text-black/55">
-                  <Gauge className="h-4 w-4 text-black/60" strokeWidth={1.5} />
-                  传感器
-                </button>
-              </div>
-            </div>
-          </Glass>
+          <FarmMap irrigation={{moisture:Object.fromEntries(ZONES.map((z,i)=>[z.fieldId,moisture[i]])),valves:Object.fromEntries(ZONES.map((z,i)=>[z.fieldId,valves[i]])),busy:running,onValve:(id)=>{const index=ZONES.findIndex(z=>z.fieldId===id);if(index>=0&&guardValve(`${id} ${ZONES[index].crop} 阀门`))setValve(index,!valves[index])}}}/>
+          <p className="farm-credit">五块田与电脑端一致；墒情和灌溉过程为演示数据。</p>
         </motion.div>
 
         {/* 阀门状态 */}
         <motion.div variants={fadeUp}>
           <Glass className="p-4">
             <SectionTitle title="阀门状态" />
-            <div className="grid grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5">
               {ZONES.map((z, i) => {
                 const on = valves[i]
                 return (
                   <button
                     key={z.id}
+                    data-valve-field={z.fieldId}
+                    aria-pressed={on}
+                    disabled={running}
                     onClick={() => guardValve(`${z.name} 阀门`) && setValve(i, !on)}
                     className={`relative flex flex-col items-center rounded-[10px] border p-2.5 transition-colors duration-200 ${
                       on ? 'border-[rgba(22,163,74,0.4)] bg-[rgba(22,163,74,0.06)]' : 'border-black/[0.08] bg-black/[0.04]'
@@ -212,7 +159,7 @@ export default function Irrigation() {
                       </span>
                     )}
                     <span className="text-[10.5px] text-black/55">{z.name}</span>
-                    <span className="text-[10px] text-black/40">阀门{i + 1}</span>
+                    <span className="text-[10px] text-black/40">{z.crop}</span>
                     <span className="my-1.5">
                       <Droplets className="h-6 w-6" strokeWidth={1.5} color={on ? '#16a34a' : 'rgba(0,0,0,0.3)'} fill={on ? 'rgba(22,163,74,0.15)' : 'none'} />
                     </span>
@@ -350,59 +297,6 @@ export default function Irrigation() {
         </div>
         <p className="mt-1.5 text-center text-[9.5px] text-black/40">*灌溉执行将按当前阀门状态与安全策略运行</p>
       </div>
-
-      {/* 分区详情弹层 */}
-      <AnimatePresence>
-        {activeZone !== null && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setActiveZone(null)}
-              className="fixed inset-0 z-40 bg-black/60"
-            />
-            <motion.div
-              initial={{ y: 240 }}
-              animate={{ y: 0 }}
-              exit={{ y: 240 }}
-              transition={{ duration: 0.3, ease: EASE }}
-              className="fixed bottom-0 left-1/2 z-50 w-full max-w-[420px] center-x rounded-t-[14px] border-t border-black/[0.09] bg-white p-5 pb-8"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-[16px] font-semibold tracking-[-0.02em] text-[#1a2b23]">
-                  {ZONES[activeZone].name} · {ZONES[activeZone].crop}
-                </h3>
-                <button onClick={() => setActiveZone(null)} className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/[0.07]">
-                  <X className="h-4 w-4 text-black/55" strokeWidth={1.5} />
-                </button>
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-2.5 text-center">
-                <div className="rounded-[10px] bg-black/[0.05] p-3">
-                  <div className="text-[18px] font-semibold" style={{ color: lerpColor(moistureToT(moisture[activeZone])) }}>
-                    {moisture[activeZone].toFixed(0)}%
-                  </div>
-                  <div className="mt-0.5 text-[10px] text-black/40">当前墒情</div>
-                </div>
-                <div className="rounded-[10px] bg-black/[0.05] p-3">
-                  <div className="text-[18px] font-semibold text-[#1a2b23]">30%</div>
-                  <div className="mt-0.5 text-[10px] text-black/40">目标墒情</div>
-                </div>
-                <div className="rounded-[10px] bg-black/[0.05] p-3">
-                  <div className="text-[18px] font-semibold text-[#1a2b23]">45<span className="text-[11px] font-normal">分</span></div>
-                  <div className="mt-0.5 text-[10px] text-black/40">建议时长</div>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-between rounded-[10px] bg-black/[0.05] p-3.5">
-                <span className="text-[13px] font-medium text-[#1a2b23]">
-                  阀门{activeZone + 1} {valves[activeZone] ? '（灌溉中）' : ''}
-                </span>
-                <Toggle on={valves[activeZone]} onChange={(v) => guardValve(`${ZONES[activeZone].name} 阀门`) && setValve(activeZone, v)} />
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* 完成 toast */}
       <AnimatePresence>

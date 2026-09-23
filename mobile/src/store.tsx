@@ -115,7 +115,7 @@ function seed(): Persisted {
       { id: 'c3', who: 'other', name: '王师傅', text: '发现田块C1有虫害，已上报并处理。', time: '09:08' },
     ],
     checkins: [],
-    valves: [false, true, true, false],
+    valves: [false, true, true, false, false],
     planEnabled: true,
     headlight: false,
     roverShots: [],
@@ -131,6 +131,7 @@ function load(key: string): Persisted {
     const raw = localStorage.getItem(key)
     if (raw) {
       const merged = { ...seed(), ...(JSON.parse(raw) as Partial<Persisted>) }
+      merged.valves = Array.from({ length: 5 }, (_, i) => merged.valves?.[i] === true)
       /* 旧数据迁移：历史作物名统一改为南瓜 */
       const OLD_CROPS = ['番茄', '黄瓜', '辣椒', '葡萄']
       merged.identifyRecords = merged.identifyRecords.map((r) =>

@@ -1,7 +1,7 @@
 import AmbientVideo from '../components/AmbientVideo'
 import { useEffect, useRef, useState } from 'react'
 import {
-  ChevronLeft, Maximize2, X, Video,
+  ChevronLeft, X,
   Camera, Lightbulb, FlaskConical, ScanSearch, Move, Droplets, BatteryCharging,
   TriangleAlert, ImageIcon, ClipboardCheck, Lock,
 } from 'lucide-react'
@@ -379,133 +379,7 @@ export default function Patrol() {
           <p className="farm-credit">路线、读数和扫描结果均为仿真，不代表实时 GPS 或硬件采集。</p>
         </motion.div>
 
-        {/* LIVE 画面（小车第一人称视角素材，主角卡） */}
-        <motion.div variants={fadeUp}>
-          <div className="relative h-[196px] overflow-hidden rounded-[14px] border border-black/[0.09]">
-            {/* 云台响应层（pan-img 动画在 img 上，云台平移作用于外层） */}
-            <div
-              className="absolute inset-0"
-              style={{
-                transform: `translate(${gimbal.pan * -0.5}px, ${gimbal.tilt * 0.35}px) scale(1.08)`,
-                transition: 'transform 0.5s cubic-bezier(0.22, 0.9, 0.28, 1)',
-              }}
-            >
-              <AmbientVideo
-                src="./videos/rover-pumpkin.mp4"
-                poster="images/live-rover.jpg"
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="pan-img absolute inset-0 h-full w-full object-cover"
-                style={headlight ? { filter: 'brightness(1.14)' } : undefined}
-              />
-            </div>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(6,9,7,0.4), transparent 35%, rgba(6,9,7,0.35))' }} />
-            {/* 照明（检测头环形照明 / 夜间巡检）光斑 */}
-            {headlight && (
-              <>
-                <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 75% 55% at 50% 100%, rgba(255,246,214,0.32), transparent 70%)' }} />
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      'radial-gradient(ellipse 26% 26% at 37% 86%, rgba(255,250,230,0.5), transparent 70%), radial-gradient(ellipse 26% 26% at 63% 86%, rgba(255,250,230,0.5), transparent 70%)',
-                  }}
-                />
-              </>
-            )}
-            {/* 扫描线 */}
-            <div className="sweep absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-[rgba(22,163,74,0.08)] to-transparent" />
-            <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-[rgba(10,15,11,0.8)] px-2 py-1">
-              <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#e8604c]" />
-              <span className="text-[10px] font-semibold tracking-wide text-white">演示画面</span>
-              <span className="text-[10px] font-medium text-white/50">1080P</span>
-            </div>
-            <button className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(255,255,255,0.88)]">
-              <Maximize2 className="h-3.5 w-3.5 text-black/55" strokeWidth={1.5} />
-            </button>
-            {/* 云台角度读数 */}
-            {(gimbal.pan !== 0 || gimbal.tilt !== 0) && (
-              <div className="absolute right-3 top-12 rounded-md bg-[rgba(255,255,255,0.88)] px-2 py-1 font-num text-[9px] text-black/55">
-                水平 {gimbal.pan > 0 ? '+' : ''}{gimbal.pan}° · 俯仰 {gimbal.tilt > 0 ? '+' : ''}{gimbal.tilt}°
-              </div>
-            )}
-
-            {/* 土壤检测：检测头下降贴土 */}
-            {soilPhase === 'descend' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-end bg-[rgba(6,9,7,0.5)] pb-6">
-                <div className="probe-drop flex flex-col items-center">
-                  <div className="h-1.5 w-12 rounded bg-white/25" />
-                  <div className="h-7 w-[3px] bg-white/40" />
-                  <div className="flex h-4 w-14 items-center justify-center rounded-md border border-[rgba(163,230,53,0.6)] bg-[#131c16]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#a3e635]" />
-                  </div>
-                  <div className="mt-1 h-[3px] w-20 rounded bg-[rgba(163,230,53,0.35)]" />
-                </div>
-                <span className="mt-2.5 text-[11px] font-medium text-white/70">停车 · 检测头下降贴土</span>
-              </div>
-            )}
-            {/* 土壤检测：环形照明 + 光谱采集 */}
-            {soilPhase === 'collect' && (
-              <div className="absolute inset-0 bg-[rgba(6,9,7,0.5)]">
-                <div
-                  className="ring-glow absolute bottom-9 left-1/2 h-11 w-11 center-x rounded-full border-2 border-[rgba(255,246,214,0.85)]"
-                  style={{ boxShadow: '0 0 26px rgba(255,246,214,0.45), inset 0 0 12px rgba(255,246,214,0.3)' }}
-                />
-                <div className="absolute inset-x-5 bottom-3">
-                  <div className="flex items-center justify-between text-[10px] text-white/70">
-                    <span>环形照明开启 · 近红外光谱采集中</span>
-                    <span className="font-num">{Math.round(soilProgress * 100)}%</span>
-                  </div>
-                  <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/15">
-                    <div className="h-full rounded-full bg-[#a3e635]" style={{ width: `${soilProgress * 100}%` }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* 扫描作物：蓝色粒子流 */}
-            {scanPhase === 'scanning' && (
-              <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-[rgba(70,130,255,0.07)]" />
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="scan-particle absolute h-[3px] w-[3px] rounded-full bg-[#6db3ff]"
-                    style={{ top: `${9 + i * 7}%`, left: 0, animationDelay: `${(i % 6) * 0.28}s`, boxShadow: '0 0 6px rgba(109,179,255,0.9)' }}
-                  />
-                ))}
-                <span className="absolute bottom-3 left-3 text-[11px] font-medium text-[#9ec5ff]">粒子扫描叶面中…</span>
-              </div>
-            )}
-            {/* 取景框锁定 */}
-            {scanPhase === 'lock' && (
-              <motion.div
-                initial={{ scale: 1.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.45, ease: EASE }}
-                className="absolute left-1/2 top-1/2 h-24 w-32 center-x -translate-y-1/2"
-              >
-                {(['left-0 top-0 border-l-2 border-t-2', 'right-0 top-0 border-r-2 border-t-2', 'left-0 bottom-0 border-l-2 border-b-2', 'right-0 bottom-0 border-r-2 border-b-2'] as const).map((cls) => (
-                  <span key={cls} className={`absolute h-4 w-4 border-[#e8a04c] ${cls}`} />
-                ))}
-                <span className="live-dot absolute left-1/2 top-1/2 h-2 w-2 center-x -translate-y-1/2 rounded-full bg-[#e8a04c]" />
-                <span className="absolute -bottom-6 left-1/2 center-x whitespace-nowrap rounded bg-[rgba(255,255,255,0.9)] px-2 py-0.5 text-[10px] font-medium text-[#e8a04c]">
-                  疑似病斑 · 已锁定
-                </span>
-              </motion.div>
-            )}
-            {/* 已就位：图传待机 */}
-            {status === 'docked' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[rgba(6,9,7,0.7)]">
-                <span className="flex items-center gap-2 text-[13px] font-medium text-white/60">
-                  <Video className="h-4 w-4" strokeWidth={1.5} />
-                  已就位，图传待机
-                </span>
-              </div>
-            )}
-          </div>
-        </motion.div>
+        {(soilBusy || scanPhase!=='idle') && <Glass className="p-4"><div role="status" className="text-[13px] font-medium">{soilBusy ? (soilPhase==='descend'?'准备土壤采样…':`土壤采集中 ${Math.round(soilProgress*100)}%`) : scanPhase==='lock'?'已锁定疑似病斑，生成复核预警…':'正在扫描作物…'}</div>{soilBusy&&<progress className="mt-3 w-full" value={soilProgress} max="1"/>}</Glass>}
 
         {/* 车型卡（真实渲染车 + 结构图鉴入口） */}
         <motion.div variants={fadeUp}>
