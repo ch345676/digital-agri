@@ -138,36 +138,17 @@ export default function Irrigation() {
         {/* 阀门状态 */}
         <motion.div variants={fadeUp}>
           <Glass className="p-4">
-            <SectionTitle title="阀门状态" />
-            <div className="grid grid-cols-3 gap-2.5">
+            <SectionTitle title="阀门控制" extra={<span className="valve-summary">{valves.filter(Boolean).length} / 5 已开启</span>} />
+            <div className="valve-list">
               {ZONES.map((z, i) => {
                 const on = valves[i]
-                return (
-                  <button
-                    key={z.id}
-                    data-valve-field={z.fieldId}
-                    aria-pressed={on}
-                    disabled={running}
-                    onClick={() => guardValve(`${z.name} 阀门`) && setValve(i, !on)}
-                    className={`relative flex flex-col items-center rounded-[10px] border p-2.5 transition-colors duration-200 ${
-                      on ? 'border-[rgba(22,163,74,0.4)] bg-[rgba(22,163,74,0.06)]' : 'border-black/[0.08] bg-black/[0.04]'
-                    }`}
-                  >
-                    {!isAdmin && (
-                      <span className="absolute right-1 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-black/[0.06]">
-                        <Lock className="h-2.5 w-2.5 text-black/40" strokeWidth={2} />
-                      </span>
-                    )}
-                    <span className="text-[10.5px] text-black/55">{z.name}</span>
-                    <span className="text-[10px] text-black/40">{z.crop}</span>
-                    <span className="my-1.5">
-                      <Droplets className="h-6 w-6" strokeWidth={1.5} color={on ? '#16a34a' : 'rgba(0,0,0,0.3)'} fill={on ? 'rgba(22,163,74,0.15)' : 'none'} />
-                    </span>
-                    <span className={`text-[10.5px] font-medium ${on ? 'text-[#16a34a]' : 'text-black/40'}`}>
-                      {on ? '开启' : '关闭'}
-                    </span>
-                  </button>
-                )
+                return <button key={z.id} data-valve-field={z.fieldId} aria-pressed={on} aria-label={`${z.name} ${z.crop} 阀门，${on?'已开启':'已关闭'}`} disabled={running} onClick={()=>guardValve(`${z.name} ${z.crop} 阀门`)&&setValve(i,!on)} className={`valve-row ${on?'is-on':''}`}>
+                  <span className="valve-icon"><Droplets size={17} strokeWidth={1.6}/></span>
+                  <span className="valve-name"><b>{z.name}</b><small>{z.crop}</small></span>
+                  {!isAdmin&&<Lock size={12} className="valve-lock"/>}
+                  <span className="valve-state">{running?'执行中':on?'开启':'关闭'}</span>
+                  <span className="valve-switch" aria-hidden="true"><i/></span>
+                </button>
               })}
             </div>
           </Glass>

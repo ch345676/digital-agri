@@ -1,4 +1,4 @@
-import AmbientVideo from '../components/AmbientVideo'
+import FieldMotion from '../components/FieldMotion'
 import { ChevronDown, ScanBarcode, Bell, ChevronRight, AlertTriangle, CloudRain, Sun, CloudSun, CloudFog, CloudLightning, Snowflake } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
@@ -29,10 +29,10 @@ export function LiveBadge({ live, dark = false }: { live: boolean; dark?: boolea
 }
 
 const FIELDS = [
-  { name: '1号南瓜田', area: 320, score: 92, stage: '坐果期', active: true, img: 'images/field-corn.jpg', video: './videos/field-1.mp4' },
-  { name: '2号南瓜田', area: 280, score: 88, stage: '开花期', active: true, img: 'images/field-soy.jpg', video: './videos/field-2.mp4' },
-  { name: '3号南瓜田', area: 300, score: 85, stage: '伸蔓期', active: false, img: 'images/field-wheat.jpg', video: './videos/field-3.mp4' },
-  { name: '4号南瓜田', area: 350, score: 90, stage: '坐果期', active: true, img: 'images/hero-field.jpg', video: './videos/field-1.mp4' },
+  { name: '1号南瓜田', area: 320, score: 92, stage: '坐果期', active: true, img: 'images/field-corn.jpg' },
+  { name: '2号南瓜田', area: 280, score: 88, stage: '开花期', active: true, img: 'images/field-soy.jpg' },
+  { name: '3号南瓜田', area: 300, score: 85, stage: '伸蔓期', active: false, img: 'images/field-wheat.jpg' },
+  { name: '4号南瓜田', area: 350, score: 90, stage: '坐果期', active: true, img: 'images/hero-field.jpg' },
 ]
 
 const ALERTS = [
@@ -153,15 +153,7 @@ export default function Overview() {
                 className="relative w-[128px] shrink-0 overflow-hidden rounded-[12px] border border-black/[0.08] bg-white shadow-[0_1px_3px_rgba(20,40,30,0.06)]"
               >
                 <div className="relative h-[86px]">
-                  <AmbientVideo
-                    src={f.video}
-                    poster={f.img}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="h-full w-full object-cover"
-                  />
+                  <FieldMotion src={f.img} alt={f.name} index={i} />
                   <div className="absolute inset-0 bg-gradient-to-t from-[rgba(6,9,6,0.55)] to-transparent" />
                   <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(11,15,12,0.75)] font-num text-[11px] font-semibold text-[#16a34a]">
                     {f.score}
