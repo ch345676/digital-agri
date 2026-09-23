@@ -44,3 +44,7 @@
   .alert-photo-button .alert-photo{width:100%;height:175px;object-fit:contain}
   .alert-photo-button>span{font-size:10px}
 }
+
+.rover-heading{transform-origin:0 0;transition:transform 240ms ease-out}html[data-motion=off] .rover-heading{transition:none}@media(prefers-reduced-motion:reduce){.rover-heading{transition:none}}
+
+.rover-reference-link{display:flex;align-items:center;gap:5px;margin-top:9px;font-size:10px;color:#647a47}.rover-reference-link:hover{color:#344f27}

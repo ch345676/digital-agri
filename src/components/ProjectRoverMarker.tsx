@@ -1,10 +1,23 @@
 import { useId } from 'react'
 
-/** Keep the project's original vehicle pixels; the SVG mask removes the field background. */
-export function ProjectRoverMarker() {
-  const clipId = useId().replaceAll(':', '')
-  return <svg className="project-rover-marker" x="-29" y="-64" width="58" height="72" viewBox="380 0 500 620" overflow="visible" aria-label="惠农项目巡检小车">
-    <defs><clipPath id={clipId}><path d="M707 28 Q710 2 733 2 Q760 3 760 30 L758 78 Q753 95 743 100 L748 395 L823 400 L855 439 L860 482 Q874 521 847 539 L801 543 Q799 582 774 600 L684 612 L629 600 L608 573 L517 545 Q499 586 461 590 Q410 591 399 547 L397 502 Q399 472 419 456 L433 441 L433 424 L460 413 L458 140 L468 128 L536 111 L536 101 L544 90 L561 88 L571 100 L570 112 L650 108 L718 122 L718 100 Q701 85 704 63 Z"/></clipPath></defs>
-    <image href="./media/glass/rover-real.jpg" width="1280" height="600" preserveAspectRatio="none" clipPath={'url(#'+clipId+')'}/>
-  </svg>
+/** Map-scale top view derived from the project's silver four-wheel rover. Front faces north. */
+export function ProjectRoverMarker({ heading = 0 }: { heading?: number }) {
+  const id = useId().replaceAll(':', '')
+  return <g className="project-rover-marker" aria-label="惠农小车俯视标记" data-heading={heading}>
+    <g className="rover-heading" style={{transform:`rotate(${heading}deg)`}}>
+      <defs>
+        <linearGradient id={id+'body'} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f3f5f2"/><stop offset=".5" stopColor="#b7c1c0"/><stop offset="1" stopColor="#7e8e90"/></linearGradient>
+        <linearGradient id={id+'roof'} x1="0" x2="1"><stop stopColor="#a4afb0"/><stop offset=".45" stopColor="#e0e5e2"/><stop offset="1" stopColor="#abb6b6"/></linearGradient>
+      </defs>
+      <rect x="-12" y="-15" width="26" height="33" rx="5" fill="#081c1a" opacity=".22"/>
+      {[-1,1].flatMap(side=>[-10,10].map(y=><g key={side+':'+y}><rect x={side<0?-15:9} y={y-5} width="6" height="10" rx="2" fill="#202d30" stroke="#80908b" strokeWidth=".6"/><path d={'M'+(side<0?-14:10)+' '+(y-2)+'h4m-4 4h4'} stroke="#52625f" strokeWidth=".7"/></g>))}
+      <rect x="-11" y="-16" width="22" height="32" rx="2" fill={'url(#'+id+'body)'} stroke="#526566" strokeWidth=".8"/>
+      <rect x="-8" y="-8" width="16" height="21" rx="1" fill={'url(#'+id+'roof)'} stroke="#71817f" strokeWidth=".7"/>
+      <path d="M-7-6H7M-7 11H7" stroke="#f6faf6" strokeWidth=".6"/>
+      <circle cx="-5" cy="-12" r="2.2" fill="#485858" stroke="#dce4df" strokeWidth=".7"/>
+      <rect x="4" y="-17" width="4" height="8" rx="2" fill="#e9eeea" stroke="#677c77" strokeWidth=".6"/>
+      <circle cx="6" cy="-15" r="1.2" fill="#1c3d46"/>
+      <path d="M-4-19L0-22L4-19" fill="none" stroke="#edf7cd" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </g>
+  </g>
 }
