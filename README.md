@@ -1,5 +1,9 @@
 # 惠农 · 智慧农业协作平台
 
+## 巡检小车移动控制台
+
+移动端演示入口：`/digital-agri/rover-control/`。提供巡检路线、自动巡航、按住移动、返航、模拟急停和镜头设备操作；移动端及桌面端巡检页也有入口。功能说明与实车接入边界见 [`rover-control/README.md`](rover-control/README.md)。
+
 在原有 digital-agri 九大模块上升级，继续使用原 GitHub Pages 地址与 hash 路由。
 
 ## 运行

@@ -370,6 +370,11 @@ export default function Patrol() {
         </span>
       </header>
 
+      <a href="../rover-control/" className="mt-4 flex items-center justify-between rounded-[14px] border border-[#b7d7ae] bg-[#e9f6e3] px-4 py-3 text-[#285d38] shadow-sm">
+        <span><strong className="block text-[13px]">打开小车移动控制台</strong><small className="mt-0.5 block text-[10px] opacity-70">路线查看 · 模拟遥控 · 设备操作</small></span>
+        <span aria-hidden="true" className="text-[20px]">↗</span>
+      </a>
+
       <div className="farm-fleet" aria-label="巡检机器人">{ROBOTS.map((r,i)=><button key={r.id} aria-pressed={i===selectedRobot} disabled={soilBusy||scanPhase!=='idle'||status==='returning'} onClick={()=>chooseRobot(i)}><strong>机器人 #{r.id} · {r.field}</strong><small>{r.job}</small><small>{i===3?'充电待机':fleet[i].progress>=100?'已完成':fleet[i].running?'巡检中':'已暂停'} · {fleet[i].progress.toFixed(1)}%</small><progress value={fleet[i].progress} max="100"/></button>)}</div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
         {/* 巡检路线地图（真实卫星影像 + 网格分区语义） */}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f7f1">
+  <meta name="description" content="惠农巡检小车移动控制台演示：巡检路线、自动巡航、手动移动与返航。">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+  <title>巡检小车控制台 · 惠农</title>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="back" href="../m/#patrol" aria-label="返回惠农巡检页面">‹</a>
+      <div class="brand"><span class="brand-mark">✳</span><span>惠农 <small>ROVER CONSOLE</small></span></div>
+      <span class="demo-pill"><i></i>演示模式</span>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div><p class="eyebrow">FIELD OPERATIONS / 01</p><h1>巡检小车<br><em>移动控制台</em></h1><p class="intro-copy">查看巡航路线，体验远程驾驶与设备控制。</p></div>
+        <div class="vehicle-photo"><img src="./assets/rover-real.jpg" alt="项目四轮巡检小车在农田中的外观"></div>
+      </section>
+
+      <section class="status-strip" aria-label="小车状态">
+        <div><span class="status-led" id="status-led"></span><span><small>当前状态</small><strong id="status">待命</strong></span></div>
+        <div><small>模拟电量</small><strong id="battery">86%</strong></div>
+        <div><small>当前速度</small><strong id="speed">0.0 <sub>m/s</sub></strong></div>
+      </section>
+
+      <section class="card map-card" id="route">
+        <div class="section-head"><div><p class="eyebrow">01 / PATROL ROUTE</p><h2>巡检路线</h2></div><span class="section-chip">A1 → B2</span></div>
+        <div class="map-frame">
+          <svg id="farm-map" viewBox="0 0 1000 560" role="img" aria-label="项目农田卫星图上的演示巡检路线与小车位置">
+            <image href="./assets/farm-satellite.jpg" width="1000" height="560" preserveAspectRatio="none"/>
+            <rect width="1000" height="560" fill="#062b20" opacity=".24"/>
+            <g class="fields">
+              <polygon points="158,80 243,70 242,378 157,380"/><polygon points="249,70 329,66 330,377 247,378"/>
+              <polygon points="335,66 421,66 421,376 335,377"/><polygon points="427,66 511,67 515,376 426,376"/>
+              <polygon points="582,185 875,186 863,327 810,318 792,333 582,315"/>
+            </g>
+            <g class="map-labels"><text x="200" y="224">A1</text><text x="289" y="224">A2</text><text x="378" y="224">B1</text><text x="470" y="224">C1</text><text x="720" y="265">B2</text></g>
+            <path id="route-base" d="M196 358 L196 91 L286 91 L286 358 L378 358 L378 91 L468 91 L468 365 L520 365 L520 175 L863 175 L863 300 L590 300" fill="none" stroke="#102d25" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M196 358 L196 91 L286 91 L286 358 L378 358 L378 91 L468 91 L468 365 L520 365 L520 175 L863 175 L863 300 L590 300" fill="none" stroke="#d7e8c0" stroke-width="3" stroke-dasharray="10 11"/>
+            <path id="route-done" d="M196 358 L196 91 L286 91 L286 358 L378 358 L378 91 L468 91 L468 365 L520 365 L520 175 L863 175 L863 300 L590 300" fill="none" stroke="#c4f576" stroke-width="7" stroke-linecap="round" pathLength="100" stroke-dasharray="38 100"/>
+            <g transform="translate(196 358)"><circle r="18" fill="#c4f576"/><text y="7" text-anchor="middle" font-size="19">⌂</text></g>
+            <g id="rover-marker" transform="translate(286 300)"><circle r="28" fill="#c4f576" opacity=".23"/><circle r="17" fill="#d7f9a1" stroke="#183627" stroke-width="3"/><path d="M0-11 7 8 0 4-7 8Z" fill="#153426"/></g>
+          </svg>
+          <span class="map-north">N ↑</span><span class="map-overlay">卫星影像 · 路线示意</span>
+        </div>
+        <div class="route-info"><span>本次进度 <b id="progress">38%</b></span><span id="route-target">下一站 · A2 玉米田</span></div>
+        <div class="progress-track"><i id="progress-fill"></i></div>
+        <p class="fine-print">轨迹与位置为网页仿真，不是实时 GPS 数据。地图底图沿用项目现有素材。</p>
+      </section>
+
+      <section class="card control-card" id="control">
+        <div class="section-head"><div><p class="eyebrow">02 / DRIVE CONTROL</p><h2>远程操控</h2></div><span class="section-chip" id="mode-label">自动模式</span></div>
+        <div class="segmented" role="group" aria-label="驾驶模式"><button id="auto-mode" class="selected" aria-pressed="true">自动巡航</button><button id="manual-mode" aria-pressed="false">手动驾驶</button></div>
+        <div id="auto-panel" class="mode-panel"><div class="control-summary"><div><small>当前路线</small><strong>A1 水稻 → B2 蔬菜</strong></div><span>全程 13 个节点</span></div><button id="cruise-btn" class="primary-btn">开始巡航 <span>↗</span></button></div>
+        <div id="manual-panel" class="mode-panel" hidden><p class="control-hint">按住方向键移动，松开立即停止。键盘方向键也可操作。</p><div class="drive-layout"><div class="dpad" aria-label="方向控制"><button data-direction="up" aria-label="前进">↑</button><button data-direction="left" aria-label="左转">←</button><div class="dpad-center">ROVER</div><button data-direction="right" aria-label="右转">→</button><button data-direction="down" aria-label="后退">↓</button></div><div class="gear"><small>速度档位</small><button data-gear="0.6">低速 <b>0.6</b></button><button data-gear="1.2" class="selected">标准 <b>1.2</b></button><button data-gear="2.0">快速 <b>2.0</b></button><span>m/s · 演示值</span></div></div></div>
+        <div class="safety-actions"><button id="return-btn">⌂ <span>一键返航</span></button><button id="stop-btn" class="stop-btn">■ <span>紧急停止</span></button></div>
+        <p class="fine-print">本页仅发送网页内的模拟指令，没有连接实车。真实控制需接入认证、遥测与硬件安全联锁。</p>
+      </section>
+
+      <section class="card camera-card" id="camera">
+        <div class="section-head"><div><p class="eyebrow">03 / FIELD VIEW</p><h2>镜头与设备</h2></div><span class="section-chip">画面样片</span></div>
+        <div class="camera-frame"><img src="./assets/live-rover.jpg" alt="项目巡检视角的历史样片，并非实时摄像头画面"><span>● 历史样片 · 非实时视频</span></div>
+        <div class="quick-actions"><button id="capture-btn">◎<span>模拟拍照</span></button><button id="light-btn" aria-pressed="false">☼<span>照明关闭</span></button><button id="pan-left-btn">↶<span>云台向左</span></button><button id="pan-right-btn">↷<span>云台向右</span></button></div>
+        <div class="camera-meta"><span>云台角度 <b id="pan-angle">0°</b></span><span>模拟拍照 <b id="capture-count">0 张</b></span></div>
+      </section>
+      <p class="end-note">惠农智慧农业 · 巡检小车交互演示</p>
+    </main>
+    <nav class="bottom-nav" aria-label="页面导航"><a href="#route">⌁<span>路线</span></a><a href="#control">✥<span>操控</span></a><a href="#camera">▣<span>镜头</span></a></nav>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
