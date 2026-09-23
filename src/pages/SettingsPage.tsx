@@ -133,7 +133,7 @@ export default function SettingsPage() {
           保存设置
         </button>
         {saved && (
-          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#178a45]">
+          <span role="status" className="flex items-center gap-1.5 text-[13px] font-semibold text-[#178a45]">
             <CheckCircle2 className="h-4 w-4" />
             已保存，工作台问候语已更新
           </span>

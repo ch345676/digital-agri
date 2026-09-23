@@ -3,9 +3,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useCallback,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
+
+import { animatePageChange } from './components/page-transition'
 
 /* ============================== 类型定义 ============================== */
 
@@ -322,21 +326,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const valid: PageKey[] = ['dashboard', 'map', 'tasks', 'devices', 'crops', 'analytics', 'inventory', 'team', 'settings', 'soil', 'history', 'alerts', 'inspection', 'harvest']
     return valid.includes(h) ? h : 'dashboard'
   })
-  const setPage = (p: PageKey) => {
-    setPageState(p)
+  const currentPage = useRef(page)
+  const changePage = useCallback((p: PageKey) => {
+    if (currentPage.current === p) return
+    currentPage.current = p
+    animatePageChange(() => { if (currentPage.current === p) setPageState(p) })
+  }, [])
+  const setPage = useCallback((p: PageKey) => {
+    changePage(p)
     window.location.hash = p
-  }
+  }, [changePage])
 
   // 浏览器前进/后退或手动改 hash 时同步页面
   useEffect(() => {
     const onHash = () => {
       const h = window.location.hash.replace('#', '') as PageKey
       const valid: PageKey[] = ['dashboard', 'map', 'tasks', 'devices', 'crops', 'analytics', 'inventory', 'team', 'settings', 'soil', 'history', 'alerts', 'inspection', 'harvest']
-      if (valid.includes(h)) setPageState(h)
+      if (valid.includes(h)) changePage(h)
     }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
-  }, [])
+  }, [changePage])
   const [readings, setReadings] = useState<Record<string, { v1: number; v2: number }>>(() => {
     const init: Record<string, { v1: number; v2: number }> = {}
     for (const d of DEVICES) init[d.id] = { v1: d.base, v2: d.base2 ?? 0 }
@@ -431,7 +441,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setPersisted((p) => ({ ...p, growthRecords: [{ ...r, id: uid('g') }, ...p.growthRecords] })),
       saveSettings: (s) => setPersisted((p) => ({ ...p, settings: s })),
     }),
-    [persisted, page, readings],
+    [persisted, page, readings, setPage],
   )
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>

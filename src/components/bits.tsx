@@ -3,11 +3,12 @@ import { useEffect, useRef, useId, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore } from '../store'
 import { SCENES } from '../media'
+import { usePresence } from './use-presence'
 
 /* 通用页面卡片 */
 export function PageCard({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)] ${className}`}>
+    <div className={`page-card rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)] ${className}`}>
       {children}
     </div>
   )
@@ -42,6 +43,7 @@ export function Modal({
   children: ReactNode
   width?: string
 }) {
+  const present = usePresence(open)
   const dialog = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const closeRef = useRef(onClose)
@@ -62,15 +64,18 @@ export function Modal({
     document.addEventListener('keydown', key)
     return () => { document.removeEventListener('keydown', key); previous?.focus() }
   }, [open])
-  if (!open) return null
+  if (!present) return null
   return createPortal(
     <div
+      data-closing={!open}
+      inert={!open}
+      aria-hidden={!open}
       className="agri-modal fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,41,30,0.35)] p-4"
       onClick={onClose}
     >
       <div
         ref={dialog}
-        role="dialog"
+        role={open ? "dialog" : undefined}
         aria-modal="true"
         aria-labelledby={titleId}
         className={`${width} max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl`}

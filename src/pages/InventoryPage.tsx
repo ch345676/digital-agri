@@ -74,7 +74,7 @@ export default function InventoryPage() {
             {inventory.map((it) => {
               const low = it.quantity < it.safety
               return (
-                <tr key={it.id} className="hover:bg-[#fafdfb]">
+                <tr data-motion-item={`stock-${it.id}`} data-status={it.quantity} key={it.id} className="hover:bg-[#fafdfb]">
                   <td className="px-5 py-3.5 font-semibold text-[#17352a]">{it.name}</td>
                   <td className="px-4 py-3.5">
                     <span className={`rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${CATEGORY_COLORS[it.category]}`}>

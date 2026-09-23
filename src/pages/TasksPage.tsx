@@ -9,6 +9,7 @@ import {
   type TaskType,
 } from '../store'
 import { PageCard, PageHeader, Modal, Field, inputCls, btnPrimary, btnGhost } from '../components/bits'
+import { Count } from '../components/Motion'
 import { TaskIllustration } from '../components/TaskIllustration'
 
 type FilterKey = 'all' | TaskStatus
@@ -127,19 +128,19 @@ export default function TasksPage() {
         <CompletionRing pct={pct} />
         <div className="flex gap-8 pr-2 text-center">
           <div>
-            <div className="text-[22px] font-extrabold text-[#17352a]">{todayTasks.length}</div>
+            <div className="text-[22px] font-extrabold text-[#17352a]"><Count value={todayTasks.length}/></div>
             <div className="text-[12px] text-[#8aa398]">今日任务</div>
           </div>
           <div>
-            <div className="text-[22px] font-extrabold text-[#e08a00]">{counts.pending}</div>
+            <div className="text-[22px] font-extrabold text-[#e08a00]"><Count value={counts.pending}/></div>
             <div className="text-[12px] text-[#8aa398]">待完成</div>
           </div>
           <div>
-            <div className="text-[22px] font-extrabold text-[#3b82f6]">{counts['in-progress']}</div>
+            <div className="text-[22px] font-extrabold text-[#3b82f6]"><Count value={counts['in-progress']}/></div>
             <div className="text-[12px] text-[#8aa398]">进行中</div>
           </div>
           <div>
-            <div className="text-[22px] font-extrabold text-[#178a45]">{counts.done}</div>
+            <div className="text-[22px] font-extrabold text-[#178a45]"><Count value={counts.done}/></div>
             <div className="text-[12px] text-[#8aa398]">已完成</div>
           </div>
         </div>
@@ -180,7 +181,7 @@ export default function TasksPage() {
         )}
         <ul className="divide-y divide-[#f0f6f3]">
           {list.map((t) => (
-            <li key={t.id} className="flex items-center gap-3 px-3 py-3.5">
+            <li key={t.id} data-motion-item={`task-${t.id}`} data-status={t.status} className="flex items-center gap-3 px-3 py-3.5">
               <TaskIllustration title={t.title} type={t.type}/>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">

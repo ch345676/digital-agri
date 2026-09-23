@@ -1,0 +1,75 @@
+import puppeteer from 'puppeteer-core'
+import assert from 'node:assert/strict'
+import fs from 'node:fs/promises'
+const base=process.env.TEST_BASE||'http://127.0.0.1:5184/'
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox']})
+const page=await browser.newPage(), errors=[], checks=[]
+page.on('pageerror',e=>errors.push(e.message))
+await page.evaluateOnNewDocument(()=>{
+ window.motionAudit={animations:0,routes:0}
+ const animate=Element.prototype.animate
+ Element.prototype.animate=function(...args){window.motionAudit.animations++;return animate.apply(this,args)}
+ if(document.startViewTransition){const start=document.startViewTransition.bind(document);document.startViewTransition=(...args)=>{window.motionAudit.routes++;return start(...args)}}
+})
+const wait=ms=>new Promise(r=>setTimeout(r,ms))
+const go=async route=>{await page.goto(base+'#'+route,{waitUntil:'networkidle0'});await wait(800)}
+const button=async(text,scope='main')=>page.evaluate((text,scope)=>{const b=[...document.querySelectorAll(scope+' button')].find(b=>b.textContent.includes(text));if(!b)throw Error('missing '+text);b.click()},text,scope)
+try{
+ await page.setViewport({width:1440,height:1000});await go('dashboard')
+ assert.ok(await page.evaluate(()=>window.motionAudit.animations>5))
+ await page.$eval('.inspection-banner',e=>e.scrollIntoView({block:'center'}));await wait(700)
+ assert.equal(await page.$eval('.inspection-banner',e=>e.dataset.motionRevealed),'true')
+ checks.push('Cards reveal on first scroll exposure; chart and metric entrances execute')
+ await page.click('.nav-item[aria-label="任务管理"]');await page.waitForSelector('.page-tasks');await wait(700)
+ assert.ok(await page.evaluate(()=>window.motionAudit.routes>0));checks.push('Native page crossfade runs')
+ await button('新建任务');await page.waitForSelector('[role="dialog"]');await wait(100)
+ assert.ok(await page.$eval('[role="dialog"]',e=>e.getAnimations().length>0))
+ await page.keyboard.press('Escape');await wait(35)
+ assert.ok(await page.$('.agri-modal[data-closing="true"]'))
+ assert.equal(await page.$eval('.agri-modal',e=>e.inert),true)
+ await wait(220);assert.equal(await page.$('.agri-modal'),null)
+ checks.push('Dialog entry and exit, inert closing state, Escape dismissal')
+ await button('待完成（');await wait(50);assert.ok(await page.$('.motion-ghost'))
+ await wait(500);assert.equal(await page.$('.motion-ghost'),null)
+ checks.push('Filtered list exits and reorders; temporary copies removed')
+ await go('crops');const trigger='[aria-controls="crop-details-A1"]'
+ await page.$eval(trigger,e=>e.click());await wait(95)
+ const halfway=await page.$eval('#crop-details-A1',e=>e.getBoundingClientRect().height)
+ await wait(350);const full=await page.$eval('#crop-details-A1',e=>e.getBoundingClientRect().height)
+ assert.ok(halfway>0&&halfway<full,`${halfway}/${full}`)
+ await page.$eval(trigger,e=>e.click());await wait(90)
+ assert.ok(await page.$eval('#crop-details-A1',e=>e.inert&&e.getBoundingClientRect().height>0))
+ await wait(350);assert.equal(await page.$eval('#crop-details-A1',e=>e.getBoundingClientRect().height),0)
+ await page.$eval(trigger,e=>{e.click();e.click();e.click()});await wait(400)
+ assert.equal(await page.$eval(trigger,e=>e.getAttribute('aria-expanded')),'true')
+ checks.push('Crop details interpolate height both ways and survive rapid toggles')
+ await page.evaluate(()=>{for(const name of ['土壤报告','预警中心','物资管理'])document.querySelector(`.nav-item[aria-label="${name}"]`).click()})
+ await page.waitForSelector('.page-inventory');await wait(700)
+ assert.ok(page.url().endsWith('#inventory'));assert.equal(await page.$('.page-alerts'),null)
+ checks.push('Rapid route changes settle on latest destination')
+ await page.click('[aria-label="关闭动画"]');await wait(120)
+ assert.equal(await page.$eval('html',e=>e.dataset.motion),'off')
+ assert.equal(await page.$('.motion-pending'),null)
+ const before=await page.evaluate(()=>window.motionAudit.animations)
+ await page.click('.nav-item[aria-label="作物管理"]');await page.waitForSelector('.page-crops')
+ await page.$eval(trigger,e=>e.click());await wait(150)
+ assert.equal(await page.evaluate(()=>window.motionAudit.animations),before)
+ assert.ok(await page.$eval('#crop-details-A1',e=>e.getBoundingClientRect().height>0))
+ checks.push('Motion off cancels animations and leaves every control usable')
+ await page.evaluate(()=>localStorage.removeItem('huinong-motion'))
+ await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);await go('dashboard');await page.reload({waitUntil:'networkidle0'});await wait(800)
+ assert.equal(await page.$eval('html',e=>e.dataset.motion),'off')
+ assert.equal(await page.evaluate(()=>window.motionAudit.animations),0)
+ checks.push('Reduced motion has no scripted animations')
+ await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'no-preference'}]);await go('dashboard')
+ await page.evaluate(()=>{document.startViewTransition=undefined})
+ await page.click('.nav-item[aria-label="土壤报告"]');await page.waitForSelector('.page-soil')
+ checks.push('Browsers without View Transitions keep CSS navigation fallback')
+ await page.setViewport({width:390,height:844});await go('dashboard');await page.click('[aria-label="打开导航"]');await wait(350)
+ assert.ok(await page.$('.sidebar.is-open'));await page.click('.sidebar [aria-label="预警中心"]');await page.waitForSelector('.page-alerts');await wait(800)
+ assert.equal(await page.$('.sidebar.is-open'),null)
+ assert.equal(await page.$eval('main',e=>e.scrollWidth>e.clientWidth+2),false)
+ checks.push('Mobile drawer and animated route remain within viewport')
+ assert.deepEqual(errors,[])
+ await fs.writeFile('qa/motion-verification.json',JSON.stringify({passed:true,base,checks,errors},null,2));console.log(JSON.stringify({passed:true,checks,errors},null,2))
+}finally{await browser.close()}

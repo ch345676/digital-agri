@@ -23,18 +23,25 @@ export function Count({ value, decimals = 0 }: { value: number; decimals?: numbe
   useEffect(() => {
     const node = ref.current
     if (!node) return
-    const from = previous.current
-    previous.current = value
-    if (!enabled) { node.textContent = value.toFixed(decimals); return }
-    let id = 0; const start = performance.now()
-    const step = (now: number) => {
-      const p = Math.min((now - start) / 1000, 1)
-      node.textContent = (from + (value - from) * (1 - Math.pow(1 - p, 3))).toFixed(decimals)
-      if (p < 1) id = requestAnimationFrame(step)
-    }
-    id = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(id)
+    if (!enabled || matchMedia('(prefers-reduced-motion: reduce)').matches) { previous.current = value; node.textContent = value.toFixed(decimals); return }
+    let id = 0
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      observer.disconnect()
+      const from = previous.current
+      previous.current = value
+      const start = performance.now()
+      const step = (now: number) => {
+        const p = Math.min((now - start) / 800, 1)
+        node.textContent = (from + (value - from) * (1 - Math.pow(1 - p, 3))).toFixed(decimals)
+        if (p < 1 && !document.hidden) id = requestAnimationFrame(step)
+        else node.textContent = value.toFixed(decimals)
+      }
+      id = requestAnimationFrame(step)
+    }, {threshold: .1})
+    observer.observe(node)
+    return () => { observer.disconnect(); cancelAnimationFrame(id) }
   }, [value, decimals, enabled])
-  return <span ref={ref}>{value.toFixed(decimals)}</span>
+  return <span className="motion-count" ref={ref}>{value.toFixed(decimals)}</span>
 }
 

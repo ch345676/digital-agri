@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Wheat, ChevronDown, ImagePlus, Trash2, NotebookPen, ArrowRight } from 'lucide-react'
 import { useStore, FIELDS, todayStr, type FieldInfo } from '../store'
 import { PageCard, PageHeader, inputCls, btnPrimary } from '../components/bits'
+import { Expand } from '../components/Expand'
 import { CropPhoto } from '../components/CropPhoto'
 
 function CropCard({ field }: { field: FieldInfo }) {
@@ -23,7 +24,7 @@ function CropCard({ field }: { field: FieldInfo }) {
   return (
     <PageCard className="!p-0 overflow-hidden">
       <CropPhoto fieldId={field.id} className="crop-photo" />
-      <button onClick={() => setOpen((v) => !v)} className="w-full p-5 text-left">
+      <button aria-expanded={open} aria-controls={`crop-details-${field.id}`} onClick={() => setOpen((v) => !v)} className="w-full p-5 text-left">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e4f7ec]">
@@ -63,7 +64,7 @@ function CropCard({ field }: { field: FieldInfo }) {
         </div>
       </button>
 
-      {open && (
+      <Expand open={open} id={`crop-details-${field.id}`}>
         <div className="border-t border-[#f0f6f3] p-5 pt-4">
           <div className="mb-3 grid grid-cols-3 gap-3 text-center">
             {[
@@ -88,7 +89,7 @@ function CropCard({ field }: { field: FieldInfo }) {
           )}
           <ul className="mb-3 max-h-[160px] space-y-2 overflow-y-auto">
             {records.map((r) => (
-              <li key={r.id} className="rounded-xl bg-[#f5faf7] p-3">
+              <li key={r.id} data-motion-item={`growth-${r.id}`} className="rounded-xl bg-[#f5faf7] p-3">
                 <div className="text-[11.5px] font-semibold text-[#178a45]">{r.date}</div>
                 <p className="mt-0.5 text-[12.5px] leading-relaxed text-[#3d5a4d]">{r.text}</p>
               </li>
@@ -122,7 +123,7 @@ function CropCard({ field }: { field: FieldInfo }) {
             </div>
           </div>
         </div>
-      )}
+      </Expand>
     </PageCard>
   )
 }

@@ -1,0 +1,67 @@
+/* One motion language: 180ms feedback, 300ms transitions, 490ms reveals. */
+:root{--motion-ease:cubic-bezier(.22,1,.36,1);--motion-fast:180ms;--motion-medium:300ms}
+.page-stage{view-transition-name:agri-page;animation:route-enter 420ms var(--motion-ease) both}
+::view-transition-group(root){animation:none}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-old(agri-page){animation:route-leave 180ms ease-in both;mix-blend-mode:normal}
+::view-transition-new(agri-page){animation:route-enter 360ms var(--motion-ease) both;mix-blend-mode:normal}
+::view-transition{pointer-events:none}
+@keyframes route-enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes route-leave{to{opacity:0;transform:translateY(-7px)}}
+/* Observer-driven entrance runs once on first exposure, including lower cards. */
+html[data-motion='on'] .motion-pending{opacity:0}
+.page-stage .panel,.page-stage .page-card,.page-stage .metric-card,.page-tasks ul>li{animation:none!important}
+.motion-expand{height:0;overflow:hidden}.motion-expand>div{min-height:0}
+.motion-ghost{pointer-events:none!important;background:#fff!important;border:1px solid #e5edf3;border-radius:14px;overflow:hidden;list-style:none;box-shadow:0 6px 20px #23405510}
+.agri-modal{animation:veil-in 180ms ease both}
+.agri-modal>div{animation:dialog-enter 320ms var(--motion-ease) both!important;transform-origin:50% 45%}
+.agri-modal[data-closing='true']{animation:veil-out 180ms ease both;pointer-events:none}
+.agri-modal[data-closing='true']>div{animation:dialog-leave 180ms ease-in both!important}
+.notification-panel{animation:popover-enter 260ms var(--motion-ease) both;transform-origin:90% 0}
+.notification-panel[data-closing='true']{animation:dialog-leave 180ms ease both;pointer-events:none}
+.mobile-scrim{animation:veil-in 220ms ease both}.sidebar{transition:transform 320ms var(--motion-ease)}
+@keyframes veil-in{from{opacity:0}to{opacity:1}}@keyframes veil-out{to{opacity:0}}
+@keyframes dialog-enter{from{opacity:0;transform:translateY(22px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes dialog-leave{to{opacity:0;transform:translateY(10px) scale(.975)}}
+@keyframes popover-enter{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:none}}
+/* Content and controls retain their own, smaller feedback. */
+button,a,input,select,textarea{transition:background-color 220ms ease,color 220ms ease,border-color 220ms ease,box-shadow 250ms ease,transform 220ms var(--motion-ease)}
+button:active:not(:disabled){transform:scale(.97)}
+.nav-item.active>svg:first-child,.mobile-bottom button.active>svg{animation:nav-pop 400ms var(--motion-ease)}
+@keyframes nav-pop{0%{transform:scale(.75) rotate(-8deg)}65%{transform:scale(1.12)}100%{transform:none}}
+.segmented button,.field-tabs button,.map-field-picker button{transition:background 260ms ease,box-shadow 260ms ease,color 220ms ease,transform 220ms var(--motion-ease)}
+[role='switch']>span{transition:left 280ms var(--motion-ease),transform 280ms var(--motion-ease)!important}
+input:focus,select:focus,textarea:focus{box-shadow:0 0 0 4px #78a8d218!important;outline:none;border-color:#8ab4d5!important}
+button:focus-visible,a:focus-visible{outline:2px solid #83afd1;outline-offset:4px}
+.progress-track>i,.h-full[style*='width']{transform-origin:left;transition:width 700ms var(--motion-ease)}
+.health-ring circle+circle{transition:stroke-dashoffset 850ms var(--motion-ease)}
+.recharts-surface{overflow:visible}.recharts-area,.recharts-line,.recharts-bar-rectangle{transition:opacity 200ms ease}
+.crop-reference>img,.scene-media>img{transition:transform 700ms var(--motion-ease),filter 400ms ease}
+.fresh-hero-photo img{animation:photo-arrive 1100ms var(--motion-ease) both}
+.fresh-welcome-copy h2{animation:route-enter 650ms var(--motion-ease) 80ms both}
+.fresh-welcome-copy p{animation:route-enter 650ms var(--motion-ease) 150ms both}
+.fresh-hero-bottom{animation:route-enter 650ms var(--motion-ease) 220ms both}
+.fresh-weather-bars i{transform-origin:50% 100%;animation:weather-rise 650ms var(--motion-ease) both}
+.fresh-weather-bars i:nth-child(3n+1){animation-delay:90ms}.fresh-weather-bars i:nth-child(3n+2){animation-delay:170ms}.fresh-weather-bars i:nth-child(3n){animation-delay:240ms}
+@keyframes photo-arrive{from{transform:scale(1.075)}to{transform:scale(1)}}
+@keyframes weather-rise{from{opacity:0;transform:scaleY(.2) translateY(5px)}to{opacity:1;transform:none}}
+.photo-reference>img{animation:photo-arrive 600ms var(--motion-ease)}
+.empty-state,.linked-task,.location-message,[role='status']{animation:route-enter 350ms var(--motion-ease) both}
+.workflow-steps span{transition:color 300ms,background 300ms}.workflow-steps .active{animation:nav-pop 400ms var(--motion-ease)}
+.map-workspace>div:last-child:not(.satellite-map-frame){animation:detail-arrive 380ms var(--motion-ease) both}
+@keyframes detail-arrive{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@media(hover:hover) and (pointer:fine){
+ .metric-card:hover,.harvest-card:hover,.robot-card:hover{transform:translateY(-4px);box-shadow:0 12px 25px #28445c0d!important}
+ .page-card,.panel{transition:box-shadow 280ms ease,border-color 250ms ease,transform 280ms var(--motion-ease)}
+ .crop-reference:hover>img,.scene-media:hover>img{transform:scale(1.035)}
+ .primary-btn:hover svg,.text-btn:hover svg,.fresh-hero-bottom button:hover svg{transform:translate(2px,-2px)}
+ .nav-item:hover>svg:first-child{transform:scale(1.12)}
+}
+@media(max-width:760px){.page-stage{animation-duration:320ms}.agri-modal>div{transform-origin:50% 70%}.fresh-hero-photo img{animation-duration:850ms}}
+html[data-motion='off'] .motion-pending{opacity:1}
+html[data-motion='off']::view-transition-group(*),html[data-motion='off']::view-transition-old(*),html[data-motion='off']::view-transition-new(*){animation:none!important}
+html[data-motion='off'] *,html[data-motion='off'] *:before,html[data-motion='off'] *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@media(prefers-reduced-motion:reduce){.motion-pending{opacity:1!important}::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media print{.motion-pending{opacity:1!important}.motion-ghost{display:none!important}*,*:before,*:after{animation:none!important;transition:none!important}}
+.map-zoom-layer{transition:transform 450ms var(--motion-ease)}
+.field-overlay,.monitor-overlay,.irrigation-overlay{animation:veil-in 280ms ease both}

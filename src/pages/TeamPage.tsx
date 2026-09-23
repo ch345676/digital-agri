@@ -116,7 +116,7 @@ export default function TeamPage() {
 
             <ul className="mt-3 max-h-[420px] space-y-2.5 overflow-y-auto">
               {announcements.map((a) => (
-                <li key={a.id} className="rounded-xl bg-[#f5faf7] p-3">
+                <li data-motion-item={`announcement-${a.id}`} key={a.id} className="rounded-xl bg-[#f5faf7] p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[12.5px] font-bold text-[#17352a]">{a.author}</span>
                     <span className="text-[11px] text-[#a4bcb1]">{a.time}</span>

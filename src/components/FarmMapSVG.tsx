@@ -35,7 +35,7 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
   const [rx,ry] = routePosition(patrol?.progress ?? 0)
   return <svg viewBox="0 0 1000 560" className="real-farm-map h-full w-full" preserveAspectRatio="xMidYMid meet" aria-label={patrol ? '真实农田遥感照片上的仿真巡航路线' : '真实农田卫星影像演示地图'}>
     <rect width="1000" height="560" fill="#18342e"/>
-    <g transform={`translate(500 280) scale(${zoom}) translate(-500 -280)`}>
+    <g className="map-zoom-layer" transform={`translate(500 280) scale(${zoom}) translate(-500 -280)`}>
       <image className="satellite-photo" href={FARM_IMAGERY.image} width="1000" height="560" preserveAspectRatio="none"/>
       <rect width="1000" height="560" fill="#092b22" opacity=".12" pointerEvents="none"/>
       {PLOTS.map(p => {
