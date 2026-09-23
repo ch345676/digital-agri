@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useStore, DEVICES, type Device } from '../store'
 import { PageCard, PageHeader, Switch } from '../components/bits'
-import { SceneMedia } from '../components/SceneMedia'
+import DevicePhoto from '../components/DevicePhoto'
 
 const KIND_ICONS: Record<Device['kind'], typeof Radar> = {
   soil: Gauge,
@@ -28,7 +28,7 @@ function DeviceCard({ device }: { device: Device }) {
 
   return (
     <PageCard className="flex flex-col">
-      <SceneMedia image={`./media/glass/${device.kind === 'soil' ? 'soil' : device.kind === 'weather' ? 'hero-field' : device.kind === 'pest' ? 'leaf-disease' : device.kind === 'valve' ? 'leaf' : 'rover-real'}.jpg`} label={`${device.name}功能示意`} className="device-photo" />
+      <DevicePhoto id={device.id}/>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -107,7 +107,7 @@ function DeviceCard({ device }: { device: Device }) {
       )}
 
       <div className="mt-auto pt-3 text-[11px] text-[#a4bcb1]">
-        {device.online ? '数据每 3 秒自动刷新' : '请检查设备电源与网络'}
+        {device.online ? '演示数据 · 每 3 秒模拟更新' : '请检查设备电源与网络'}
       </div>
     </PageCard>
   )
@@ -128,7 +128,7 @@ export default function DevicesPage() {
       <PageHeader title="设备监控" desc="物联网设备实时状态与远程控制" />
 
       {/* 汇总条 */}
-      <PageCard className="mb-5 flex items-center gap-10">
+      <PageCard className="device-summary mb-5 flex items-center gap-10">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e4f7ec]">
             <Radar className="h-5 w-5 text-[#178a45]" />

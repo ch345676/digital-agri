@@ -1,0 +1,5 @@
+import {useState} from 'react'
+import {DEVICE_PHOTOS} from '../device-photos'
+import {Modal} from './bits'
+import {PhotoReference} from './ImageryCredit'
+export default function DevicePhoto({id}:{id:string}){const photo=DEVICE_PHOTOS[id];const [open,setOpen]=useState(false);const [origin,setOrigin]=useState<DOMRect|null>(null);const [failed,setFailed]=useState(false);if(!photo)return null;return <><button type="button" className={'device-reference '+(photo.portrait?'portrait':'')} aria-label={'查看'+photo.title+'实拍参考'} onClick={e=>{setOrigin(e.currentTarget.getBoundingClientRect());setOpen(true)}}><span className="device-reference-frame">{!failed?<img src={photo.image} alt={photo.title} loading="lazy" onError={()=>setFailed(true)}/>:<span className="device-photo-fallback">照片暂未载入 · 查看来源</span>}<span className="device-reference-tag">{id} · 实拍参考</span></span><span className="device-reference-caption"><b>{photo.title}</b><small>查看完整照片 ↗</small></span></button><Modal open={open} origin={origin} onClose={()=>setOpen(false)} title={photo.title} width="w-[720px]"><PhotoReference photo={photo}/></Modal></>}
