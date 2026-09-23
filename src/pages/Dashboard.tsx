@@ -1,11 +1,9 @@
-import { useEffect, useRef } from 'react'
-import { ArrowUpRight, ArrowRight, Leaf, ScanLine, Bot, ShieldAlert, Cherry, Droplets, Wind, Sun, CloudSun, Waves, Check, ChevronRight, ClipboardList } from 'lucide-react'
+import { ArrowUpRight, ArrowRight, Leaf, ScanLine, Bot, ShieldAlert, Cherry, CloudSun, Waves, Check, ChevronRight, ClipboardList } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
 import { useStore, FIELDS, todayStr } from '../store'
 import { ALERTS, alertTaskTitle, HARVEST, SAMPLES, soilHistory } from '../agronomy'
 import { Count } from '../components/Motion'
 import { useMotion } from '../components/motion-context'
-import { FeatureGallery } from '../components/SceneMedia'
 
 const colors = ['#507555', '#aad866', '#49c9a0', '#d9a166']
 const maturity = [{ name: '未成熟', value: HARVEST.filter(h => h.maturity < 50).length }, { name: '接近成熟', value: HARVEST.filter(h => h.maturity >= 50 && h.maturity < 85).length }, { name: '成熟', value: HARVEST.filter(h => h.maturity >= 85 && h.maturity < 98).length }, { name: '过熟', value: HARVEST.filter(h => h.maturity >= 98).length }]
@@ -14,18 +12,6 @@ import { chartTooltip } from '../components/chart-theme'
 export default function Dashboard() {
   const { settings, setPage, tasks, setTaskStatus, readings } = useStore()
   const { enabled } = useMotion()
-  const video = useRef<HTMLVideoElement>(null)
-  useEffect(() => {
-    const node = video.current
-    if (!node) return
-    let inView = true
-    const sync = () => { if (enabled && inView && !document.hidden) node.play().catch(() => {}); else node.pause() }
-    const observer = new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; sync() })
-    observer.observe(node)
-    document.addEventListener('visibilitychange', sync)
-    sync()
-    return () => { observer.disconnect(); document.removeEventListener('visibilitychange', sync) }
-  }, [enabled])
   const pending = ALERTS.filter(a => !tasks.some(t => t.title === alertTaskTitle(a) && t.status === 'done'))
   const total = FIELDS.reduce((s, f) => s + f.area, 0)
   const harvestArea = HARVEST.filter(h => h.maturity >= 85).reduce((s, h) => s + h.area, 0)
@@ -34,17 +20,11 @@ export default function Dashboard() {
   const weather = readings.D4
   const trends = soilHistory('A1', 7)
   return <div className="overview">
-    <div className="overview-heading"><div><div className="eyebrow">GROW WITH INTELLIGENCE</div><h1>一览田间，心中有数<span>.</span></h1><p>{settings.displayName}，欢迎回到你的智慧农场。</p></div><button className="primary-btn" onClick={() => setPage('tasks')}>安排农事 <ArrowUpRight size={17} /></button></div>
-    <section className="field-hero">
-      <video ref={video} muted loop playsInline autoPlay={enabled} preload="metadata" poster="./media/field.jpg" aria-hidden="true"><source src="./media/field.mp4" type="video/mp4" /></video>
-      <div className="hero-shade" /><div className="hero-grid" />
-      <div className="hero-story"><div className="hero-chip"><span className="status-dot" />智慧农业 · 生长进行时</div><h2>科技扎根土壤<br />让丰收<span>有迹可循。</span></h2><p>从一片叶子的变化，到整座农场的生长。<br />感知、分析、行动，在这里自然相连。</p><button className="hero-link" onClick={() => setPage('inspection')}>进入智能巡检 <span><ArrowUpRight size={18} /></span></button></div>
-      <div className="field-marker marker-one"><span className="target-ring" /><div><small>A1 · 水稻种植区</small><b>长势良好 <Leaf size={12} /></b></div></div>
-      <div className="field-marker marker-two"><span className="target-ring" /><div><small>环境感知</small><b>土壤 · 光谱 · 虫情</b></div></div>
-      <aside className="weather-glass"><div className="weather-top"><span>田间微气候</span><CloudSun size={23} /></div><div className="weather-value"><Count value={weather?.v1 ?? 26} decimals={1} /><sup>°C</sup></div><p>多云间晴 · 适宜田间作业</p><div className="weather-details"><span><Droplets size={14} />湿度 <b>{Math.round(weather?.v2 ?? 65)}%</b></span><span><Wind size={14} />东南风 <b>2 级</b></span></div><div className="hourly">{['现在','12:00','14:00','16:00'].map((h,i) => <div key={h}><small>{h}</small><Sun size={15} /><b>{[26,28,29,27][i]}°</b></div>)}</div><small className="weather-note">气象演示 · 非实时天气预报</small></aside>
-      <div className="hero-coordinate">FIELD / 01 <span>PRECISION AGRICULTURE</span></div>
-    </section>
-    <FeatureGallery />
+    <div className="overview-heading"><div><div className="eyebrow">YOUR FARM, IN FOCUS</div><h1>你好，{settings.displayName}<span> ☀</span></h1><p>新的一天，让每一份生长都被看见。</p></div><button className="primary-btn" onClick={() => setPage('tasks')}>安排农事 <ArrowUpRight size={17} /></button></div>
+    <div className="fresh-hero-grid">
+      <section className="fresh-welcome"><div className="fresh-welcome-copy"><span className="fresh-label">HUINONG / 智慧农场</span><h2>美好丰收，<br/>从今天开始。</h2><p>连接土地、作物与每一个你。<br/>你的田间日常，现在一目了然。</p><div className="fresh-hero-bottom"><span className="fresh-farm-count"><Leaf size={17}/><b>{FIELDS.length} 个地块</b><small>正在生长</small></span><button onClick={()=>setPage('map')}>探索我的农场 <ArrowUpRight size={17}/></button></div></div><div className="fresh-hero-photo"><img src="./media/crops/bok-choy.jpg" alt="田间生长的青菜实拍参考"/><span><i/> ROOTED IN NATURE</span></div><span className="fresh-orbit" aria-hidden="true"/></section>
+      <section className="fresh-weather"><div className="fresh-weather-heading"><div><span className="fresh-label">FIELD CONDITIONS</span><h3>田间好时光</h3><p>多云间晴 · 适宜田间作业</p></div><CloudSun size={42} strokeWidth={1.2}/></div><div className="fresh-weather-bars" aria-hidden="true">{Array.from({length:24},(_,i)=><i key={i} className={i<16?'filled':''}/>)}</div><div className="fresh-weather-bottom"><button onClick={()=>setPage('devices')}>查看环境 <ArrowUpRight size={14}/></button><div><b><Count value={weather?.v1??26} decimals={1}/><small>°C</small></b><span>湿度 {Math.round(weather?.v2??65)}% · 东南风 2 级</span></div></div><small className="fresh-weather-note">气象演示数据</small></section>
+    </div>
     <div className="kpi-grid">
       {[{ title:'管理面积',value:total,unit:'亩',sub:`${FIELDS.length} 个地块 · 全域覆盖`,icon:ScanLine,decimal:1 },{title:'今日农事',value:today.length-done,unit:'项',sub:`已完成 ${done} / ${today.length} 项`,icon:Leaf},{title:'巡检机器人',value:3,unit:'台',sub:'3 台在线 · 1 台待机（演示）',icon:Bot},{title:'待处置预警',value:pending.length,unit:'条',sub:`${pending.filter(a=>a.level==='高风险').length} 条高风险 · 优先关注`,icon:ShieldAlert},{title:'可采摘面积',value:harvestArea,unit:'亩',sub:'B2 蔬菜 · 建议明日采收',icon:Cherry,decimal:1}].map((k,i) => <button className={`metric-card metric-${i}`} key={k.title} onClick={() => setPage((['map','tasks','inspection','alerts','harvest'] as const)[i])}><div className="metric-top"><span>{k.title}</span><k.icon size={18} /></div><div className="metric-number"><Count value={k.value} decimals={k.decimal ?? 0} /><small>{k.unit}</small></div><div className="metric-bottom"><span>{k.sub}</span><ArrowUpRight size={14} /></div><svg className="mini-spark" viewBox="0 0 120 24" aria-hidden="true"><path d="M0 20 L15 16 L28 18 L45 8 L57 13 L70 5 L85 9 L98 3 L120 0" /></svg></button>)}
     </div>

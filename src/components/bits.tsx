@@ -3,7 +3,6 @@ import { useEffect, useRef, useId, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore } from '../store'
 import { SCENES } from '../media'
-import { HeaderScene } from './SceneMedia'
 
 /* 通用页面卡片 */
 export function PageCard({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -19,7 +18,6 @@ export function PageHeader({ title, desc, extra }: { title: string; desc?: strin
   const { page } = useStore()
   return (
     <div className="page-heading-glass mb-5 flex items-start justify-between">
-      <HeaderScene scene={SCENES[page]} />
       <div className="page-heading-copy">
         <span className="eyebrow">{SCENES[page].kicker}</span>
         <h1 className="text-[24px] font-extrabold tracking-tight text-[#10291e]">{title}</h1>

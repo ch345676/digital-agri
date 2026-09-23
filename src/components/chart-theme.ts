@@ -1,1 +1,1 @@
-export const chartTooltip = { backgroundColor: '#142b23', border: '1px solid #395446', borderRadius: 12, color: '#eef6e8', fontSize: 12 }
+export const chartTooltip = { backgroundColor: '#ffffff', border: '1px solid #e3e9ee', borderRadius: 14, color: '#1f2930', fontSize: 12 }
