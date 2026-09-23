@@ -4,9 +4,10 @@ const WAYPOINTS = ['A1 北侧田埂','A1 北侧','A2 南侧','B1 南侧','B1 北
 const lengths = ROUTE.slice(1).map(([x,y],i) => Math.hypot(x-ROUTE[i][0],y-ROUTE[i][1]));
 const routeLength = lengths.reduce((a,b)=>a+b,0);
 const $ = (id) => document.getElementById(id);
-const state = {mode:'auto',status:'idle',progress:38,x:0,y:0,heading:0,battery:86,gear:1.2,direction:null,pan:0,light:false,captures:0};
+const state = {screen:'route',mode:'auto',status:'idle',progress:38,x:0,y:0,heading:0,battery:86,gear:1.2,direction:null,driveX:0,driveY:0,inputSource:null,pan:0,light:false,captures:0};
 let toastTimer = 0;
 let lastFrame = performance.now();
+let joystickPointerId = null;
 
 function routePosition(progress){
   let distance=routeLength*Math.max(0,Math.min(100,progress))/100;
@@ -25,18 +26,52 @@ function toast(message){
   const el=$('toast');el.textContent=message;el.classList.add('show');
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400);
 }
-function setDirection(direction){
-  state.direction=state.mode==='manual'&&state.status!=='stopped'&&state.status!=='returning'?direction:null;
-  document.querySelectorAll('[data-direction]').forEach(el=>el.classList.toggle('active',el.dataset.direction===state.direction));
+function canDrive(){return state.screen==='control'&&state.mode==='manual'&&state.status==='manual'}
+function setDirection(direction,source='buttons'){
+  if(!canDrive())return;
+  const vectors={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+  [state.driveX,state.driveY]=vectors[direction];
+  state.direction=direction;state.inputSource=source;
+  document.querySelectorAll('[data-direction]').forEach(el=>el.classList.toggle('active',el.dataset.direction===direction&&source==='buttons'));
   render();
 }
-function stopDirection(){if(state.direction)setDirection(null)}
+function stopDrive(){
+  state.driveX=0;state.driveY=0;state.direction=null;state.inputSource=null;joystickPointerId=null;
+  document.querySelectorAll('[data-direction]').forEach(el=>el.classList.remove('active'));
+  $('joystick').classList.remove('active');$('joystick').style.setProperty('--stick-x','0px');$('joystick').style.setProperty('--stick-y','0px');
+  render();
+}
+function updateJoystick(event){
+  if(!canDrive())return;
+  const pad=$('joystick');const rect=pad.getBoundingClientRect();const radius=(rect.width-72)/2;
+  const dx=event.clientX-(rect.left+rect.width/2),dy=event.clientY-(rect.top+rect.height/2);
+  const distance=Math.hypot(dx,dy);const scale=distance>radius?radius/distance:1;
+  const x=dx*scale/radius,y=dy*scale/radius;
+  state.driveX=distance<radius*.12?0:x;state.driveY=distance<radius*.12?0:y;
+  state.direction=null;state.inputSource='joystick';
+  pad.classList.add('active');pad.style.setProperty('--stick-x',`${dx*scale}px`);pad.style.setProperty('--stick-y',`${dy*scale}px`);
+  render();
+}
+function showPage(){
+  const requested=location.hash.slice(1);const page=['route','control','camera'].includes(requested)?requested:'route';
+  if(state.screen!==page)stopDrive();
+  state.screen=page;
+  for(const name of ['route','control','camera']){
+    $(`page-${name}`).hidden=name!==page;
+    $(`${name}-intro`).hidden=name!==page;
+    const nav=document.querySelector(`[data-nav="${name}"]`);
+    if(name===page)nav.setAttribute('aria-current','page');else nav.removeAttribute('aria-current');
+  }
+  document.title=`${{route:'巡检路线',control:'远程操控',camera:'镜头与设备'}[page]} · 惠农巡检小车`;
+  window.scrollTo({top:0,behavior:'instant'});
+}
 function render(){
   const labels={idle:'待命',cruising:'巡航中',manual:'手动驾驶',returning:'返航中',docked:'充电桩待命',stopped:'已紧急停止'};
   $('status').textContent=labels[state.status];
   $('status-led').classList.toggle('stopped',state.status==='stopped');
   $('battery').textContent=`${Math.round(state.battery)}%`;
-  $('speed').innerHTML=`${(state.status==='cruising'?state.gear:state.status==='returning'?0.8:state.direction?state.gear:0).toFixed(1)} <sub>m/s</sub>`;
+  const driveMagnitude=Math.min(1,Math.hypot(state.driveX,state.driveY));
+  $('speed').innerHTML=`${(state.status==='cruising'?state.gear:state.status==='returning'?0.8:state.status==='manual'?state.gear*driveMagnitude:0).toFixed(1)} <sub>m/s</sub>`;
   $('progress').textContent=`${state.progress.toFixed(0)}%`;
   $('progress-fill').style.width=`${state.progress}%`;
   $('route-done').setAttribute('stroke-dasharray',`${state.progress} 100`);
@@ -59,9 +94,9 @@ function selectMode(mode){
   if(state.status==='stopped'){toast('请先解除紧急停止');return}
   if(state.status==='returning'){toast('返航期间暂不可切换模式');return}
   if(state.mode===mode)return;
-  stopDirection();state.mode=mode;
-  if(mode==='manual'){state.status='manual';toast('手动模式：按住方向键驾驶')}
-  else{const point=routePosition(state.progress);Object.assign(state,{x:point.x,y:point.y,heading:point.heading,status:'idle'});toast('已切回示意巡检路线')}
+  stopDrive();state.mode=mode;
+  if(mode==='manual'){state.status='manual'}
+  else{const point=routePosition(state.progress);Object.assign(state,{x:point.x,y:point.y,heading:point.heading,status:'idle'})}
   render();
 }
 function tick(now){
@@ -73,12 +108,11 @@ function tick(now){
       state.battery=Math.max(10,state.battery-dt*.012);
       if(state.progress>=100){state.status='idle';toast('巡检路线演示完成')}
       render();
-    }else if(state.status==='manual'&&state.direction){
-      const vectors={up:[0,-1,0],down:[0,1,180],left:[-1,0,-90],right:[1,0,90]};
-      const [vx,vy,angle]=vectors[state.direction];
-      state.x=Math.max(130,Math.min(900,state.x+vx*state.gear*65*dt));
-      state.y=Math.max(55,Math.min(400,state.y+vy*state.gear*65*dt));
-      state.heading=angle;state.battery=Math.max(10,state.battery-dt*.016);render();
+    }else if(state.status==='manual'&&Math.hypot(state.driveX,state.driveY)>.01){
+      state.x=Math.max(130,Math.min(900,state.x+state.driveX*state.gear*65*dt));
+      state.y=Math.max(55,Math.min(400,state.y+state.driveY*state.gear*65*dt));
+      state.heading=Math.atan2(state.driveY,state.driveX)*180/Math.PI+90;
+      state.battery=Math.max(10,state.battery-dt*.016*Math.hypot(state.driveX,state.driveY));render();
     }else if(state.status==='returning'){
       const [dx,dy]=[ROUTE[0][0]-state.x,ROUTE[0][1]-state.y];const distance=Math.hypot(dx,dy);
       if(distance<3){state.x=ROUTE[0][0];state.y=ROUTE[0][1];state.status='docked';state.progress=0;toast('已返回充电桩')}
@@ -90,18 +124,28 @@ function tick(now){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  Object.assign(state,routePosition(state.progress));render();
+  Object.assign(state,routePosition(state.progress));render();showPage();
+  window.addEventListener('hashchange',showPage);
   $('auto-mode').addEventListener('click',()=>selectMode('auto'));
   $('manual-mode').addEventListener('click',()=>selectMode('manual'));
+  const changeInputMethod=(method)=>{
+    stopDrive();
+    $('joystick-wrap').hidden=method!=='joystick';$('dpad').hidden=method!=='buttons';
+    $('joystick-mode').classList.toggle('selected',method==='joystick');$('joystick-mode').setAttribute('aria-pressed',method==='joystick');
+    $('buttons-mode').classList.toggle('selected',method==='buttons');$('buttons-mode').setAttribute('aria-pressed',method==='buttons');
+    $('drive-hint').textContent=method==='joystick'?'拖动摇杆控制方向与速度，松手立即停车。':'按住方向键移动，松开立即停车；键盘方向键也可操作。';
+  };
+  $('joystick-mode').addEventListener('click',()=>changeInputMethod('joystick'));
+  $('buttons-mode').addEventListener('click',()=>changeInputMethod('buttons'));
   $('cruise-btn').addEventListener('click',()=>{
     if(state.status==='cruising'){state.status='idle';toast('巡航已暂停')}
     else{if(state.progress>=100){state.progress=0;Object.assign(state,routePosition(0))}state.status='cruising';toast('已开始模拟巡航')}
     render();
   });
-  $('return-btn').addEventListener('click',()=>{stopDirection();state.status='returning';toast('模拟返航中');render()});
+  $('return-btn').addEventListener('click',()=>{stopDrive();state.status='returning';toast('模拟返航中');render()});
   $('stop-btn').addEventListener('click',()=>{
     if(state.status==='stopped'){state.status=state.mode==='manual'?'manual':'idle';toast('已解除模拟急停')}
-    else{stopDirection();state.status='stopped';toast('模拟急停已触发')}
+    else{stopDrive();state.status='stopped';toast('模拟急停已触发')}
     render();
   });
   document.querySelectorAll('[data-gear]').forEach(button=>button.addEventListener('click',()=>{
@@ -109,14 +153,22 @@ document.addEventListener('DOMContentLoaded',()=>{
   }));
   document.querySelectorAll('[data-direction]').forEach(button=>{
     button.addEventListener('pointerdown',event=>{event.preventDefault();button.setPointerCapture(event.pointerId);setDirection(button.dataset.direction)});
-    button.addEventListener('pointerup',stopDirection);button.addEventListener('pointercancel',stopDirection);
-    button.addEventListener('lostpointercapture',stopDirection);
+    button.addEventListener('pointerup',()=>{if(state.inputSource==='buttons')stopDrive()});
+    button.addEventListener('pointercancel',()=>{if(state.inputSource==='buttons')stopDrive()});
+    button.addEventListener('lostpointercapture',()=>{if(state.inputSource==='buttons')stopDrive()});
   });
+  const pad=$('joystick');
+  pad.addEventListener('pointerdown',event=>{
+    if(!canDrive())return;
+    event.preventDefault();joystickPointerId=event.pointerId;pad.setPointerCapture(event.pointerId);updateJoystick(event);
+  });
+  pad.addEventListener('pointermove',event=>{if(event.pointerId===joystickPointerId){event.preventDefault();updateJoystick(event)}});
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(type,event=>{if(event.pointerId===joystickPointerId)stopDrive()});
   const keys={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
-  document.addEventListener('keydown',event=>{if(keys[event.key]&&state.mode==='manual'){event.preventDefault();setDirection(keys[event.key])}});
-  document.addEventListener('keyup',event=>{if(keys[event.key]&&state.direction===keys[event.key])stopDirection()});
-  window.addEventListener('blur',stopDirection);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')stopDirection()});
+  document.addEventListener('keydown',event=>{if(keys[event.key]&&canDrive()){event.preventDefault();setDirection(keys[event.key],'keyboard')}});
+  document.addEventListener('keyup',event=>{if(keys[event.key]&&state.inputSource==='keyboard'&&state.direction===keys[event.key])stopDrive()});
+  window.addEventListener('blur',stopDrive);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')stopDrive()});
   $('capture-btn').addEventListener('click',()=>{state.captures++;toast('已记录一次模拟拍照');render()});
   $('light-btn').addEventListener('click',()=>{state.light=!state.light;toast(state.light?'模拟照明已开启':'模拟照明已关闭');render()});
   $('pan-left-btn').addEventListener('click',()=>{state.pan=Math.max(-45,state.pan-15);toast(`云台角度 ${state.pan}°`);render()});
