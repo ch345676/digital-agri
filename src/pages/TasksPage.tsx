@@ -9,7 +9,7 @@ import {
   type TaskType,
 } from '../store'
 import { PageCard, PageHeader, Modal, Field, inputCls, btnPrimary, btnGhost } from '../components/bits'
-import { TASK_IMAGES } from '../media'
+import { TaskIllustration } from '../components/TaskIllustration'
 
 type FilterKey = 'all' | TaskStatus
 
@@ -181,7 +181,7 @@ export default function TasksPage() {
         <ul className="divide-y divide-[#f0f6f3]">
           {list.map((t) => (
             <li key={t.id} className="flex items-center gap-3 px-3 py-3.5">
-              <img className="task-photo" src={TASK_IMAGES[t.type]} alt={`${t.type}场景示意`} loading="lazy" />
+              <TaskIllustration title={t.title} type={t.type}/>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span

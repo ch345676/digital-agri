@@ -1,0 +1,33 @@
+/* Large, consistent previews; full uncropped images remain available in dialogs. */
+.alert-photo-button{flex-basis:clamp(210px,23vw,320px);align-self:stretch;display:flex;flex-direction:column}
+.alert-photo-button .alert-photo{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;object-position:center;flex:1;min-height:0}
+.alert-photo-button>span{font-size:10px;padding:9px}
+.alert-card{align-items:center;gap:25px;padding:20px}
+.alert-main h3{font-size:17px}.alert-main p{font-size:12px;line-height:1.9}
+.crop-reference{display:block;position:relative;padding:0;width:100%;overflow:hidden;border:0;background:#173c30;text-align:left;cursor:zoom-in;isolation:isolate}
+.crop-reference>img{display:block;width:100%;height:100%;object-fit:cover;transition:filter .3s}
+.crop-reference:hover>img{filter:brightness(1.07)}
+.crop-reference>span{position:absolute;bottom:0;left:0;right:0;padding:28px 15px 11px;background:linear-gradient(transparent,#092619bd);color:#fffce7;font-size:10px;display:flex;justify-content:space-between;gap:10px;text-shadow:0 1px 3px #173328}
+.crop-reference>span>b{font-weight:400}
+.crop-reference.crop-photo{height:auto;aspect-ratio:4/3;max-height:430px;margin:0;border-radius:16px 16px 0 0}
+.crop-reference.harvest-photo{height:auto;aspect-ratio:4/3;width:calc(100% + 40px);margin:-20px -20px 20px;border-radius:16px 16px 0 0}
+.photo-reference>img{max-height:60vh}
+.task-illustration{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex-shrink:0;width:78px;height:72px;border-radius:12px;border:1px solid #dfefb85c;background:linear-gradient(145deg,#cdebc33b,#224c414d);box-shadow:inset 0 1px #f2ffe350;color:#e4f5cd}
+.task-illustration small{font-size:9px;white-space:nowrap;color:#d5e8c7}
+.soil-summary-counts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+.soil-summary-counts>div{padding:14px;border:1px solid #d2e8bd33;border-radius:12px;background:#daefcb0c}
+.soil-summary-counts b{display:block;font-size:35px;font-weight:400;color:#f0f8da}
+.soil-summary-counts span{font-size:11px;color:#c9dfc0}
+.soil-indicator-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.soil-indicator-strip span{font-size:9px;color:#d6e7c9}.soil-indicator-strip i{display:block;height:5px;border-radius:4px;background:#bcdaa1;margin-bottom:6px}
+.soil-indicator-strip .attention i{background:#f3c876}.soil-indicator-strip .attention{color:#f3d49d}
+.soil-next-step{margin:22px 0;padding:15px 0;border-top:1px solid #d6ebbc33;border-bottom:1px solid #d6ebbc33}
+.soil-next-step>b{font-size:12px;color:#eff6d7}.soil-next-step p{font-size:11px;line-height:1.8;margin:8px 0}.soil-next-step small{font-size:9px;color:#c3d6b8}
+@media(min-width:1600px){.crop-reference.harvest-photo{width:calc(100% + 46px);margin:-23px -23px 20px}}
+@media(max-width:1200px){.crop-reference.harvest-photo{width:calc(100% + 32px);margin:-16px -16px 20px}.alert-photo-button{flex-basis:210px}}
+@media(max-width:760px){
+ .alert-photo-button{flex:1 0 100%;width:100%}.alert-photo-button .alert-photo{width:100%;aspect-ratio:4/3;height:auto;flex:none}.alert-card{gap:16px;padding:17px}
+ .crop-reference.harvest-photo{width:calc(100% + 34px);margin:-17px -17px 20px}.crop-reference.crop-photo{max-height:none}
+ .page-tasks ul>li{grid-template-columns:78px minmax(0,1fr)}.page-tasks ul>li>.task-illustration{grid-column:1;grid-row:1}
+ .task-illustration{width:78px;height:72px}.crop-reference>span{font-size:10px}
+}
