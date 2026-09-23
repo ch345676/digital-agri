@@ -71,7 +71,7 @@ export function Modal({
     const transform='translate('+(origin.left-rect.left)+'px,'+(origin.top-rect.top)+'px) scale('+origin.width/rect.width+','+origin.height/rect.height+')'
     const frames=[{transform,opacity:.25,borderRadius:'24px'},{transform:'none',opacity:1,borderRadius:'18px'}]
     node.style.transformOrigin='top left'
-    const animation=node.animate(open?frames:frames.slice().reverse(),{duration:open?420:170,easing:'cubic-bezier(.22,1,.36,1)'})
+    const animation=node.animate(open?frames:frames.slice().reverse(),{duration:open?280:170,easing:'cubic-bezier(.22,1,.36,1)'})
     return()=>{animation.cancel();node.style.transformOrigin=''}
   },[open,origin,enabled,present])
   if (!present) return null

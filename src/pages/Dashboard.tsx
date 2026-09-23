@@ -1,9 +1,10 @@
-import { ArrowUpRight, ArrowRight, Leaf, ScanLine, Bot, ShieldAlert, Cherry, Check, ChevronRight, ClipboardList } from 'lucide-react'
+import { ArrowUpRight, ArrowRight, Leaf, Bot, ShieldAlert, Cherry, Check, ChevronRight, ClipboardList } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
 import { useStore, FIELDS, todayStr } from '../store'
 import { ALERTS, alertTaskTitle, HARVEST, soilHistory } from '../agronomy'
 import {FarmEmpty} from '../components/AgriArtwork'
 import DigitalTwinOverview from '../components/DigitalTwinOverview'
+import DailyOverview from '../components/DailyOverview'
 import { Count } from '../components/Motion'
 import { useMotion } from '../components/motion-context'
 
@@ -23,9 +24,7 @@ export default function Dashboard() {
   const trends = soilHistory('A1', 7)
   return <div className="overview">
     <div className="overview-heading"><div><h1>农场工作台</h1><p>{settings.displayName}，从今天需要关注的田间事务开始。</p></div><button className="primary-btn" onClick={() => setPage('tasks')}>安排农事 <ArrowUpRight size={17} /></button></div>
-    <div className="kpi-grid">
-      {[{ title:'管理面积',value:total,unit:'亩',sub:`${FIELDS.length} 个地块 · 全域覆盖`,icon:ScanLine,decimal:1 },{title:'今日农事',value:today.length-done,unit:'项',sub:`已完成 ${done} / ${today.length} 项`,icon:Leaf},{title:'巡检机器人',value:3,unit:'台',sub:'3 台在线 · 1 台待机（演示）',icon:Bot},{title:'待处置预警',value:pending.length,unit:'条',sub:`${pending.filter(a=>a.level==='高风险').length} 条高风险 · 优先关注`,icon:ShieldAlert},{title:'可采摘面积',value:harvestArea,unit:'亩',sub:'B2 蔬菜 · 建议明日采收',icon:Cherry,decimal:1}].map((k,i) => <button className={`metric-card metric-${i}`} key={k.title} onClick={() => setPage((['map','tasks','inspection','alerts','harvest'] as const)[i])}><div className="metric-top"><span>{k.title}</span><k.icon size={18} /></div><div className="metric-number"><Count value={k.value} decimals={k.decimal ?? 0} /><small>{k.unit}</small></div><div className="metric-bottom"><span>{k.sub}</span><ArrowUpRight size={14} /></div></button>)}
-    </div>
+    <DailyOverview totalTasks={today.length} completedTasks={done} area={total} fieldCount={FIELDS.length} alerts={pending.length} highRisk={pending.filter(a=>a.level==='高风险').length} harvestArea={harvestArea}/>
     <div className="dashboard-priorities">
       <section className="panel"><div className="panel-heading"><h3><ShieldAlert size={17}/>优先处理</h3><button className="text-btn" onClick={() => setPage('alerts')}>全部 <ArrowUpRight size={14}/></button></div><div className="alert-preview">{pending.slice(0,3).map(a=><button key={a.id} onClick={()=>setPage('alerts')}><span className={`signal ${a.level==='高风险'?'red':'orange'}`}/><div><b>{a.title}</b><small>{a.field} · {a.source}</small></div><span className={`risk-pill ${a.level==='高风险'?'high':'medium'}`}>{a.level}</span></button>)}{pending.length===0 && <FarmEmpty title="全部预警已完成处置" description="田间风险已复核，继续关注作物变化。" action={()=>setPage('inspection')} label="查看巡检"/>}</div></section>
       <section className="panel"><div className="panel-heading"><h3><ClipboardList size={17}/>今日任务</h3><button className="text-btn" onClick={()=>setPage('tasks')}>全部 <ArrowUpRight size={14}/></button></div><div className="schedule-preview">{today.filter(t=>t.status!=='done').slice(0,3).map(t=><div key={t.id}><button className="task-check" title="标记完成" onClick={()=>setTaskStatus(t.id,'done')}><Check size={12}/></button><div><b>{t.title}</b><small>{t.assignee} · {t.time}</small></div><span className="tiny-status">{t.status==='in-progress'?'进行中':'待完成'}</span></div>)}{today.every(t=>t.status==='done')&&<FarmEmpty title="今日任务已全部完成" description="把下一次农事安排好，让生长从容有序。" action={()=>setPage('tasks')} label="安排农事"/>}</div></section>

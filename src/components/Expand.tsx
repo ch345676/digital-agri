@@ -13,7 +13,7 @@ export function Expand({ open, children, id }: { open: boolean; children: ReactN
     node.style.height = open ? 'auto' : '0px'
     if (!enabled || matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const target = open ? node.scrollHeight : 0
-    const animation = node.animate([{height: `${height}px`, opacity: open ? .4 : 1}, {height: `${target}px`, opacity: open ? 1 : 0}], {duration: 300, easing: 'cubic-bezier(.22,1,.36,1)'})
+    const animation = node.animate([{height: `${height}px`, opacity: open ? .4 : 1}, {height: `${target}px`, opacity: open ? 1 : 0}], {duration: 240, easing: 'cubic-bezier(.22,1,.36,1)'})
     return () => animation.cancel()
   }, [open, enabled])
   return <div ref={ref} id={id} className="motion-expand" inert={!open} aria-hidden={!open} data-open={open}><div>{children}</div></div>
