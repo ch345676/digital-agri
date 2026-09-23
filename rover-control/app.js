@@ -5,6 +5,24 @@ const lengths = ROUTE.slice(1).map(([x,y],i) => Math.hypot(x-ROUTE[i][0],y-ROUTE
 const routeLength = lengths.reduce((a,b)=>a+b,0);
 const $ = (id) => document.getElementById(id);
 const state = {screen:'route',mode:'auto',status:'idle',progress:38,x:0,y:0,heading:0,battery:86,gear:1.2,direction:null,driveX:0,driveY:0,inputSource:null,pan:0,light:false,captures:0};
+const PHOTO_TYPES = {
+  downy:{title:'大豆叶片疑似异常',file:'downy-mildew.jpg',credit:'Clemson University / USDA Extension',source:'https://commons.wikimedia.org/wiki/File:Peronospora_manshurica_on_soybean_leaf.jpg',license:'CC BY 3.0'},
+  powdery:{title:'大豆叶片白色斑块',file:'powdery-mildew.jpg',credit:'Madan_subedi01',source:'https://commons.wikimedia.org/wiki/File:Powdery_Mildew_on_Soyabean_leaves.jpg',license:'CC BY 3.0'},
+  aphids:{title:'甘蓝叶片虫群',file:'aphids.jpg',credit:'Sanjay Acharya',source:'https://commons.wikimedia.org/wiki/File:Aphids_on_Kale_leaf.jpg',license:'CC BY-SA 4.0'}
+};
+const SAMPLE_ISSUES = [
+  {id:'sample-1',type:'downy',x:202,y:150,field:'A1',time:'演示样本',sample:true},
+  {id:'sample-2',type:'powdery',x:376,y:185,field:'B1',time:'演示样本',sample:true},
+  {id:'sample-3',type:'aphids',x:751,y:284,field:'B2',time:'演示样本',sample:true}
+];
+const ISSUE_KEY='huinong-rover-issues-v1';
+const SPRAY_KEY='huinong-rover-spray-plan-v1';
+function readStored(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}}
+const savedIssues=readStored(ISSUE_KEY,[]);
+const issues=Array.isArray(savedIssues)?savedIssues.filter(item=>item&&PHOTO_TYPES[item.type]&&Number.isFinite(item.x)&&Number.isFinite(item.y)&&item.x>=0&&item.x<=1000&&item.y>=0&&item.y<=560&&typeof item.id==='string'&&/^capture-[\w-]{1,40}$/.test(item.id)&&typeof item.field==='string'&&item.field.length<20&&typeof item.time==='string'&&item.time.length<50).slice(0,100):[];
+let sprayPlan=readStored(SPRAY_KEY,null);
+if(!sprayPlan||!['A1','A2','B1','C1','B2'].includes(sprayPlan.field)||!['spot','area'].includes(sprayPlan.scope))sprayPlan=null;
+let selectedIssue=null;
 let toastTimer = 0;
 let lastFrame = performance.now();
 let joystickPointerId = null;
@@ -53,16 +71,16 @@ function updateJoystick(event){
   render();
 }
 function showPage(){
-  const requested=location.hash.slice(1);const page=['route','control','camera'].includes(requested)?requested:'route';
+  const requested=location.hash.slice(1);const pages=['route','control','camera','album','spray'];const page=pages.includes(requested)?requested:'route';
   if(state.screen!==page)stopDrive();
   state.screen=page;
-  for(const name of ['route','control','camera']){
+  for(const name of pages){
     $(`page-${name}`).hidden=name!==page;
     $(`${name}-intro`).hidden=name!==page;
     const nav=document.querySelector(`[data-nav="${name}"]`);
     if(name===page)nav.setAttribute('aria-current','page');else nav.removeAttribute('aria-current');
   }
-  document.title=`${{route:'巡检路线',control:'远程操控',camera:'镜头与设备'}[page]} · 惠农巡检小车`;
+  document.title=`${{route:'巡检路线',control:'远程操控',camera:'镜头与设备',album:'异常相册',spray:'喷洒作业'}[page]} · 惠农巡检小车`;
   window.scrollTo({top:0,behavior:'instant'});
 }
 function render(){
@@ -89,6 +107,41 @@ function render(){
   $('light-btn').classList.toggle('on',state.light);$('light-btn').setAttribute('aria-pressed',state.light);
   $('light-btn').querySelector('span').textContent=state.light?'照明开启':'照明关闭';
   $('pan-angle').textContent=`${state.pan}°`;$('capture-count').textContent=`${state.captures} 张`;
+}
+function fieldAt(x,y){
+  if(x<245)return 'A1';if(x<333)return 'A2';if(x<424)return 'B1';if(x<515)return 'C1';if(x>575)return 'B2';
+  return y<180?'B2':'田埂';
+}
+function addText(parent,tag,value,className){const el=document.createElement(tag);el.textContent=value;if(className)el.className=className;parent.append(el);return el}
+function renderIssueMarkers(){
+  const group=$('issue-markers');group.replaceChildren();
+  for(const item of [...SAMPLE_ISSUES,...issues]){
+    const marker=document.createElementNS('http://www.w3.org/2000/svg','g');marker.setAttribute('transform',`translate(${item.x} ${item.y})`);marker.setAttribute('class',`issue-marker${item.id===selectedIssue?' selected':''}`);marker.setAttribute('role','button');marker.setAttribute('tabindex','0');marker.setAttribute('aria-label',`${item.field} ${PHOTO_TYPES[item.type].title}，查看相册`);
+    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');circle.setAttribute('r','14');
+    const text=document.createElementNS('http://www.w3.org/2000/svg','text');text.setAttribute('text-anchor','middle');text.setAttribute('y','5');text.textContent='!';marker.append(circle,text);
+    const open=()=>{selectedIssue=item.id;renderIssueMarkers();renderAlbum();location.hash='album';setTimeout(()=>document.querySelector(`[data-issue-id="${item.id}"]`)?.scrollIntoView({block:'center'}),30)};
+    marker.addEventListener('click',open);marker.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open()}});group.append(marker);
+  }
+}
+function renderAlbum(){
+  const list=$('album-list');list.replaceChildren();const all=[...issues].reverse().concat(SAMPLE_ISSUES);
+  $('issue-count').textContent=`${all.length} 条记录`;
+  for(const item of all){
+    const photo=PHOTO_TYPES[item.type];const card=addText(list,'article','',`issue-card${item.id===selectedIssue?' selected':''}`);card.dataset.issueId=item.id;
+    const img=document.createElement('img');img.src=`./assets/${photo.file}`;img.alt=`${photo.title}的真实参考照片`;img.loading='lazy';card.append(img);
+    const body=addText(card,'div','', 'issue-body');
+    const header=addText(body,'div','', 'issue-header');addText(header,'strong',photo.title);addText(header,'span','待人工复核','issue-status');
+    addText(body,'p',`${item.sample?'预置演示记录':'模拟拍照记录'} · ${item.time}`,'issue-time');
+    addText(body,'p',`地点 ${item.field} 地块 · 示意坐标 ${Math.round(item.x)}, ${Math.round(item.y)}`,'issue-location');
+    const actions=addText(body,'div','','issue-actions');
+    const map=addText(actions,'button','在路线中查看');map.type='button';map.addEventListener('click',()=>{selectedIssue=item.id;renderIssueMarkers();renderAlbum();location.hash='route';toast(`已标记 ${item.field} 地块的异常位置`)});
+    const plan=addText(actions,'button','规划喷洒');plan.type='button';plan.addEventListener('click',()=>{$('spray-field').value=item.field==='田埂'?'B2':item.field;$('spray-scope').value='spot';$('spray-note').value=`核实 ${photo.title} 后再确定处理方案`;location.hash='spray';toast('已带入目标地块，请先核实异常')});
+    const credit=addText(body,'p','真实参考照片：','issue-credit');const link=addText(credit,'a',`${photo.credit} · ${photo.license}`);link.href=photo.source;link.target='_blank';link.rel='noopener noreferrer';
+  }
+}
+function renderSprayPlan(){
+  const el=$('spray-plan');el.replaceChildren();el.hidden=!sprayPlan;if(!sprayPlan)return;
+  addText(el,'small','已保存的本机演示计划');addText(el,'strong',`${sprayPlan.field} 地块 · ${sprayPlan.scope==='spot'?'定点喷洒':'区域喷洒'}`);addText(el,'p',sprayPlan.note||'未填写备注');addText(el,'span','待模块上线与人工确认 · 未执行');
 }
 function selectMode(mode){
   if(state.status==='stopped'){toast('请先解除紧急停止');return}
@@ -124,7 +177,7 @@ function tick(now){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  Object.assign(state,routePosition(state.progress));render();showPage();
+  Object.assign(state,routePosition(state.progress));state.captures=issues.length;render();renderAlbum();renderIssueMarkers();renderSprayPlan();showPage();
   window.addEventListener('hashchange',showPage);
   $('auto-mode').addEventListener('click',()=>selectMode('auto'));
   $('manual-mode').addEventListener('click',()=>selectMode('manual'));
@@ -169,9 +222,21 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('keyup',event=>{if(keys[event.key]&&state.inputSource==='keyboard'&&state.direction===keys[event.key])stopDrive()});
   window.addEventListener('blur',stopDrive);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')stopDrive()});
-  $('capture-btn').addEventListener('click',()=>{state.captures++;toast('已记录一次模拟拍照');render()});
+  $('capture-btn').addEventListener('click',()=>{
+    const type=$('capture-type').value;
+    const item={id:`capture-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,type,x:Math.round(state.x),y:Math.round(state.y),field:fieldAt(state.x,state.y),time:new Date().toLocaleString('zh-CN',{hour12:false})};
+    issues.push(item);if(issues.length>100)issues.shift();
+    try{localStorage.setItem(ISSUE_KEY,JSON.stringify(issues))}catch{toast('浏览器存储不可用，记录只在当前页面保留')}
+    state.captures=issues.length;render();renderAlbum();renderIssueMarkers();toast(`已存入异常相册 · ${item.field} 地块`);
+  });
   $('light-btn').addEventListener('click',()=>{state.light=!state.light;toast(state.light?'模拟照明已开启':'模拟照明已关闭');render()});
   $('pan-left-btn').addEventListener('click',()=>{state.pan=Math.max(-45,state.pan-15);toast(`云台角度 ${state.pan}°`);render()});
   $('pan-right-btn').addEventListener('click',()=>{state.pan=Math.min(45,state.pan+15);toast(`云台角度 ${state.pan}°`);render()});
+  $('spray-form').addEventListener('submit',event=>{
+    event.preventDefault();sprayPlan={field:$('spray-field').value,scope:$('spray-scope').value,note:$('spray-note').value.trim().slice(0,120)};
+    try{localStorage.setItem(SPRAY_KEY,JSON.stringify(sprayPlan))}catch{toast('浏览器存储不可用，计划只在当前页面保留')}
+    renderSprayPlan();toast('模拟作业计划已保存；喷洒模块仍离线');
+  });
+  if(sprayPlan){$('spray-field').value=sprayPlan.field;$('spray-scope').value=sprayPlan.scope;$('spray-note').value=typeof sprayPlan.note==='string'?sprayPlan.note.slice(0,120):''}
   requestAnimationFrame(tick);
 });
