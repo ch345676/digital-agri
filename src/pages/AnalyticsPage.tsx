@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { chartTooltip, chartColors } from '../components/chart-theme'
 import {
   ResponsiveContainer,
   LineChart,
@@ -65,14 +66,9 @@ const WEEKLY_YIELD = (() => {
   return arr
 })()
 
-const PIE_COLORS = ['#1fa756', '#5cbb63', '#8ecf78', '#2196e8', '#8b5cf6']
+const PIE_COLORS = [chartColors.green, chartColors.pale, chartColors.amber, chartColors.water, chartColors.earth]
 
-const tooltipStyle = {
-  borderRadius: 12,
-  border: '1px solid #dcebe2',
-  fontSize: 12,
-  boxShadow: '0 4px 16px rgba(23,53,42,0.12)',
-}
+const tooltipStyle = chartTooltip
 
 export default function AnalyticsPage() {
   const { enabled } = useMotion()
@@ -118,7 +114,7 @@ export default function AnalyticsPage() {
               <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#8aa398' }} interval={Math.floor(weeks / 8)} />
               <YAxis tick={{ fontSize: 11, fill: '#8aa398' }} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Line type="monotone" dataKey="yield" name="产量" stroke="#1fa756" strokeWidth={2.5} dot={false} isAnimationActive={enabled} />
+              <Line type="monotone" dataKey="yield" name="产量" stroke={chartColors.green} strokeWidth={2.5} dot={false} isAnimationActive={enabled} />
             </LineChart>
           </ResponsiveContainer>
         </PageCard>
@@ -133,8 +129,8 @@ export default function AnalyticsPage() {
               <YAxis tick={{ fontSize: 11, fill: '#8aa398' }} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="water" name="灌溉用水 (m³)" fill="#2196e8" radius={[4, 4, 0, 0]} isAnimationActive={enabled} />
-              <Bar dataKey="fertilizer" name="肥料 (kg)" fill="#1fa756" radius={[4, 4, 0, 0]} isAnimationActive={enabled} />
+              <Bar dataKey="water" name="灌溉用水 (m³)" fill={chartColors.water} radius={[4, 4, 0, 0]} isAnimationActive={enabled} />
+              <Bar dataKey="fertilizer" name="肥料 (kg)" fill={chartColors.green} radius={[4, 4, 0, 0]} isAnimationActive={enabled} />
             </BarChart>
           </ResponsiveContainer>
         </PageCard>
@@ -171,15 +167,15 @@ export default function AnalyticsPage() {
             <AreaChart data={monthly} margin={{ top: 5, right: 10, bottom: 0, left: -18 }}>
               <defs>
                 <linearGradient id="compGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1fa756" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#1fa756" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor={chartColors.green} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={chartColors.green} stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e8f2ec" />
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8aa398' }} />
               <YAxis domain={[40, 100]} tick={{ fontSize: 11, fill: '#8aa398' }} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Area type="monotone" dataKey="completion" name="完成率" stroke="#1fa756" strokeWidth={2.5} fill="url(#compGrad)" isAnimationActive={enabled} />
+              <Area type="monotone" dataKey="completion" name="完成率" stroke={chartColors.green} strokeWidth={2.5} fill="url(#compGrad)" isAnimationActive={enabled} />
             </AreaChart>
           </ResponsiveContainer>
         </PageCard>

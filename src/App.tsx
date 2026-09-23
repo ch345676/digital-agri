@@ -27,13 +27,13 @@ import './motion.css'
 import './refinement.css'
 import './experience.css'
 import './devices-media.css'
+import './workbench.css'
 import NavIndicator from './components/NavIndicator'
 import PresentationMode from './components/PresentationMode'
 import BrandMark from './components/BrandMark'
 import FeedbackHost, {SaveIndicator} from './components/FeedbackHost'
 import MotionRuntime from './components/MotionRuntime'
 import { usePresence } from './components/use-presence'
-import ButtonMotion from './components/ButtonMotion'
 
 const NAV: { key: PageKey; icon: LucideIcon; label: string; group: string }[] = [
   { key: 'dashboard', icon: LayoutDashboard, label: '农场总览', group: '智 慧 农 场' },
@@ -81,7 +81,6 @@ function Shell() {
   return <div className="agri-shell">
     <div className="landscape-backdrop" aria-hidden="true" />
     <div className="landscape-mist" aria-hidden="true" />
-    <ButtonMotion />
     <MotionRuntime /><FeedbackHost/>
     {menu && <button className="mobile-scrim" aria-label="关闭菜单" onClick={() => setMenu(false)} />}
     <aside className={`sidebar ${menu ? 'is-open' : ''}`}>

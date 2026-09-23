@@ -15,7 +15,7 @@ export default function MotionRuntime() {
     const ghosts = new Set<HTMLElement>()
     const positions = new Map<string, {rect: DOMRect; clone: HTMLElement}>()
     let frame = 0, snapshotTime = 0
-    const play = (node: Element, frames: Keyframe[], duration = 430, delay = 0) => {
+    const play = (node: Element, frames: Keyframe[], duration = 260, delay = 0) => {
       if (document.hidden) return
       const a = node.animate(frames, {duration, delay, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards'})
       animations.add(a)
@@ -31,12 +31,12 @@ export default function MotionRuntime() {
         // Do not leave hidden DOM behind if animation is interrupted.
         node.classList.remove('motion-pending')
         node.dataset.motionRevealed = 'true'
-        play(node, [{opacity: 0, transform: 'translateY(20px) scale(.985)'}, {opacity: 1, transform: 'none'}], 490, Math.min(order++ * 38, 190))
+        play(node, [{opacity: 0, transform: 'translateY(8px)'}, {opacity: 1, transform: 'none'}], 280, Math.min(order++ * 20, 80))
         node.querySelectorAll<SVGGeometryElement>('.recharts-line-curve, .recharts-area-curve').forEach(path => {
           const length = path.getTotalLength()
-          if (length > 0) play(path, [{strokeDasharray: String(length), strokeDashoffset: length}, {strokeDasharray: String(length), strokeDashoffset: 0}], 850, 100)
+          if (length > 0) play(path, [{strokeDasharray: String(length), strokeDashoffset: length}, {strokeDasharray: String(length), strokeDashoffset: 0}], 500, 60)
         })
-        node.querySelectorAll<HTMLElement>('.progress-track>i, .h-full[style*="width"]').forEach(bar => play(bar, [{transform: 'scaleX(0)', transformOrigin: 'left'}, {transform: 'scaleX(1)', transformOrigin: 'left'}], 720, 100))
+        node.querySelectorAll<HTMLElement>('.progress-track>i, .h-full[style*="width"]').forEach(bar => play(bar, [{transform: 'scaleX(0)', transformOrigin: 'left'}, {transform: 'scaleX(1)', transformOrigin: 'left'}], 400, 60))
       })
     }, {threshold: .06, rootMargin: '0px 0px -12px 0px'})
     const register = (root: Element) => {

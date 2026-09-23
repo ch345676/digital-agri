@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Radar,
   CloudSun,
@@ -27,9 +28,8 @@ function DeviceCard({ device }: { device: Device }) {
   const Icon = KIND_ICONS[device.kind]
 
   return (
-    <PageCard className="flex flex-col">
-      <DevicePhoto id={device.id}/>
-      <div className="flex items-start justify-between">
+    <PageCard className={`device-card flex flex-col ${!device.online ? 'device-offline' : ''}`}>
+      <div className="device-card-heading flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
             className={`flex h-11 w-11 items-center justify-center rounded-xl ${
@@ -53,7 +53,7 @@ function DeviceCard({ device }: { device: Device }) {
         </span>
       </div>
 
-      <div className="mt-4 flex items-end justify-between rounded-xl bg-[#f5faf7] p-3.5">
+      <div className="device-values mt-4 flex items-end justify-between rounded-xl bg-[#f5faf7] p-3.5">
         {device.online ? (
           <>
             <div>
@@ -106,7 +106,8 @@ function DeviceCard({ device }: { device: Device }) {
         </div>
       )}
 
-      <div className="mt-auto pt-3 text-[11px] text-[#a4bcb1]">
+      <DevicePhoto id={device.id}/>
+      <div className="device-update mt-auto pt-3 text-[11px] text-[#a4bcb1]">
         {device.online ? '演示数据 · 每 3 秒模拟更新' : '请检查设备电源与网络'}
       </div>
     </PageCard>
@@ -115,6 +116,9 @@ function DeviceCard({ device }: { device: Device }) {
 
 export default function DevicesPage() {
   const { readings, valves } = useStore()
+  const [status, setStatus] = useState('all')
+  const [kind, setKind] = useState('all')
+  const visible = DEVICES.filter(d => (status === 'all' || d.online === (status === 'online')) && (kind === 'all' || d.kind === kind))
   const online = DEVICES.filter((d) => d.online).length
   const onlineRate = Math.round((online / DEVICES.length) * 100)
   const lowMoisture = DEVICES.filter(
@@ -125,7 +129,7 @@ export default function DevicesPage() {
 
   return (
     <div>
-      <PageHeader title="设备监控" desc="物联网设备实时状态与远程控制" />
+      <PageHeader title="设备监控" desc="关注设备连通、田间读数与灌溉状态；点击照片查看现场参考。" />
 
       {/* 汇总条 */}
       <PageCard className="device-summary mb-5 flex items-center gap-10">
@@ -156,12 +160,13 @@ export default function DevicesPage() {
         </div>
       </PageCard>
 
-      {/* 设备网格 */}
-      <div className="grid grid-cols-3 gap-5 max-[1400px]:grid-cols-2">
-        {DEVICES.map((d) => (
+      <div className="device-toolbar"><div className="segmented" aria-label="设备状态筛选">{[{id:'all',label:'全部设备 '+DEVICES.length},{id:'online',label:'在线 '+online},{id:'offline',label:'离线 '+(DEVICES.length-online)}].map(item=><button key={item.id} aria-pressed={status===item.id} className={status===item.id?'active':''} onClick={()=>setStatus(item.id)}>{item.label}</button>)}</div><label>设备类型<select value={kind} onChange={e=>setKind(e.target.value)}><option value="all">全部类型</option><option value="soil">土壤墒情</option><option value="weather">气象站</option><option value="valve">灌溉阀门</option><option value="pest">虫情监测</option></select></label></div>
+      <div className="device-grid">
+        {visible.map((d) => (
           <DeviceCard key={d.id} device={d} />
         ))}
       </div>
+      {visible.length===0&&<div className="device-empty" role="status"><Radar size={24}/><p>当前筛选下没有设备</p><button className="secondary-btn" onClick={()=>{setStatus('all');setKind('all')}}>显示全部设备</button></div>}
     </div>
   )
 }

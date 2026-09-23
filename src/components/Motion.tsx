@@ -32,7 +32,7 @@ export function Count({ value, decimals = 0 }: { value: number; decimals?: numbe
       previous.current = value
       const start = performance.now()
       const step = (now: number) => {
-        const p = Math.min((now - start) / 800, 1)
+        const p = Math.min((now - start) / 450, 1)
         node.textContent = (from + (value - from) * (1 - Math.pow(1 - p, 3))).toFixed(decimals)
         if (p < 1 && !document.hidden) id = requestAnimationFrame(step)
         else node.textContent = value.toFixed(decimals)
