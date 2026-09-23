@@ -68,3 +68,26 @@ input:focus, textarea:focus { box-shadow: 0 0 0 4px #5c9edf15; }
 @media (hover: hover) { button:not(:disabled):hover { filter: brightness(.98); } .surface-card:hover { box-shadow: 0 8px 28px #4872930d; } }
 @media (max-width: 360px) { .page-stage h1 { font-size: 20px; } .alert-card > div > div { padding: 15px 12px; } .summary-main strong { font-size: 50px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } .ui-ripple { display: none; } }
+/* Desktop farm geometry with mobile-readable controls and scroll-to-zoom. */
+.farm-demo{background:#fff;border-radius:24px;overflow:hidden;border:1px solid #e5ece8;color:#233b30}
+.farm-map-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px}
+.farm-map-heading b{font-size:14px}.farm-map-heading small{display:block;font-size:10px;color:#78877f;margin-top:4px}
+.farm-demo button{min-height:34px}.farm-map-heading button,.farm-map-tools button{display:grid;place-items:center;border-radius:10px;background:#f0f5f4;width:34px}
+.farm-layer-tabs,.farm-field-tabs{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 12px}
+.farm-layer-tabs button,.farm-field-tabs button{padding:6px 10px;border-radius:10px;background:#f1f5ef;color:#59745d;font-size:10px}
+.farm-layer-tabs button[aria-pressed=true],.farm-field-tabs button[aria-pressed=true]{background:#426c58;color:white}
+.farm-canvas-scroll{width:100%;overflow:auto;background:#19372e;overscroll-behavior:contain}
+.farm-canvas{min-width:100%;aspect-ratio:1000/560}.farm-canvas svg{display:block;width:100%;height:100%}
+.farm-map-tools{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:10px;color:#73827c}.farm-map-tools>div{display:flex;gap:4px}
+.farm-field-detail{margin:0 12px;background:#f5f8f1;border-radius:16px;overflow:hidden}.farm-field-detail .farm-map-heading{padding:12px}
+.farm-field-detail dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 12px}.farm-field-detail dl>div{background:#fff;padding:10px;border-radius:12px}.farm-field-detail dt{font-size:10px;color:#78877f}.farm-field-detail dd{font-size:17px;font-weight:650;margin-top:5px}
+.farm-field-detail p{margin:10px 12px;font-size:11px;color:#61785d}.farm-growth{height:5px;border-radius:5px;background:#dfe9da;margin:0 12px}.farm-growth i{display:block;height:100%;border-radius:5px;background:#849f51}
+.farm-action{display:flex;align-items:center;justify-content:center;gap:7px;background:#263e31;color:#fff;border-radius:12px;margin:12px;width:calc(100% - 24px);font-size:12px}
+.farm-credit{font-size:9px;line-height:1.6;color:#78847c;padding:8px 12px}
+.farm-expanded{position:fixed;inset:8px;z-index:75;max-width:900px;margin:auto;overflow-y:auto;box-shadow:0 0 0 100vmax #13291fe0}
+.farm-expanded .farm-canvas{min-width:580px}.farm-patrol-controls{display:flex;align-items:center;justify-content:space-between;padding:12px;font-size:12px}.farm-patrol-controls button{background:#263e31;color:white;border-radius:999px;padding:9px 15px}
+.real-field{cursor:pointer;transition:fill 220ms,stroke 220ms}.real-field:focus-visible{outline:none;stroke:#fff;stroke-width:5}
+.field-map-label.selected .field-label-box{fill:#f4f8e9}.field-map-label.selected text{fill:#315d42}.rover-heading{transition:transform 300ms linear}.rover-position{transition:transform 100ms linear}
+.farm-fleet{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.farm-fleet button{padding:12px;border:1px solid #e1e9df;border-radius:16px;background:white;text-align:left}.farm-fleet button[aria-pressed=true]{background:#e6eed3;border-color:#9eaf7b}.farm-fleet strong{display:block;font-size:12px}.farm-fleet small{display:block;font-size:10px;color:#74826a;margin-top:5px}.farm-fleet progress{height:4px;width:100%;accent-color:#789650}
+@media(prefers-reduced-motion:reduce){.rover-position,.rover-heading{transition:none}}
+.farm-leaf-video{height:180px;object-fit:cover}

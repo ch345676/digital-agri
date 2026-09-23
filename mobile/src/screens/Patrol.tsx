@@ -1,36 +1,23 @@
 import AmbientVideo from '../components/AmbientVideo'
 import { useEffect, useRef, useState } from 'react'
 import {
-  ChevronLeft, Layers, LocateFixed, Maximize2, X, Video,
+  ChevronLeft, Maximize2, X, Video,
   Camera, Lightbulb, FlaskConical, ScanSearch, Move, Droplets, BatteryCharging,
   TriangleAlert, ImageIcon, ClipboardCheck, Lock,
 } from 'lucide-react'
 import { AnimatePresence, motion, animate } from 'framer-motion'
-import L from 'leaflet'
+import FarmMap from '../components/FarmMap'
+import { ROUTE as FARM_ROUTE, routePosition } from '../farm-route'
 import { Glass, stagger, fadeUp, EASE } from '../components/anim'
-import { SatMap, toggleLabels, type SatCenter } from '../components/SatMap'
-import { DEMO_LOCATION } from '../lib/weather'
-import { useStore, nowHM, type SoilTest, type PatrolAlert } from '../store'
-import { usePerm } from '../auth'
 
-/* 巡检路线（沿田埂折线），逻辑坐标 360x210，渲染时换算为经纬度偏移 */
-const ROUTE: [number, number][] = [
-  [30, 180], [120, 180], [120, 120], [200, 120], [200, 60], [300, 60], [300, 140],
-  [240, 140], [240, 190], [150, 190], [150, 150], [60, 150], [60, 100], [30, 100],
-]
-const DOCK: [number, number] = ROUTE[0] // 充电桩（路线起点）
-const FIELD_POLY = [[24, 196], [24, 44], [312, 44], [312, 196]]
-const WAYPOINT_NAMES = [
-  '充电桩', '东侧田埂 · 南段', '3号南瓜田 · 东界', '3号南瓜田 · 东北角', '3号南瓜田 · 北界',
-  '灌溉阀组', '北界田埂 · 西段', '土壤采样点 A', '2号南瓜田 · 东界', '2号南瓜田 · 南界',
-  '1号南瓜田', '南界田埂 · 西段', '西南角', '返回充电桩',
-]
-/* 历史异常分区（网格语义：3x3 小方格块） */
-const ANOMALIES: { x: number; y: number; color: string }[] = [
-  { x: 200, y: 90, color: '#e8604c' },
-  { x: 262, y: 140, color: '#e8a04c' },
-  { x: 62, y: 126, color: '#e8a04c' },
-]
+
+import { useStore, nowHM, type SoilTest, type PatrolAlert } from '../store'
+import { usePerm, useAuth, storageKeyFor } from '../auth'
+
+// Coordinates retain the mobile record format (360 × 210), mapped to the desktop farm.
+const ROUTE: [number, number][] = FARM_ROUTE.map(([x,y])=>[x*360/1000,y*210/560])
+const DOCK: [number, number] = ROUTE[0]
+const WAYPOINT_NAMES = ['A1 水稻','A1 北侧田埂','A2 玉米','A2 南侧田埂','B1 大豆','B1 北侧田埂','C1 试验田','C1 南侧田埂','东侧管线','B2 北侧田埂','B2 蔬菜','B2 东侧田埂','B2 采样点']
 const GEARS = [
   { k: 'D1', speed: 0.6 },
   { k: 'D2', speed: 1.2 },
@@ -42,63 +29,7 @@ const MODULES = [
   'USB 工业摄像头（云台）', '泵 / 过滤器 / 管路', '下层 · 电池组', '底部 · 光学检测模块',
 ]
 
-/* 逻辑坐标 → 经纬度（围绕中心点） */
-const LNG_SPAN = 0.005
-const LAT_SPAN = 0.0029
-const toLatLng = (c: SatCenter, px: number, py: number): [number, number] => [
-  c.lat + ((105 - py) / 210) * LAT_SPAN,
-  c.lon + ((px - 180) / 360) * LNG_SPAN,
-]
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
-
-/* 覆盖物图标 */
-const wpIcon = () => L.divIcon({ className: 'lm-pin', html: '<span class="lm-wp"></span>', iconSize: [6, 6], iconAnchor: [3, 3] })
-const dockIcon = () => L.divIcon({ className: 'lm-pin', html: '<span class="lm-home">⚡</span>', iconSize: [22, 22], iconAnchor: [11, 11] })
-/* 土壤检测点编号小旗 */
-const flagIcon = (label: string) =>
-  L.divIcon({
-    className: 'lm-pin lm-flag',
-    html: `<span style="display:flex;align-items:center;gap:2px;background:rgba(11,15,12,0.88);border:1px solid rgba(163,230,53,0.6);border-radius:4px;padding:1px 4px;font-size:8px;line-height:1.4;color:#a3e635;white-space:nowrap">⚑ ${label}</span>`,
-    iconSize: [40, 14],
-    iconAnchor: [3, 7],
-  })
-
-/* 网格分区块（3x3 小方格高亮，对齐真实网格地图语义） */
-const drawGridBlock = (g: L.LayerGroup, c: SatCenter, cx: number, cy: number, color: string) => {
-  const s = 8
-  const gap = 1.5
-  for (let i = -1; i <= 1; i++) {
-    for (let j = -1; j <= 1; j++) {
-      const x0 = cx + i * (s + gap) - s / 2
-      const y0 = cy + j * (s + gap) - s / 2
-      L.polygon(
-        [toLatLng(c, x0, y0), toLatLng(c, x0 + s, y0), toLatLng(c, x0 + s, y0 + s), toLatLng(c, x0, y0 + s)],
-        { color, weight: 0.5, fillColor: color, fillOpacity: 0.32 },
-      ).addTo(g)
-    }
-  }
-}
-
-/* ROVER_SKIN: 换皮单一引用点 —— 真实车体俯视图：方箱体 + 摄像头立杆 + 四轮（前后反向转向态） */
-const roverIcon = () =>
-  L.divIcon({
-    className: 'lm-pin lm-rover',
-    html: `<svg width="40" height="40" viewBox="0 0 40 40">
-      <circle cx="20" cy="20" r="16" fill="rgba(163,230,53,0.10)"/>
-      <rect x="9" y="10.5" width="4.5" height="7" rx="1.8" fill="rgba(237,242,238,0.6)" transform="rotate(-12 11.25 14)"/>
-      <rect x="26.5" y="10.5" width="4.5" height="7" rx="1.8" fill="rgba(237,242,238,0.6)" transform="rotate(-12 28.75 14)"/>
-      <rect x="9" y="22.5" width="4.5" height="7" rx="1.8" fill="rgba(237,242,238,0.6)" transform="rotate(12 11.25 26)"/>
-      <rect x="26.5" y="22.5" width="4.5" height="7" rx="1.8" fill="rgba(237,242,238,0.6)" transform="rotate(12 28.75 26)"/>
-      <rect x="12.5" y="8" width="15" height="24" rx="2.5" fill="#c9cfc9"/>
-      <rect x="14" y="12.5" width="12" height="13.5" rx="1.5" fill="#EDF2EE"/>
-      <rect x="21.3" y="8.6" width="2.6" height="5.5" rx="1.3" fill="#dfe4df"/>
-      <circle cx="22.6" cy="8.8" r="2.7" fill="#EDF2EE" stroke="rgba(10,15,12,0.4)" stroke-width="0.6"/>
-      <circle cx="22.6" cy="8.8" r="0.9" fill="#0a0f0c"/>
-      <rect x="16.5" y="27.5" width="7" height="3" rx="1.2" fill="rgba(10,15,12,0.45)"/>
-    </svg>`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  })
 
 type Mode = 'auto' | 'manual'
 type RoverStatus = 'cruise' | 'returning' | 'docked'
@@ -114,19 +45,30 @@ const genSpectrum = () =>
   })
 const spectrumPoints = (s: number[]) => s.map((v, i) => `${(i / (s.length - 1)) * 300},${88 - (v / 100) * 80}`).join(' ')
 
+const ROBOTS = [{id:'01',field:'A1',job:'多光谱叶面扫描',battery:86},{id:'02',field:'B1',job:'病害复查与采样',battery:72},{id:'03',field:'B2',job:'作物成熟度采集',battery:64},{id:'04',field:'基地',job:'充电待机',battery:98}]
+type FleetRun = {progress:number;running:boolean}
+const initialFleet: FleetRun[] = [{progress:42,running:true},{progress:28,running:true},{progress:65,running:true},{progress:0,running:false}]
+function loadFleet(key:string):FleetRun[]{try{const data=JSON.parse(localStorage.getItem(key)??'null');if(Array.isArray(data)&&data.length===4&&data.every(r=>Number.isFinite(r.progress)&&r.progress>=0&&r.progress<=100&&typeof r.running==='boolean'))return data}catch{/* optional persistence */}return initialFleet.map(r=>({...r}))}
+
 export default function Patrol() {
   const {
     setScreen, headlight, setHeadlight, roverShots, addRoverShot,
     soilTests, addSoilTest, patrolAlerts, addPatrolAlert, confirmPatrolAlert,
   } = useStore()
   const { isAdmin, needAdmin, needLogin } = usePerm()
+  const {session} = useAuth()
+  const fleetKey=storageKeyFor(session!, 'farm-patrol-demo-v2')
+  const [fleet,setFleet]=useState(()=>loadFleet(fleetKey))
+  const fleetRef=useRef(fleet)
+  const [selectedRobot,setSelectedRobot]=useState(0)
+  const robot=ROBOTS[selectedRobot]
   const [mode, setMode] = useState<Mode>('auto')
   const [status, setStatus] = useState<RoverStatus>('cruise')
-  const [cruising, setCruising] = useState(true)
+  const [cruising, setCruising] = useState(fleet[0].running)
   const [gear, setGear] = useState(1)
-  const [tele, setTele] = useState({ battery: 68, speed: 1.2, mileage: 2.6, signal: -62 })
-  const [progress, setProgress] = useState(38)
-  const [elapsed, setElapsed] = useState(12 * 60 + 45) // 秒
+  const [tele, setTele] = useState({ battery: 86, speed: 1.2, mileage: 2.6, signal: -62 })
+  const [progress, setProgress] = useState(fleet[0].progress)
+  const [elapsed, setElapsed] = useState(Math.floor(fleet[0].progress*4)) // 秒
   const [nextTarget, setNextTarget] = useState(WAYPOINT_NAMES[1])
   const [knob, setKnob] = useState<[number, number]>([0, 0])
   const [toast, setToast] = useState<string | null>(null)
@@ -141,18 +83,20 @@ export default function Patrol() {
   const [showExploded, setShowExploded] = useState(false)
 
   /* 地图相关 ref */
-  const mapWrapRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<L.Map | null>(null)
-  const overlayRef = useRef<L.LayerGroup | null>(null)
-  const roverMarkerRef = useRef<L.Marker | null>(null)
-  const centerRef = useRef<SatCenter>({ ...DEMO_LOCATION })
-  const posRef = useRef<[number, number]>([...ROUTE[1]])
-  const segRef = useRef(0)
+  const [position, setPosition] = useState<[number,number,number]>(()=>routePosition(fleet[0].progress) as [number,number,number])
+  const [visible, setVisible] = useState(!document.hidden)
+  const progressRef = useRef(fleet[0].progress)
+  useEffect(()=>{const update=()=>setVisible(!document.hidden);document.addEventListener('visibilitychange',update);return()=>document.removeEventListener('visibilitychange',update)},[])
+  const posRef = useRef<[number, number]>([position[0]*360/1000,position[1]*210/560])
   const speedRef = useRef(1.2)
   const joyRef = useRef({ dx: 0, dy: 0, mag: 0 })
   const joyBaseRef = useRef<HTMLDivElement>(null)
   const toastTimer = useRef<number | null>(null)
-  const alertZonesRef = useRef<{ x: number; y: number }[]>([])
+  const delayed=useRef<number[]>([])
+  const collectors=useRef<number[]>([])
+  const schedule=(fn:()=>void,ms:number)=>{const id=window.setTimeout(fn,ms);delayed.current.push(id);return id}
+  useEffect(()=>()=>{delayed.current.forEach(clearTimeout);collectors.current.forEach(clearInterval)},[])
+
   /* 供长驻 interval 读取的最新状态 */
   const modeRef = useRef(mode)
   const statusRef = useRef(status)
@@ -163,20 +107,40 @@ export default function Patrol() {
   useEffect(() => { cruisingRef.current = cruising }, [cruising])
   useEffect(() => { gearRef.current = gear }, [gear])
 
+  useEffect(()=>{
+    fleetRef.current[selectedRobot]={progress,running:cruising&&mode==='auto'&&status==='cruise'&&selectedRobot<3}
+  },[progress,cruising,mode,status,selectedRobot])
+  useEffect(()=>{
+    const save=()=>{try{localStorage.setItem(fleetKey,JSON.stringify(fleetRef.current))}catch{/* storage may be unavailable */}}
+    const tick=setInterval(()=>{
+      fleetRef.current=fleetRef.current.map((r,i)=>i!==selectedRobot&&i<3&&r.running&&!document.hidden?{progress:Math.min(100,r.progress+.25),running:r.progress+.25<100}:r)
+      setFleet(fleetRef.current.map(r=>({...r})));save()
+    },1000)
+    window.addEventListener('pagehide',save)
+    return()=>{clearInterval(tick);save();window.removeEventListener('pagehide',save)}
+  },[selectedRobot,fleetKey])
+  const chooseRobot=(index:number)=>{
+    if(index===selectedRobot||soilPhase!=='idle'||scanPhase!=='idle'||status==='returning')return
+    const run=fleetRef.current[index];setSelectedRobot(index);progressRef.current=run.progress;setProgress(run.progress)
+    setCruising(index<3&&run.running);setStatus(index===3?'docked':'cruise');setMode('auto');setElapsed(Math.floor(run.progress*4))
+    const point=routePosition(run.progress) as [number,number,number];setPosition(point);posRef.current=[point[0]*360/1000,point[1]*210/560]
+    setTele(t=>({...t,battery:ROBOTS[index].battery,speed:run.running?1.2:0}));joyRef.current={dx:0,dy:0,mag:0};setKnob([0,0])
+  }
   const syncRover = () => {
-    const m = roverMarkerRef.current
-    if (m) m.setLatLng(toLatLng(centerRef.current, posRef.current[0], posRef.current[1]))
+    const [x,y] = posRef.current
+    setPosition(prev => [x*1000/360,y*560/210, Math.abs(x*1000/360-prev[0])+Math.abs(y*560/210-prev[1])>.01 ? Math.atan2(y*560/210-prev[1],x*1000/360-prev[0])*180/Math.PI+90 : prev[2]])
   }
 
   const showToast = (t: string) => {
     setToast(t)
     if (toastTimer.current) window.clearTimeout(toastTimer.current)
-    toastTimer.current = window.setTimeout(() => setToast(null), 2200)
+    toastTimer.current = schedule(() => setToast(null), 2200)
   }
 
   /* 遥测微跳 + 进度缓增（2s 节拍） */
   useEffect(() => {
     const t = setInterval(() => {
+      if(document.hidden) return
       const spd = statusRef.current === 'docked' ? 0 : speedRef.current
       setTele((p) => ({
         battery: Math.max(1, Math.round((p.battery - 0.05) * 10) / 10),
@@ -185,43 +149,31 @@ export default function Patrol() {
         signal: Math.round(-62 + (Math.random() - 0.5) * 7),
       }))
       if (modeRef.current === 'auto' && statusRef.current === 'cruise' && cruisingRef.current) {
-        setProgress((p) => Math.min(99, Math.round((p + 0.3) * 10) / 10))
         setElapsed((e) => e + 2)
       }
     }, 2000)
     return () => clearInterval(t)
   }, [])
 
-  /* 自动巡航：沿田埂路线循环（framer-motion 驱动，直接写 marker） */
+  // Same distance-based route and 0.25%/second simulation as desktop. No restart on resume.
   useEffect(() => {
-    if (mode !== 'auto' || status !== 'cruise' || !cruising) return
-    speedRef.current = 1.2
-    const controls = animate(0, 1, {
-      duration: 72,
-      repeat: Infinity,
-      ease: 'linear',
-      onUpdate: (t) => {
-        const n = ROUTE.length
-        const seg = t * n
-        const i = Math.floor(seg) % n
-        const f = seg - Math.floor(seg)
-        const a = ROUTE[i]
-        const b = ROUTE[(i + 1) % n]
-        posRef.current = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]
-        syncRover()
-        if (i !== segRef.current) {
-          segRef.current = i
-          setNextTarget(WAYPOINT_NAMES[(i + 1) % n])
-        }
-      },
-    })
-    return () => controls.stop()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, status, cruising])
+    if (selectedRobot===3 || mode !== 'auto' || status !== 'cruise' || !cruising || !visible) { speedRef.current=0; return }
+    speedRef.current=1.2
+    const timer=setInterval(()=>{
+      const next=Math.min(100,progressRef.current+.025)
+      progressRef.current=next; setProgress(next)
+      const point=routePosition(next) as [number,number,number]
+      setPosition(point);posRef.current=[point[0]*360/1000,point[1]*210/560]
+      const nearest=ROUTE.reduce((best,p,i)=>Math.hypot(p[0]-posRef.current[0],p[1]-posRef.current[1])<Math.hypot(ROUTE[best][0]-posRef.current[0],ROUTE[best][1]-posRef.current[1])?i:best,0)
+      setNextTarget(WAYPOINT_NAMES[Math.min(nearest+1,WAYPOINT_NAMES.length-1)])
+      if(next>=100){setCruising(false);speedRef.current=0}
+    },100)
+    return()=>clearInterval(timer)
+  }, [mode,status,cruising,visible,selectedRobot])
 
   /* 手动驾驶：30ms 循环按摇杆向量 × 挡位速度更新位置 */
   useEffect(() => {
-    if (mode !== 'manual') return
+    if (mode !== 'manual' || !visible) return
     speedRef.current = 0
     const t = setInterval(() => {
       const j = joyRef.current
@@ -239,22 +191,16 @@ export default function Patrol() {
       }
     }, 30)
     return () => clearInterval(t)
-  }, [mode])
-
-  /* 全屏切换后通知 Leaflet 重算尺寸 */
-  useEffect(() => {
-    const onFs = () => setTimeout(() => mapRef.current?.invalidateSize(), 120)
-    document.addEventListener('fullscreenchange', onFs)
-    return () => document.removeEventListener('fullscreenchange', onFs)
-  }, [])
+  }, [mode, visible])
 
   const fmtTime = (s: number) => `${`${Math.floor(s / 60)}`.padStart(2, '0')}:${`${s % 60}`.padStart(2, '0')}`
-  const remaining = Math.max(0, Math.round(((100 - progress) / 100) * 32 * 60))
+  const remaining = Math.max(0, Math.round((100 - progress) * 4))
 
   /* 一键回充 / 就位后再出发 */
   const goDock = () => {
-    if (status === 'returning') return
-    if (status === 'docked') {
+    if (selectedRobot===3 || status === 'returning') return
+    if (status === 'docked' || progressRef.current >= 100) {
+      progressRef.current=0;setProgress(0)
       setStatus('cruise')
       setMode('auto')
       setCruising(true)
@@ -292,11 +238,11 @@ export default function Patrol() {
   /* ============ 真实硬件功能 1：底部光学检测模块（土壤检测） ============ */
   const soilBusy = soilPhase !== 'idle'
   const startSoilTest = () => {
-    if (soilBusy || scanPhase !== 'idle') return
+    if (selectedRobot===3 || soilBusy || scanPhase !== 'idle') return
     setCruising(false) // 停车
     speedRef.current = 0
     setSoilPhase('descend')
-    window.setTimeout(() => {
+    schedule(() => {
       setSoilPhase('collect')
       setSoilProgress(0)
       const t0 = Date.now()
@@ -308,10 +254,11 @@ export default function Patrol() {
           finishSoilTest()
         }
       }, 100)
+      collectors.current.push(iv)
     }, 1500)
   }
   const finishSoilTest = () => {
-    const point = `B-${String(soilTests.length + 1).padStart(2, '0')}`
+    const point = `${robot.field}-${String(soilTests.length + 1).padStart(2, '0')}`
     const jit = (base: number, pct: number) => Math.round(base * (1 + (Math.random() - 0.5) * pct) * 100) / 100
     const test: SoilResult = {
       point,
@@ -327,28 +274,17 @@ export default function Patrol() {
     addSoilTest(test)
     setSoilResult(test)
     setSoilPhase('idle')
-    /* 检测点小旗立即上图 */
-    const g = overlayRef.current
-    if (g) {
-      L.marker(toLatLng(centerRef.current, test.x, test.y), { icon: flagIcon(test.point), interactive: false, keyboard: false }).addTo(g)
-    }
   }
 
-  /* ============ 真实硬件功能 2：顶部云台摄像头（扫描作物 → 病斑预警） ============ */
-  const addAlertGrid = (x: number, y: number) => {
-    alertZonesRef.current.push({ x, y })
-    const g = overlayRef.current
-    if (g) drawGridBlock(g, centerRef.current, x, y, '#e8a04c')
-  }
+  /* Scanning generates a deterministic demonstration alert for a repeatable walkthrough. */
   const startScan = () => {
-    if (scanPhase !== 'idle' || soilBusy) return
+    if (selectedRobot===3 || scanPhase !== 'idle' || soilBusy) return
     setScanPhase('scanning')
-    window.setTimeout(() => {
-      if (Math.random() < 0.6) {
+    schedule(() => {
         setScanPhase('lock')
-        window.setTimeout(() => {
+        schedule(() => {
           setScanPhase('idle')
-          const zone = `B-${String((patrolAlerts.length % 5) + 1).padStart(2, '0')}`
+          const zone = robot.field
           const base = {
             zone,
             kind: '疑似叶片病斑',
@@ -359,13 +295,8 @@ export default function Patrol() {
           }
           const id = addPatrolAlert(base)
           addRoverShot({ img: 'images/live-rover.jpg', time: nowHM() })
-          addAlertGrid(base.x, base.y)
           setAlertCard({ ...base, id })
         }, 1100)
-      } else {
-        setScanPhase('idle')
-        showToast('扫描完成 · 未发现异常')
-      }
     }, 2400)
   }
 
@@ -394,52 +325,6 @@ export default function Patrol() {
     joyRef.current = { dx: 0, dy: 0, mag: 0 }
   }
 
-  /* Leaflet 覆盖物重建（定位变化时） */
-  const buildOverlays = (map: L.Map, c: SatCenter) => {
-    centerRef.current = c
-    overlayRef.current?.remove()
-    const g = L.layerGroup().addTo(map)
-    overlayRef.current = g
-
-    /* 田块范围（亮色描边，保证深卫星图对比） */
-    L.polygon(FIELD_POLY.map(([x, y]) => toLatLng(c, x, y)), {
-      color: 'rgba(163,230,53,0.45)',
-      weight: 1,
-      fillColor: '#a3e635',
-      fillOpacity: 0.05,
-    }).addTo(g)
-    /* 巡检路线（虚线） */
-    L.polyline(ROUTE.map(([x, y]) => toLatLng(c, x, y)), {
-      color: '#a3e635',
-      weight: 1.5,
-      dashArray: '5 6',
-    }).addTo(g)
-    /* 途经点 */
-    for (const [x, y] of ROUTE) {
-      L.marker(toLatLng(c, x, y), { icon: wpIcon(), interactive: false, keyboard: false }).addTo(g)
-    }
-    /* 历史异常分区（3x3 网格块） */
-    for (const a of ANOMALIES) drawGridBlock(g, c, a.x, a.y, a.color)
-    /* 本次预警产生的橙色分区 */
-    for (const z of alertZonesRef.current) drawGridBlock(g, c, z.x, z.y, '#e8a04c')
-    /* 土壤检测点小旗（持久化记录驱动） */
-    for (const t of soilTests) {
-      L.marker(toLatLng(c, t.x, t.y), { icon: flagIcon(t.point), interactive: false, keyboard: false }).addTo(g)
-    }
-    /* 充电桩 */
-    L.marker(toLatLng(c, DOCK[0], DOCK[1]), { icon: dockIcon(), interactive: false, keyboard: false }).addTo(g)
-    /* 巡检小车 */
-    const rover = L.marker(toLatLng(c, posRef.current[0], posRef.current[1]), {
-      icon: roverIcon(),
-      interactive: false,
-      keyboard: false,
-      zIndexOffset: 100,
-    }).addTo(g)
-    roverMarkerRef.current = rover
-
-    map.fitBounds(L.latLngBounds(ROUTE.map(([x, y]) => toLatLng(c, x, y))), { padding: [26, 26] })
-  }
-
   const statusMeta =
     mode === 'manual'
       ? { text: '手动驾驶', cls: 'bg-[rgba(53,114,184,0.1)] text-[#3572b8]', pulse: true }
@@ -452,22 +337,6 @@ export default function Patrol() {
             : cruising
               ? { text: '巡航中', cls: 'bg-[rgba(22,163,74,0.08)] text-[#16a34a]', pulse: true }
               : { text: '待命', cls: 'bg-black/[0.07] text-black/40', pulse: false }
-
-  const recenter = () => {
-    const map = mapRef.current
-    if (map) map.flyTo([centerRef.current.lat, centerRef.current.lon], map.getZoom())
-  }
-  const fullscreen = () => {
-    const el = mapWrapRef.current
-    if (!el) return
-    if (document.fullscreenElement) void document.exitFullscreen()
-    else void el.requestFullscreen?.()
-  }
-  const ctrlButtons = [
-    { icon: Layers, fn: () => mapRef.current && toggleLabels(mapRef.current) },
-    { icon: LocateFixed, fn: recenter },
-    { icon: Maximize2, fn: fullscreen },
-  ]
 
   /* 硬件功能键（严格对齐真实硬件，无「鸣笛」）；操控类仅管理员可用 */
   const hwKeys = [
@@ -494,42 +363,20 @@ export default function Patrol() {
         <button onClick={() => setScreen('overview')} className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
           <ChevronLeft className="h-5 w-5 text-black/60" strokeWidth={1.5} />
         </button>
-        <h1 className="text-[17px] font-semibold tracking-[-0.02em] text-[#1a2b23]">巡检小车 · 01</h1>
+        <h1 className="text-[17px] font-semibold tracking-[-0.02em] text-[#1a2b23]">巡检小车 · {robot.id}</h1>
         <span className={`flex items-center gap-1.5 rounded-full border border-black/[0.09] px-2.5 py-1 text-[11px] font-medium ${statusMeta.cls}`}>
           <span className={`h-1.5 w-1.5 rounded-full bg-current ${statusMeta.pulse ? 'live-dot' : ''}`} />
           {statusMeta.text}
         </span>
       </header>
 
+      <div className="farm-fleet" aria-label="巡检机器人">{ROBOTS.map((r,i)=><button key={r.id} aria-pressed={i===selectedRobot} disabled={soilBusy||scanPhase!=='idle'||status==='returning'} onClick={()=>chooseRobot(i)}><strong>机器人 #{r.id} · {r.field}</strong><small>{r.job}</small><small>{i===3?'充电待机':fleet[i].progress>=100?'已完成':fleet[i].running?'巡检中':'已暂停'} · {fleet[i].progress.toFixed(1)}%</small><progress value={fleet[i].progress} max="100"/></button>)}</div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
         {/* 巡检路线地图（真实卫星影像 + 网格分区语义） */}
         <motion.div variants={fadeUp}>
-          <div ref={mapWrapRef} className="relative overflow-hidden rounded-[14px] border border-black/[0.09] bg-[#f5f7f8]">
-            <SatMap
-              className="h-[210px]"
-              badgeSide="left"
-              onMapReady={(m) => {
-                mapRef.current = m
-              }}
-              onView={buildOverlays}
-            />
-            <div className="absolute right-3 top-3 z-[500] flex flex-col gap-2">
-              {ctrlButtons.map(({ icon: Icon, fn }, i) => (
-                <button
-                  key={i}
-                  onClick={fn}
-                  className="flex h-8 w-8 flex-col items-center justify-center rounded-lg border border-black/[0.09] bg-[rgba(255,255,255,0.88)] text-black/55"
-                >
-                  <Icon className="h-4 w-4" strokeWidth={1.5} />
-                </button>
-              ))}
-            </div>
-            <div className="absolute right-3 top-3 z-[500] mt-[104px] flex flex-col gap-1 text-[9px] text-black/40">
-              <span className="w-8 text-center">图层</span>
-              <span className="w-8 text-center">居中</span>
-              <span className="w-8 text-center">全屏</span>
-            </div>
-          </div>
+          <FarmMap patrol={{progress,running:cruising&&visible&&mode==='auto'&&status==='cruise',position}} markers={[...soilTests.map(t=>({id:t.id,x:t.x*1000/360,y:t.y*560/210,kind:'soil' as const})),...patrolAlerts.map(t=>({id:t.id,x:t.x*1000/360,y:t.y*560/210,kind:'alert' as const}))]}/>
+          <div className="farm-patrol-controls"><span>路线进度 <b data-patrol-progress>{progress.toFixed(1)}%</b></span><button onClick={()=>{if(progress>=100){progressRef.current=0;setProgress(0);setStatus('cruise')}setMode('auto');setCruising(progress>=100?true:!cruising)}} disabled={selectedRobot===3||status==='returning'||soilBusy||scanPhase!=='idle'}>{selectedRobot===3?'充电待机':progress>=100?'重新演示':cruising?'暂停演示':'继续演示'}</button></div>
+          <p className="farm-credit">路线、读数和扫描结果均为仿真，不代表实时 GPS 或硬件采集。</p>
         </motion.div>
 
         {/* LIVE 画面（小车第一人称视角素材，主角卡） */}
@@ -572,7 +419,7 @@ export default function Patrol() {
             <div className="sweep absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-[rgba(22,163,74,0.08)] to-transparent" />
             <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-[rgba(10,15,11,0.8)] px-2 py-1">
               <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#e8604c]" />
-              <span className="text-[10px] font-semibold tracking-wide text-white">LIVE</span>
+              <span className="text-[10px] font-semibold tracking-wide text-white">演示画面</span>
               <span className="text-[10px] font-medium text-white/50">1080P</span>
             </div>
             <button className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-md bg-[rgba(255,255,255,0.88)]">
@@ -689,7 +536,7 @@ export default function Patrol() {
                 {(['auto', 'manual'] as const).map((m) => (
                   <button
                     key={m}
-                    onClick={() => needAdmin() && setMode(m)}
+                    disabled={selectedRobot===3} onClick={() => needAdmin() && setMode(m)}
                     className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
                       mode === m ? 'bg-[rgba(22,163,74,0.12)] text-[#16a34a]' : 'text-black/40'
                     }`}
@@ -712,10 +559,11 @@ export default function Patrol() {
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.96 }}
-                  disabled={status === 'returning'}
+                  disabled={selectedRobot===3 || status === 'returning'}
                   onClick={() => {
                     if (!needAdmin()) return
-                    if (status === 'docked') {
+                    if (status === 'docked' || progressRef.current >= 100) {
+      progressRef.current=0;setProgress(0)
                       setStatus('cruise')
                       setCruising(true)
                     } else {
@@ -812,6 +660,7 @@ export default function Patrol() {
           </Glass>
         </motion.div>
 
+        <Glass className="p-4"><div className="mb-2 text-[14px] font-semibold">叶面采集预览</div><AmbientVideo src={cruising||scanPhase!=='idle'?'./media/glass/leaf.mp4':undefined} poster="./media/glass/leaf.jpg" muted loop playsInline className="farm-leaf-video w-full rounded-2xl"/><p className="mt-2 text-[11px] text-black/50">{robot.job} · RGB / 多光谱 / 热红外辅助</p><button className="farm-action" onClick={()=>setScreen('alerts')}>查看识别预警</button><p className="farm-credit">视觉示意素材，未连接真实摄像头。</p></Glass>
         {/* 硬件功能键（对齐真实硬件） */}
         <motion.div variants={fadeUp}>
           <div className="grid grid-cols-3 gap-2">
@@ -1004,7 +853,7 @@ export default function Patrol() {
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={goDock}
-              disabled={status === 'returning'}
+              disabled={selectedRobot===3 || status === 'returning'}
               className={`flex h-[74px] w-[74px] shrink-0 flex-col items-center justify-center rounded-full border font-medium ${
                 status !== 'returning'
                   ? 'border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.06)] text-[#16a34a]'

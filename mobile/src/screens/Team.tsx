@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { Search, Bell, ChevronRight, Camera, Send, AlertTriangle, Wrench, Droplets, Bug, Tractor, Car, Sprout, Lock } from 'lucide-react'
 import { motion } from 'framer-motion'
-import L from 'leaflet'
+import FarmMap from '../components/FarmMap'
 import { Glass, SectionTitle, Ring, CountUp, stagger, fadeUp, EASE } from '../components/anim'
-import { SatMap, type SatCenter } from '../components/SatMap'
+
 import { useStore, nowHM } from '../store'
 import { usePerm } from '../auth'
 
@@ -21,39 +21,6 @@ const MACHINES = [
   { icon: Tractor, name: '智能拖拉机', pct: 65, status: '作业中 · 田块B2', active: true },
   { icon: Sprout, name: '播种机', pct: 0, status: '待命中 · 田块C3', active: false },
 ]
-
-const MAP_FIELDS = [
-  { label: 'A2', points: '30,20 110,14 118,66 38,72', status: 'done', lx: 72, ly: 46 },
-  { label: 'B2', points: '30,80 118,74 126,130 38,136', status: 'doing', lx: 76, ly: 108 },
-  { label: 'B2', points: '126,20 210,14 218,72 134,66', status: 'doing', lx: 172, ly: 46 },
-  { label: 'C1', points: '134,80 218,74 226,130 142,136', status: 'todo', lx: 180, ly: 108 },
-]
-
-const MAP_PINS = [
-  { x: 100, y: 24, color: '#16a34a' },
-  { x: 40, y: 118, color: '#e8a04c' },
-  { x: 205, y: 112, color: '#16a34a' },
-]
-
-const MAP_COLORS: Record<string, string> = {
-  doing: 'rgba(22,163,74,0.22)',
-  todo: 'rgba(232,160,76,0.22)',
-  done: 'rgba(255,255,255,0.1)',
-}
-
-/* 逻辑坐标（250x150）→ 经纬度（围绕定位中心） */
-const T_LNG_SPAN = 0.006
-const T_LAT_SPAN = 0.0036
-const tToLatLng = (c: SatCenter, px: number, py: number): [number, number] => [
-  c.lat + ((75 - py) / 150) * T_LAT_SPAN,
-  c.lon + ((px - 125) / 250) * T_LNG_SPAN,
-]
-const parsePts = (s: string) => s.split(' ').map((p) => p.split(',').map(Number) as [number, number])
-
-const tLabelIcon = (label: string) =>
-  L.divIcon({ className: 'lm-pin', html: `<span class="lm-tfield">${label}</span>`, iconSize: [0, 0], iconAnchor: [0, 0] })
-const tPinIcon = (color: string) =>
-  L.divIcon({ className: 'lm-pin', html: `<span class="lm-mpin" style="background:${color}"></span>`, iconSize: [14, 14], iconAnchor: [7, 12] })
 
 const ALERTS = [
   { icon: Droplets, tone: '#e8a04c', title: '土壤湿度偏低', desc: '田块A2土壤湿度低于设定值', time: '08:45' },
@@ -74,31 +41,6 @@ export default function Team() {
   const [input, setInput] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const replyIdx = useRef(0)
-  const taskOverlayRef = useRef<L.LayerGroup | null>(null)
-
-  /* 任务地图覆盖物重建（定位变化时） */
-  const buildTaskOverlays = (map: L.Map, c: SatCenter) => {
-    taskOverlayRef.current?.remove()
-    const g = L.layerGroup().addTo(map)
-    taskOverlayRef.current = g
-    const allPts: [number, number][] = []
-    for (const f of MAP_FIELDS) {
-      const pts = parsePts(f.points)
-      allPts.push(...pts)
-      L.polygon(pts.map(([x, y]) => tToLatLng(c, x, y)), {
-        color: 'rgba(255,255,255,0.12)',
-        weight: 1,
-        fillColor: MAP_COLORS[f.status],
-        fillOpacity: 1,
-      }).addTo(g)
-      L.marker(tToLatLng(c, f.lx, f.ly), { icon: tLabelIcon(f.label), interactive: false, keyboard: false }).addTo(g)
-    }
-    for (const p of MAP_PINS) {
-      L.marker(tToLatLng(c, p.x, p.y), { icon: tPinIcon(p.color), interactive: false, keyboard: false }).addTo(g)
-    }
-    map.fitBounds(L.latLngBounds(allPts.map(([x, y]) => tToLatLng(c, x, y))), { padding: [16, 16] })
-  }
-
   const send = () => {
     if (!needLogin()) return
     const text = input.trim()
@@ -229,11 +171,11 @@ export default function Team() {
         </motion.div>
 
         {/* 任务地图 + 拍照打卡 */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3.5">
+        <motion.div variants={fadeUp} className="grid grid-cols-1 gap-3.5">
           <Glass className="p-3.5">
             <SectionTitle title="任务地图" />
             <div className="overflow-hidden rounded-[10px] border border-black/[0.08]">
-              <SatMap className="h-[130px]" onView={buildTaskOverlays} />
+              <FarmMap compact />
             </div>
             <div className="mt-1.5 flex items-center gap-3 text-[9px] text-black/40">
               <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#16a34a]" />进行中</span>
