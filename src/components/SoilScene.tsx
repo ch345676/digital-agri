@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type CSSProperties } from 'react'
 import { Pause, Play, ScanLine } from 'lucide-react'
 import { useMotion } from './motion-context'
 import { useSceneCanvas, type SceneDraw } from './use-scene-canvas'
 import { curvePoint, traceCurve, glow, type Curve } from './scene-drawing'
+const ELEMENTS = [{symbol:'N',name:'氮',index:4,x:17,y:59,color:'#d3eaa1'},{symbol:'P',name:'磷',index:5,x:80,y:59,color:'#eacb89'},{symbol:'K',name:'钾',index:6,x:28,y:78,color:'#addbbb'},{symbol:'OM',name:'有机质',index:7,x:68,y:77,color:'#d6b58a'}]
 const MODES = ['温度分布', '水分迁移', '离子分布', '酸碱观察', '氮素通道', '磷素通道', '钾素通道', '有机质分布']
 export default function SoilScene({ selected, value, unit, onSelect }: { selected: number; value: number; unit: string; onSelect: (index: number) => void }) {
   const [paused, setPaused] = useState(false)
@@ -36,6 +37,24 @@ export default function SoilScene({ selected, value, unit, onSelect }: { selecte
         ctx.fillStyle = '#f5ffeb'; ctx.beginPath(); ctx.arc(x, y, selected === 1 ? 1.4 : 1, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1
       }
     }
+    if (selected >= 4) {
+      const element = ELEMENTS[selected - 4]
+      // Explicit symbols remain legible while small tracer labels move toward roots.
+      for (let lane = 0; lane < 4; lane++) {
+        const side = lane % 2 ? 1 : -1
+        const p: Curve = [[w * (.5 + side * .35), h * (.57 + Math.floor(lane / 2) * .2)], [w * (.5 + side * .3), h * .72], [w * (.5 + side * .16), h * .6], [w * .5, h * .46]]
+        for (let n = 0; n < 2; n++) {
+          const phase = (n / 2 + lane * .11 + t * .065) % 1
+          const [x, y] = curvePoint(p, phase)
+          ctx.font = '600 ' + Math.max(10, Math.min(13, w / 45)) + 'px system-ui'
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+          ctx.shadowColor = '#0c201a'; ctx.shadowBlur = 5; ctx.strokeStyle = '#163026'; ctx.lineWidth = 3
+          ctx.globalAlpha = .5 + Math.sin(phase * Math.PI) * .45
+          ctx.strokeText(element.symbol, x, y); ctx.fillStyle = element.color; ctx.fillText(element.symbol, x, y)
+          ctx.globalAlpha = 1; ctx.shadowBlur = 0
+        }
+      }
+    }
     // Soft particles suspended in pores, rather than uniform dotted arrows.
     for (let i = 0; i < 28; i++) {
       const x = w * (.09 + ((i * 73) % 83) / 100), y = h * (.47 + ((i * 29) % 47) / 100) + Math.sin(t * .45 + i) * 3
@@ -56,7 +75,12 @@ export default function SoilScene({ selected, value, unit, onSelect }: { selecte
     <img className="soil-profile-photo" src={`${import.meta.env.BASE_URL}media/insights/soil-root-profile-v2.webp`} alt="写实生成的田间幼苗与土壤根系剖面示意，非现场照片或实测剖面" width="1536" height="1024"/>
     <canvas ref={canvas} aria-hidden="true"/>
     <div className="soil-scene-toolbar"><span><ScanLine size={13}/>{MODES[selected]}</span><button aria-label={paused ? '播放土壤特效' : '暂停土壤特效'} disabled={!enabled} onClick={() => setPaused(!paused)}>{paused || !enabled ? <Play size={13}/> : <Pause size={13}/>}</button></div>
-    <div className="soil-scene-reading" key={selected}><span>当前演示读数</span><b>{value}<small>{unit}</small></b></div>
+    {selected >= 4 && <div className="soil-element-layer" aria-label="土壤元素示意选择">
+      <svg className="soil-element-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{ELEMENTS.map(e=><path key={e.symbol} d={`M${e.x} ${e.y} Q${(e.x+50)/2} ${e.y+2} 50 47`} className={selected===e.index?'active':''} style={{stroke:e.color}}/>)}</svg>
+      {ELEMENTS.map(e=><button key={e.symbol} data-element={e.symbol} className={`soil-element-node ${selected===e.index?'active':''}`} style={{left:`${e.x}%`,top:`${e.y}%`,'--element-color':e.color} as CSSProperties} onClick={()=>onSelect(e.index)} aria-label={`查看${e.name}含量`} aria-pressed={selected===e.index}><b>{e.symbol}</b><span>{e.name}</span></button>)}
+      <span className="soil-element-note">元素分布示意 · 非实测位置</span>
+    </div>}
+    <div className="soil-scene-reading" key={selected}><span>{selected>=4?ELEMENTS[selected-4].name+'含量':'当前演示读数'}</span><b>{value}<small>{unit}</small></b></div>
     <div className="soil-scene-tabs" aria-label="图谱效果"><button aria-pressed={selected === 1} onClick={() => onSelect(1)}>水分</button><button aria-pressed={selected === 3} onClick={() => onSelect(3)}>酸碱</button><button aria-pressed={selected >= 4} onClick={() => onSelect(4)}>养分</button></div>
   </div>
 }

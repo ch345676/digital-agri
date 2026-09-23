@@ -10,7 +10,7 @@ export default function SoilExplorer({sample}:{sample:SoilSample}){
  const metrics=soilMetrics(sample),metric=metrics[selected],position=metricPosition(metric.value,metric.range)
  const warnings=metrics.filter(m=>m.warning)
  return <section className="soil-explorer panel">
-  <div className="soil-visual"><div className="soil-visual-heading"><span className="insight-kicker">地块体检图谱</span><h2>{sample.id} · {sample.crop}</h2><span className="soil-score">综合评分 <b><Count value={soilScore(sample)}/></b><small>/ 100</small></span></div>
+  <div className="soil-visual"><div className="soil-visual-heading"><div className="soil-heading-copy"><span className="insight-kicker">地块体检图谱</span><h2>{sample.id} · {sample.crop}</h2></div><div className="soil-score"><span>综合评分</span><div><b><Count value={soilScore(sample)}/></b><small>/ 100</small></div></div></div>
    <SoilScene selected={selected} value={metric.value} unit={metric.unit} onSelect={setSelected}/><div className="soil-visual-footer"><span><i className={warnings.length?'warning':''}/>{warnings.length?`${warnings.length} 项待复核`:'8 项指标均在参考范围内'}</span><small>写实生成示意 · 非实测剖面</small></div>
   </div>
   <div className="soil-inspector"><div className="panel-heading"><div><span className="insight-kicker">点选指标，查看所在区间</span><h3>土壤指标透视</h3></div><span className="insight-badge">{selected+1} / 8</span></div><div className="soil-metric-picker" aria-label="选择土壤指标">{metrics.map((m,i)=><button key={m.name} onClick={()=>setSelected(i)} aria-pressed={selected===i} className={`${selected===i?'selected':''} ${m.warning?'warning':''}`}><b>{SYMBOLS[i]}</b><span>{m.name}</span>{m.warning&&<i/>}</button>)}</div>
