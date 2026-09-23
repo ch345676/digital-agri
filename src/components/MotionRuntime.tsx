@@ -61,8 +61,8 @@ export default function MotionRuntime() {
       positions.forEach(({rect, clone}, key) => {
         const node = current.get(key)
         if (node) {
-          const next = node.getBoundingClientRect(), dy = rect.top - next.top
-          if (Math.abs(dy) > 2 && Math.abs(dy) < innerHeight) play(node, [{transform: `translateY(${dy}px)`}, {transform: 'none'}], 340)
+          const next = node.getBoundingClientRect(), dy = rect.top - next.top, dx=rect.left-next.left
+          if ((Math.abs(dy)>2||Math.abs(dx)>2) && Math.abs(dy)<innerHeight) play(node, [{transform: `translate(${dx}px,${dy}px)`}, {transform: 'none'}], 340)
         } else if (key.startsWith('task-')) {
           clone.classList.remove('motion-pending'); clone.classList.add('motion-ghost')
           clone.inert = true; clone.setAttribute('aria-hidden', 'true'); clone.removeAttribute('data-motion-item')
@@ -94,6 +94,8 @@ export default function MotionRuntime() {
     register(document.body)
     mutations.observe(document.body, {childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['aria-checked', 'data-status', 'data-open']})
     document.addEventListener('click', snapshot, true)
+    document.addEventListener('drop', snapshot, true)
+    document.addEventListener('change', snapshot, true)
     document.addEventListener('input', snapshot, true)
     const visibility = () => {if(document.hidden) animations.forEach(a => a.finish())}
     document.addEventListener('visibilitychange', visibility)
@@ -101,7 +103,9 @@ export default function MotionRuntime() {
       observer.disconnect(); mutations.disconnect(); cancelAnimationFrame(frame)
       animations.forEach(a => a.cancel()); ghosts.forEach(n => n.remove())
       waiting.forEach(n => n.classList.remove('motion-pending'))
-      document.removeEventListener('click', snapshot, true); document.removeEventListener('input', snapshot, true)
+      document.removeEventListener('click', snapshot, true)
+      document.removeEventListener('drop', snapshot, true)
+      document.removeEventListener('change', snapshot, true); document.removeEventListener('input', snapshot, true)
       document.removeEventListener('visibilitychange', visibility)
       cancelPageTransition()
     }

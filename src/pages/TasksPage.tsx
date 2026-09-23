@@ -1,4 +1,5 @@
-import BrandMark from '../components/BrandMark'
+import {FarmEmpty} from '../components/AgriArtwork'
+import TaskBoard from '../components/TaskBoard'
 import { useMemo, useState } from 'react'
 import { Plus, Search, Play, Check, Trash2, CalendarDays, User } from 'lucide-react'
 import {
@@ -64,6 +65,7 @@ function CompletionRing({ pct }: { pct: number }) {
 
 export default function TasksPage() {
   const { tasks, members, addTask, setTaskStatus, deleteTask } = useStore()
+  const [view,setView]=useState<'list'|'board'>('list')
   const [filter, setFilter] = useState<FilterKey>('all')
   const [keyword, setKeyword] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -175,10 +177,12 @@ export default function TasksPage() {
         </div>
       </div>
 
+      <div className="task-view-switch segmented" aria-label="任务视图"><button aria-pressed={view==='list'} className={view==='list'?'active':''} onClick={()=>setView('list')}>列表视图</button><button aria-pressed={view==='board'} className={view==='board'?'active':''} onClick={()=>{setView('board');setFilter('all')}}>看板视图</button></div>
+      {view==='board'?<TaskBoard tasks={list} onCreate={()=>setDialogOpen(true)}/>:<>
       {/* 任务列表 */}
       <PageCard className="!p-2">
         {list.length === 0 && (
-          <div className="guided-empty"><BrandMark/><h3>没有符合条件的任务</h3><p>清除筛选，重新看看今天的农事安排。</p><button className="secondary-btn" onClick={()=>{setKeyword('');setFilter('all')}}>清除筛选</button></div>
+          <FarmEmpty title="没有符合条件的任务" description="清除筛选重新查看，或创建第一项农事。" action={()=>{setKeyword('');setFilter('all');if(!tasks.length)setDialogOpen(true)}} label={tasks.length?'清除筛选':'新建农事'}/>
         )}
         <ul className="divide-y divide-[#f0f6f3]">
           {list.map((t) => (
@@ -249,6 +253,7 @@ export default function TasksPage() {
         </ul>
       </PageCard>
 
+      </>}
       {/* 新建任务对话框 */}
       <Modal open={dialogOpen} title="新建任务" onClose={() => setDialogOpen(false)}>
         <div className="space-y-3.5">

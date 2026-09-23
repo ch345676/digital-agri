@@ -107,7 +107,7 @@ export default function FarmMapPage() {
 
         {/* 地块详情侧栏 */}
         {field && (
-          <div className="flex w-[320px] shrink-0 flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)]">
+          <div key={field.id} className="field-detail-enter flex w-[320px] shrink-0 flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)]">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-[18px] font-extrabold text-[#17352a]">

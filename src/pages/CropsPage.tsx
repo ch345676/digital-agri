@@ -3,6 +3,7 @@ import { Wheat, ChevronDown, ImagePlus, Trash2, NotebookPen, ArrowRight } from '
 import { useStore, FIELDS, todayStr, type FieldInfo } from '../store'
 import { PageCard, PageHeader, inputCls, btnPrimary } from '../components/bits'
 import { Expand } from '../components/Expand'
+import {CropTimeline,FarmEmpty} from '../components/AgriArtwork'
 import { CropPhoto } from '../components/CropPhoto'
 
 function CropCard({ field }: { field: FieldInfo }) {
@@ -65,7 +66,7 @@ function CropCard({ field }: { field: FieldInfo }) {
       </button>
 
       <Expand open={open} id={`crop-details-${field.id}`}>
-        <div className="border-t border-[#f0f6f3] p-5 pt-4">
+        <div className="border-t border-[#f0f6f3] p-5 pt-4"><CropTimeline percent={field.stagePct} stage={field.stageName} harvest={field.harvest}/>
           <div className="mb-3 grid grid-cols-3 gap-3 text-center">
             {[
               ['土壤湿度', `${field.soilMoisture}%`],
@@ -85,7 +86,7 @@ function CropCard({ field }: { field: FieldInfo }) {
             生长记录
           </div>
           {records.length === 0 && (
-            <p className="py-2 text-[12.5px] text-[#a4bcb1]">暂无记录，添加第一条观察记录吧。</p>
+            <FarmEmpty title="记录第一份生长" description="记下今天的长势，让每个变化都有迹可循。" action={()=>document.getElementById('growth-input-'+field.id)?.focus()} label="添加观察记录"/>
           )}
           <ul className="mb-3 max-h-[160px] space-y-2 overflow-y-auto">
             {records.map((r) => (
@@ -108,7 +109,7 @@ function CropCard({ field }: { field: FieldInfo }) {
                 <ImagePlus className="h-4 w-4" />
               </button>
             </div>
-            <textarea
+            <textarea id={'growth-input-'+field.id}
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="记录作物长势、病虫害、农事操作…"

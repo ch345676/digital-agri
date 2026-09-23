@@ -3,6 +3,7 @@ import { useEffect, useRef, useId, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore } from '../store'
 import { SCENES } from '../media'
+import {useMotion} from './motion-context'
 import { usePresence } from './use-presence'
 
 /* 通用页面卡片 */
@@ -36,13 +37,16 @@ export function Modal({
   onClose,
   children,
   width = 'w-[420px]',
+  origin,
 }: {
   open: boolean
   title: string
   onClose: () => void
   children: ReactNode
   width?: string
+  origin?: DOMRect | null
 }) {
+  const {enabled}=useMotion()
   const present = usePresence(open)
   const dialog = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -64,6 +68,16 @@ export function Modal({
     document.addEventListener('keydown', key)
     return () => { document.removeEventListener('keydown', key); previous?.focus() }
   }, [open])
+  useEffect(()=>{
+    const node=dialog.current
+    if(!node||!origin||!enabled||matchMedia('(prefers-reduced-motion: reduce)').matches)return
+    const rect=node.getBoundingClientRect()
+    const transform='translate('+(origin.left-rect.left)+'px,'+(origin.top-rect.top)+'px) scale('+origin.width/rect.width+','+origin.height/rect.height+')'
+    const frames=[{transform,opacity:.25,borderRadius:'24px'},{transform:'none',opacity:1,borderRadius:'18px'}]
+    node.style.transformOrigin='top left'
+    const animation=node.animate(open?frames:frames.slice().reverse(),{duration:open?420:170,easing:'cubic-bezier(.22,1,.36,1)'})
+    return()=>{animation.cancel();node.style.transformOrigin=''}
+  },[open,origin,enabled,present])
   if (!present) return null
   return createPortal(
     <div
