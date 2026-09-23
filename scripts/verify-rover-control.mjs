@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
-import { readFile } from 'node:fs/promises'
+import { readFile, mkdir } from 'node:fs/promises'
 import { resolve, extname, sep } from 'node:path'
 import puppeteer from 'puppeteer-core'
 
@@ -22,13 +22,13 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 try {
   for (const width of [320, 390, 768]) {
     await page.setViewport({ width, height: 860, deviceScaleFactor: 1 })
-    for (const screen of ['route', 'control', 'camera']) {
+    for (const screen of ['route', 'control', 'camera', 'album', 'spray']) {
       await page.goto(`http://127.0.0.1:${port}/#${screen}`, { waitUntil: 'networkidle0' })
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `horizontal overflow at ${width}px on ${screen}`)
       assert.equal(await page.$eval(`#page-${screen}`, el => el.hidden), false)
       assert.equal(await page.$eval(`[data-nav="${screen}"]`, el => el.getAttribute('aria-current')), 'page')
       assert.equal(await page.evaluate(() => scrollY), 0, `page ${screen} starts at the top`)
-      for (const other of ['route', 'control', 'camera'].filter(name => name !== screen)) assert.equal(await page.$eval(`#page-${other}`, el => el.hidden), true)
+      for (const other of ['route', 'control', 'camera', 'album', 'spray'].filter(name => name !== screen)) assert.equal(await page.$eval(`#page-${other}`, el => el.hidden), true)
     }
   }
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 })
@@ -83,6 +83,30 @@ try {
   assert.equal(await page.$eval('#capture-count', el => el.textContent), '1 张')
   assert.equal(await page.$eval('#pan-angle', el => el.textContent), '15°')
   assert.equal(await page.$eval('#light-btn', el => el.getAttribute('aria-pressed')), 'true')
+  await page.click('[data-nav="album"]')
+  await page.waitForFunction(() => !document.querySelector('#page-album')?.hidden)
+  if (process.env.ROVER_SCREENSHOTS) { await mkdir('qa', { recursive: true }); await page.screenshot({ path: 'qa/rover-album.png', fullPage: true }) }
+  assert.equal(await page.$$eval('.issue-card', cards => cards.length), 4, 'three samples plus captured record')
+  assert.match(await page.$eval('.issue-card', el => el.textContent), /A1 地块/)
+  assert.equal(await page.$$eval('#issue-markers .issue-marker', markers => markers.length), 4)
+  assert.equal(await page.$eval('.issue-card img', img => img.complete && img.naturalWidth > 0), true, 'genuine reference photo loads')
+  await page.reload({ waitUntil: 'networkidle0' })
+  assert.equal(await page.$$eval('.issue-card', cards => cards.length), 4, 'captured record persists locally')
+  await page.$eval('.issue-card .issue-actions button:last-child', el => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  await wait(200)
+  await page.click('.issue-card .issue-actions button:last-child')
+  await page.waitForFunction(() => !document.querySelector('#page-spray')?.hidden)
+  if (process.env.ROVER_SCREENSHOTS) await page.screenshot({ path: 'qa/rover-spray.png', fullPage: true })
+  assert.equal(await page.$eval('#spray-field', el => el.value), 'A1', 'album passes target field into spray plan')
+  assert.equal(await page.$eval('#spray-execute', el => el.disabled), true, 'real spray cannot start while offline')
+  await page.$eval('#spray-form button[type="submit"]', el => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  await wait(200)
+  await page.click('#spray-form button[type="submit"]')
+  assert.equal(await page.$eval('#spray-plan', el => el.hidden), false)
+  assert.match(await page.$eval('#spray-plan', el => el.textContent), /A1 地块/)
+  await page.reload({ waitUntil: 'networkidle0' })
+  assert.match(await page.$eval('#spray-plan', el => el.textContent), /A1 地块/, 'spray plan persists locally')
+  assert.equal(await page.$eval('#spray-execute', el => el.disabled), true)
   const touchPage = await browser.newPage()
   touchPage.on('pageerror', error => errors.push(error.message))
   await touchPage.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, isMobile: true, hasTouch: true })
@@ -103,5 +127,5 @@ try {
   assert.equal(await touchPage.$eval('#rover-marker', el => el.getAttribute('transform')), touchMoved, 'touch release stops rover')
   await touchPage.close()
   assert.deepEqual(errors, [])
-  console.log('Rover control: three separate pages at 320/390/768, cruise, mouse and touch joystick, buttons with release stop, emergency stop, return, camera controls passed')
+  console.log('Rover control: five pages at 320/390/768, cruise, joystick and buttons, emergency stop, return, camera, persistent issue album and offline spray plan passed')
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)) }
