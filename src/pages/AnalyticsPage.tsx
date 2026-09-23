@@ -1,185 +1,36 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { ArrowDownRight, ArrowUpRight, Download, Droplets, Leaf, Sprout, RotateCcw, SlidersHorizontal, ChartNoAxesCombined } from 'lucide-react'
+import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { chartTooltip, chartColors } from '../components/chart-theme'
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from 'recharts'
-import { PageCard, PageHeader } from '../components/bits'
+import { PageHeader } from '../components/bits'
+import { CropPhoto } from '../components/CropPhoto'
+import { Count } from '../components/Motion'
 import { FIELDS } from '../store'
 import { useMotion } from '../components/motion-context'
-
-type RangeKey = '3m' | '6m' | '12m'
-const RANGES: { key: RangeKey; label: string; months: number; weeks: number }[] = [
-  { key: '3m', label: '近 3 月', months: 3, weeks: 12 },
-  { key: '6m', label: '近半年', months: 6, weeks: 26 },
-  { key: '12m', label: '近一年', months: 12, weeks: 52 },
-]
-
-/* 确定性伪随机（保证同一月份数据稳定） */
-function seeded(seed: number): () => number {
-  let s = seed
-  return () => {
-    s = (s * 9301 + 49297) % 233280
-    return s / 233280
-  }
-}
-
-const MONTH_LABELS = (() => {
-  const labels: string[] = []
-  const now = new Date()
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    labels.push(`${d.getMonth() + 1}月`)
-  }
-  return labels
-})()
-
-const MONTHLY = (() => {
-  const rnd = seeded(42)
-  return MONTH_LABELS.map((m, i) => ({
-    month: m,
-    water: Math.round(2800 + rnd() * 1400 + Math.sin(i / 2) * 500),
-    fertilizer: Math.round(60 + rnd() * 50 + (i > 5 ? 25 : 0)),
-    completion: Math.round(68 + rnd() * 28),
-  }))
-})()
-
-const WEEKLY_YIELD = (() => {
-  const rnd = seeded(7)
-  const arr: { week: string; yield: number }[] = []
-  for (let i = 52; i >= 1; i--) {
-    arr.push({ week: `W${53 - i}`, yield: Math.round(12 + rnd() * 16 + (52 - i) / 6) })
-  }
-  return arr
-})()
-
-const PIE_COLORS = [chartColors.green, chartColors.pale, chartColors.amber, chartColors.water, chartColors.earth]
-
-const tooltipStyle = chartTooltip
-
-export default function AnalyticsPage() {
-  const { enabled } = useMotion()
-  const [range, setRange] = useState<RangeKey>('6m')
-  const months = RANGES.find((r) => r.key === range)!.months
-  const weeks = RANGES.find((r) => r.key === range)!.weeks
-
-  const monthly = useMemo(() => MONTHLY.slice(12 - months), [months])
-  const weekly = useMemo(() => WEEKLY_YIELD.slice(52 - weeks), [weeks])
-  const pieData = FIELDS.map((f) => ({ name: `${f.id} ${f.crop}`, value: f.area }))
-
-  return (
-    <div>
-      <PageHeader
-        title="数据分析"
-        desc="产量、水肥与任务完成情况一览"
-        extra={
-          <div className="flex gap-2">
-            {RANGES.map((r) => (
-              <button
-                key={r.key}
-                onClick={() => setRange(r.key)}
-                className={`rounded-lg px-3.5 py-1.5 text-[13px] transition-colors ${
-                  range === r.key
-                    ? 'border border-[#1fa756] bg-white font-semibold text-[#178a45]'
-                    : 'border border-transparent bg-[#f2f7f4] text-[#7b9489] hover:text-[#4f6b5f]'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        }
-      />
-
-      <div className="grid grid-cols-2 gap-5">
-        {/* 产量趋势 */}
-        <PageCard>
-          <h3 className="mb-3 text-[15px] font-bold text-[#17352a]">产量趋势（吨 / 周）</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={weekly} margin={{ top: 5, right: 10, bottom: 0, left: -18 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e8f2ec" />
-              <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#8aa398' }} interval={Math.floor(weeks / 8)} />
-              <YAxis tick={{ fontSize: 11, fill: '#8aa398' }} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Line type="monotone" dataKey="yield" name="产量" stroke={chartColors.green} strokeWidth={2.5} dot={false} isAnimationActive={enabled} />
-            </LineChart>
-          </ResponsiveContainer>
-        </PageCard>
-
-        {/* 水肥用量对比 */}
-        <PageCard>
-          <h3 className="mb-3 text-[15px] font-bold text-[#17352a]">水肥用量对比</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthly} margin={{ top: 5, right: 10, bottom: 0, left: -18 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e8f2ec" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8aa398' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#8aa398' }} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="water" name="灌溉用水 (m³)" fill={chartColors.water} radius={[4, 4, 0, 0]} isAnimationActive={enabled} />
-              <Bar dataKey="fertilizer" name="肥料 (kg)" fill={chartColors.green} radius={[4, 4, 0, 0]} isAnimationActive={enabled} />
-            </BarChart>
-          </ResponsiveContainer>
-        </PageCard>
-
-        {/* 作物面积占比 */}
-        <PageCard>
-          <h3 className="mb-3 text-[15px] font-bold text-[#17352a]">作物面积占比（亩）</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={55}
-                outerRadius={90}
-                paddingAngle={3}
-                isAnimationActive={enabled}
-                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                fontSize={11}
-              >
-                {pieData.map((_, i) => (
-                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={tooltipStyle} />
-            </PieChart>
-          </ResponsiveContainer>
-        </PageCard>
-
-        {/* 任务完成率 */}
-        <PageCard>
-          <h3 className="mb-3 text-[15px] font-bold text-[#17352a]">月度任务完成率（%）</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={monthly} margin={{ top: 5, right: 10, bottom: 0, left: -18 }}>
-              <defs>
-                <linearGradient id="compGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={chartColors.green} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={chartColors.green} stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e8f2ec" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#8aa398' }} />
-              <YAxis domain={[40, 100]} tick={{ fontSize: 11, fill: '#8aa398' }} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Area type="monotone" dataKey="completion" name="完成率" stroke={chartColors.green} strokeWidth={2.5} fill="url(#compGrad)" isAnimationActive={enabled} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </PageCard>
-      </div>
-    </div>
-  )
+import { downloadCSV } from '../agronomy'
+import { MONTHLY_OPERATIONS, WEEKLY_PRODUCTION, resourceScenario } from '../insight-model'
+const RANGES=[{key:'3m',label:'近 3 月',months:3,weeks:12},{key:'6m',label:'近半年',months:6,weeks:26},{key:'12m',label:'近一年',months:12,weeks:52}]
+const money=(value:number)=>value.toLocaleString('zh-CN',{maximumFractionDigits:0})
+export default function AnalyticsPage(){
+ const {enabled}=useMotion()
+ const [range,setRange]=useState('6m'),[trend,setTrend]=useState('yield'),[resource,setResource]=useState<'water'|'fertilizer'>('water'),[field,setField]=useState('A1')
+ const [waterPrice,setWaterPrice]=useState(2.4),[fertilizerPrice,setFertilizerPrice]=useState(4.8),[waterReduction,setWaterReduction]=useState(0),[fertilizerReduction,setFertilizerReduction]=useState(0)
+ const period=RANGES.find(r=>r.key===range)!,monthly=MONTHLY_OPERATIONS.slice(-period.months),weekly=WEEKLY_PRODUCTION.slice(-period.weeks)
+ const totals=monthly.reduce((a,m)=>({water:a.water+m.water,fertilizer:a.fertilizer+m.fertilizer,completion:a.completion+m.completion}),{water:0,fertilizer:0,completion:0})
+ const totalYield=weekly.reduce((sum,w)=>sum+w.yield,0),avgCompletion=totals.completion/monthly.length
+ const scenario=resourceScenario(totals.water,totals.fertilizer,waterPrice,fertilizerPrice,waterReduction,fertilizerReduction)
+ const selected=FIELDS.find(f=>f.id===field)!,totalArea=FIELDS.reduce((sum,f)=>sum+f.area,0)
+ const peakWater=monthly.reduce((a,b)=>a.water>b.water?a:b),peakYield=weekly.reduce((a,b)=>a.yield>b.yield?a:b)
+ const completionChange=monthly.at(-1)!.completion-monthly[0].completion
+ const exportScenario=()=>downloadCSV(`惠农-${period.label}-投入情景测算.csv`,[['惠农投入情景测算','演示样本；单价为可编辑假设，非市场报价'],['统计范围',period.label,`${period.months} 个月`],['项目','原用量','调整后用量','单位','假设单价（元）','调整比例（%）'],['灌溉用水',totals.water,scenario.nextWater.toFixed(2),'m³',waterPrice,waterReduction],['肥料',totals.fertilizer,scenario.nextFertilizer.toFixed(2),'kg',fertilizerPrice,fertilizerReduction],['基准投入（元）',scenario.baseline.toFixed(2)],['调整后投入（元）',scenario.next.toFixed(2)],['投入差额（元）',scenario.saving.toFixed(2)],['限制','仅水肥投入；未计人工设备等成本，未模拟减量对产量的影响']])
+ return <div className="insights-page operations-lab"><PageHeader title="经营分析" desc="从产量和资源构成出发，观察执行表现，试算不同投入情景。" extra={<div className="segmented">{RANGES.map(r=><button key={r.key} onClick={()=>setRange(r.key)} className={range===r.key?'active':''} aria-pressed={range===r.key}>{r.label}</button>)}</div>}/>
+  <div className="insight-summary-grid"><div className="insight-summary featured"><span><ChartNoAxesCombined size={17}/>累计产量</span><b><Count value={totalYield}/><small>吨</small></b><p>最近 {period.weeks} 周 · 演示产量</p></div><div className="insight-summary"><span><Droplets size={17}/>灌溉用水</span><b><Count value={totals.water}/><small>m³</small></b><p>最近 {period.months} 个月累计</p></div><div className="insight-summary"><span><Leaf size={17}/>肥料投入</span><b><Count value={totals.fertilizer}/><small>kg</small></b><p>最近 {period.months} 个月累计</p></div><div className="insight-summary"><span><Sprout size={17}/>农事执行</span><b><Count value={avgCompletion} decimals={1}/><small>%</small></b><p>所选月份完成率的平均值</p></div></div>
+  <div className="operations-main-grid"><section className="panel operations-trend"><div className="panel-heading"><div><span className="insight-kicker">投入之外，观察产出与执行</span><h3>{trend==='yield'?'产量变化':'农事完成率'}</h3></div><div className="segmented"><button className={trend==='yield'?'active':''} aria-pressed={trend==='yield'} onClick={()=>setTrend('yield')}>产量</button><button className={trend==='completion'?'active':''} aria-pressed={trend==='completion'} onClick={()=>setTrend('completion')}>执行率</button></div></div><div className="trend-reading"><strong>{trend==='yield'?weekly.at(-1)!.yield:monthly.at(-1)!.completion}<small>{trend==='yield'?'吨 / 周':'%'}</small></strong><span>{trend==='yield'?`最近一周 · ${weekly.at(-1)!.week}`:`最近一月 · ${monthly.at(-1)!.month}`}</span></div>
+   <ResponsiveContainer width="100%" height={265}><AreaChart data={trend==='yield'?weekly:monthly} margin={{top:10,right:12,bottom:0,left:-17}}><defs><linearGradient id="operations-trend" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#527b54" stopOpacity={.25}/><stop offset="100%" stopColor="#527b54" stopOpacity={0}/></linearGradient></defs><CartesianGrid vertical={false} strokeDasharray="3 6"/><XAxis dataKey={trend==='yield'?'week':'month'} axisLine={false} tickLine={false} minTickGap={28}/><YAxis domain={trend==='yield'?[0,'auto']:[0,100]} axisLine={false} tickLine={false}/><Tooltip contentStyle={chartTooltip}/><Area type="monotone" dataKey={trend==='yield'?'yield':'completion'} name={trend==='yield'?'周产量':'月完成率'} unit={trend==='yield'?' 吨':'%'} stroke="#527b54" fill="url(#operations-trend)" strokeWidth={2.5} isAnimationActive={enabled} animationDuration={450}/></AreaChart></ResponsiveContainer><div className="trend-takeaway"><ArrowUpRight size={17}/><span>{trend==='yield'?`区间峰值出现在 ${peakYield.week}，产量 ${peakYield.yield} 吨。`:`期末较期初${completionChange>=0?'增加':'减少'} ${Math.abs(completionChange)} 个百分点。`}</span></div></section>
+   <section className="panel field-portfolio"><div className="panel-heading"><div><span className="insight-kicker">点击地块，查看面积构成</span><h3>种植结构</h3></div><span className="insight-badge">{totalArea.toFixed(1)} 亩</span></div><CropPhoto key={field} fieldId={field} className="portfolio-photo"/><div className="portfolio-selection"><b>{selected.id} {selected.crop}</b><span>{selected.area} 亩 · 占 {(selected.area/totalArea*100).toFixed(1)}%</span></div><div className="field-allocation">{FIELDS.map(f=><button key={f.id} className={field===f.id?'selected':''} aria-pressed={field===f.id} onClick={()=>setField(f.id)}><span>{f.id} {f.crop.replace('（试验）','')}</span><i><em style={{width:`${f.area/totalArea*100}%`}}/></i><b>{(f.area/totalArea*100).toFixed(1)}%</b></button>)}</div><small className="insight-footnote">面积为地块演示档案，不随统计周期改变。</small></section></div>
+  <section className="panel resource-planner"><div className="panel-heading"><div><span className="insight-kicker">调整参数，立即看到构成与差额</span><h3><SlidersHorizontal size={19}/>资源投入情景测算</h3></div><button className="secondary-btn" onClick={exportScenario}><Download size={15}/>导出测算</button></div><div className="resource-planner-grid"><div className="resource-flow"><div className="resource-flow-heading"><span>{period.label} · 水肥投入构成</span><small>假设单价测算</small></div><svg viewBox="0 0 600 205" role="img" aria-label={`基准水费 ${money(scenario.waterCost)} 元，肥料费用 ${money(scenario.fertilizerCost)} 元，调整后合计 ${money(scenario.next)} 元`}><path className="resource-channel water" d="M135 60C240 60 230 100 340 100" fill="none" stroke="#7fadb2" strokeWidth={5+22*(scenario.baseline?scenario.waterCost/scenario.baseline:0)}/><path className="resource-channel nutrient" d="M135 151C240 151 230 108 340 108" fill="none" stroke="#c4ce8c" strokeWidth={5+22*(scenario.baseline?scenario.fertilizerCost/scenario.baseline:0)}/><path d="M362 104H423" fill="none" stroke="#dde8c1" strokeWidth="2"/><path d="M416 99L423 104L416 109" fill="none" stroke="#dde8c1" strokeWidth="2"/><rect x="10" y="30" width="128" height="58" rx="10" fill="#ffffff0c" stroke="#ffffff22"/><text x="25" y="52" fill="#cae1df" fontSize="13">灌溉用水</text><text x="25" y="74" fill="#f4f7ed" fontSize="18">¥ {money(scenario.waterCost)}</text><rect x="10" y="122" width="128" height="58" rx="10" fill="#ffffff0c" stroke="#ffffff22"/><text x="25" y="144" fill="#d9e2b4" fontSize="13">肥料投入</text><text x="25" y="166" fill="#f4f7ed" fontSize="18">¥ {money(scenario.fertilizerCost)}</text><circle cx="347" cy="104" r="24" fill="#345940" stroke="#b6c998"/><path d="M342 119V96M342 107C321 101 329 82 342 91M343 100C345 80 366 87 359 98C356 103 346 105 343 100" fill="none" stroke="#d1e1ac" strokeWidth="2"/><text x="436" y="89" fill="#c7d7bd" fontSize="13">调整后投入</text><text x="436" y="121" fill="#f7faed" fontSize="25">¥ {money(scenario.next)}</text><text x="436" y="147" fill="#bfcfae" fontSize="11">仅计水肥两项</text></svg><div className="resource-comparison"><div><span>基准投入</span><b>¥ <Count value={scenario.baseline}/></b></div><ArrowDownRight size={22}/><div><span>预计减少</span><b>¥ <Count value={scenario.saving}/><small>{scenario.savingRate.toFixed(1)}%</small></b></div></div><small>流向图展示基准费用构成，右侧金额按调整参数计算。</small></div>
+   <div className="resource-controls"><div className="price-assumptions"><label>水价假设 <span>元 / m³</span><input aria-label="水价假设" type="number" min="0" max="100" step="0.1" value={waterPrice} onChange={e=>setWaterPrice(Math.min(100,Math.max(0,Number(e.target.value))))}/></label><label>肥料单价假设 <span>元 / kg</span><input aria-label="肥料单价假设" type="number" min="0" max="1000" step="0.1" value={fertilizerPrice} onChange={e=>setFertilizerPrice(Math.min(1000,Math.max(0,Number(e.target.value))))}/></label></div><label className="scenario-slider"><span><Droplets size={16}/>用水减量 <b>{waterReduction}%</b></span><input aria-label="用水减量" type="range" min="0" max="30" step="1" value={waterReduction} onChange={e=>setWaterReduction(Number(e.target.value))}/><small>{money(totals.water)} → {money(scenario.nextWater)} m³</small></label><label className="scenario-slider"><span><Leaf size={16}/>肥料减量 <b>{fertilizerReduction}%</b></span><input aria-label="肥料减量" type="range" min="0" max="20" step="1" value={fertilizerReduction} onChange={e=>setFertilizerReduction(Number(e.target.value))}/><small>{money(totals.fertilizer)} → {money(scenario.nextFertilizer)} kg</small></label><button className="text-btn" onClick={()=>{setWaterPrice(2.4);setFertilizerPrice(4.8);setWaterReduction(0);setFertilizerReduction(0)}}><RotateCcw size={14}/>重置测算参数</button><p className="scenario-caveat">单价为可编辑假设，并非市场报价。仅测算水肥投入，未计人工、设备等成本，也未模拟减量对产量的影响。</p></div></div></section>
+  <div className="operations-bottom-grid"><section className="panel"><div className="panel-heading"><div><span className="insight-kicker">不同单位，分别观察</span><h3>月度资源用量</h3></div><div className="segmented"><button className={resource==='water'?'active':''} aria-pressed={resource==='water'} onClick={()=>setResource('water')}>用水 m³</button><button className={resource==='fertilizer'?'active':''} aria-pressed={resource==='fertilizer'} onClick={()=>setResource('fertilizer')}>肥料 kg</button></div></div><ResponsiveContainer width="100%" height={220}><BarChart data={monthly} margin={{top:15,right:10,left:-15,bottom:0}}><CartesianGrid vertical={false} strokeDasharray="3 6"/><XAxis dataKey="month" axisLine={false} tickLine={false}/><YAxis axisLine={false} tickLine={false}/><Tooltip contentStyle={chartTooltip}/><Bar dataKey={resource} name={resource==='water'?'用水':'肥料'} unit={resource==='water'?' m³':' kg'} fill={resource==='water'?chartColors.water:chartColors.green} radius={[5,5,0,0]} maxBarSize={38} isAnimationActive={enabled} animationDuration={450}/></BarChart></ResponsiveContainer></section><section className="panel operations-observations"><span className="insight-kicker">所选区间的三个观察</span><h3>本期经营观察</h3><ol><li><span>01</span><div><b>{peakWater.month} 用水量最高</b><p>{money(peakWater.water)} m³，占所选月份总用水的 {(peakWater.water/totals.water*100).toFixed(1)}%。</p></div></li><li><span>02</span><div><b>期末执行率 {monthly.at(-1)!.completion}%</b><p>较期初{completionChange>=0?'上升':'下降'} {Math.abs(completionChange)} 个百分点。</p></div></li><li><span>03</span><div><b>{selected.crop}占在管面积 {(selected.area/totalArea*100).toFixed(1)}%</b><p>可切换种植结构中的地块查看构成；未按地块分配产量。</p></div></li></ol></section></div>
+  <p className="data-disclaimer">本页为经营分析演示：产量按最近 {period.weeks} 周统计，水肥与完成率按最近 {period.months} 个月统计，均非实测经营记录。</p>
+ </div>
 }
