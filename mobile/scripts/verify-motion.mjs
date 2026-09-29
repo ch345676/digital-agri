@@ -14,7 +14,7 @@ try {
  const center=async selector=>{await page.waitForSelector(selector);await page.$eval(selector,e=>e.scrollIntoView({block:'center'}));await pause(500)}
  await page.goto(base+'/#overview',{waitUntil:'networkidle2'})
  await click('注册');await page.waitForSelector('input[placeholder="再次输入密码"]');assert.equal(await page.$$eval('input[type=password]',e=>e.length),2)
- await click('管理员登录');await page.waitForSelector('input[placeholder="初始密码 admin123"]');await page.type('input[type=password]','admin123');await page.click('button[type=submit]');await page.waitForSelector('.app-tabs');await pause(650)
+ await click('管理员登录');await page.waitForSelector('input[placeholder="初始密码 admin123"]');await page.type('input[type=password]','admin123');await center('button[type=submit]');await page.$eval('form',e=>e.requestSubmit());await page.waitForSelector('.app-tabs');await pause(650)
  assert.equal(await page.$('video'),null)
  await route('irrigation');await center('.farm-demo')
  const before=await page.$eval('.farm-map-slot',e=>e.getBoundingClientRect().height)

@@ -1,3 +1,4 @@
+import { PhotoGallery } from '../components/workflow'
 import { Reveal, Disclosure, MotionLabel } from '../components/motion'
 import AmbientVideo from '../components/AmbientVideo'
 import { useEffect, useRef, useState } from 'react'
@@ -82,6 +83,7 @@ export default function Patrol() {
   const [showGimbal, setShowGimbal] = useState(false)
   const [gimbal, setGimbal] = useState({ pan: 0, tilt: 0 })
   const [showExploded, setShowExploded] = useState(false)
+  const [galleryIndex,setGalleryIndex]=useState<number|null>(null)
 
   /* 地图相关 ref */
   const [position, setPosition] = useState<[number,number,number]>(()=>routePosition(fleet[0].progress) as [number,number,number])
@@ -263,6 +265,7 @@ export default function Patrol() {
     const jit = (base: number, pct: number) => Math.round(base * (1 + (Math.random() - 0.5) * pct) * 100) / 100
     const test: SoilResult = {
       point,
+      fieldId: robot.field,
       time: nowHM(),
       om: jit(22.4, 0.1),
       tn: jit(1.28, 0.1),
@@ -288,6 +291,7 @@ export default function Patrol() {
           const zone = robot.field
           const base = {
             zone,
+            fieldId: robot.field,
             kind: '疑似叶片病斑',
             time: nowHM(),
             status: '待确认' as const,
@@ -295,7 +299,7 @@ export default function Patrol() {
             y: clamp(Math.round(posRef.current[1]) - 12, 20, 190),
           }
           const id = addPatrolAlert(base)
-          addRoverShot({ img: 'images/live-rover.jpg', time: nowHM() })
+          addRoverShot({ img: 'images/live-rover.jpg', time: nowHM(),fieldId:robot.field })
           setAlertCard({ ...base, id })
         }, 1100)
     }, 2400)
@@ -352,7 +356,7 @@ export default function Patrol() {
       locked: false,
       fn: () => {
         if (!needLogin()) return
-        addRoverShot({ img: 'images/live-rover.jpg', time: nowHM() })
+        addRoverShot({ img: 'images/live-rover.jpg', time: nowHM(),fieldId:robot.field })
         showToast('巡检图像已保存')
       },
     },
@@ -371,7 +375,7 @@ export default function Patrol() {
         </span>
       </header>
 
-      <a href="../rover-control/" className="mt-4 flex items-center justify-between rounded-[14px] border border-[#b7d7ae] bg-[#e9f6e3] px-4 py-3 text-[#285d38] shadow-sm">
+      <a href="https://ch345676.github.io/digital-agri/rover-control/" className="mt-4 flex items-center justify-between rounded-[14px] border border-[#b7d7ae] bg-[#e9f6e3] px-4 py-3 text-[#285d38] shadow-sm">
         <span><strong className="block text-[13px]">打开小车移动控制台</strong><small className="mt-0.5 block text-[10px] opacity-70">路线查看 · 模拟遥控 · 设备操作</small></span>
         <span aria-hidden="true" className="text-[20px]">↗</span>
       </a>
@@ -698,9 +702,9 @@ export default function Patrol() {
               </div>
             ) : (
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-                {roverShots.map((s) => (
+                {roverShots.map((s,i) => (
                   <motion.div layout key={s.id} initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} className="shrink-0">
-                    <img src={s.img} alt="巡检照片" className="h-16 w-24 rounded-[8px] border border-black/[0.09] object-cover" />
+                    <button aria-label="查看巡检照片" onClick={()=>setGalleryIndex(i)}><img src={s.img} alt="巡检照片" className="h-16 w-24 rounded-[8px] border border-black/[0.09] object-cover" /></button>
                     <div className="mt-1 text-center font-num text-[9px] text-black/40">{s.time}</div>
                   </motion.div>
                 ))}
@@ -899,6 +903,7 @@ export default function Patrol() {
         </motion.div>
       )}</AnimatePresence>
 
+      <PhotoGallery photos={roverShots.map(s=>({id:s.id,src:s.img,note:`${s.fieldId??'田间'} · ${s.time}`}))} index={galleryIndex} onClose={()=>setGalleryIndex(null)}/>
       {/* 轻提示 */}
       <AnimatePresence>{toast && (
         <motion.div key={toast} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}} className="fixed bottom-[96px] left-1/2 z-[1100] center-x rounded-full border border-black/10 bg-[rgba(255,255,255,0.94)] px-4 py-2 text-[12px] text-black/70 backdrop-blur-md">

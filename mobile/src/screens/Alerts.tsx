@@ -1,3 +1,7 @@
+import { useFarm } from '../FarmContext'
+import { usePerm } from '../auth'
+import { InteractiveChart } from '../components/workflow'
+import { validFieldId } from '../workflow-model'
 import { Reveal } from '../components/motion'
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -12,36 +16,8 @@ import { ProCard, BlockTitle, InfoRow, StatBar, RiskBadge, RISK, type RiskLevel 
 import { stagger, fadeUp, EASE, CountUp } from '../components/anim'
 
 /* ================= 趋势折线图（SVG，与全站风格一致） ================= */
-function TrendChart({ data, unit, color = '#15803d' }: { data: number[]; unit: string; color?: string }) {
-  const W = 300
-  const H = 110
-  const max = Math.max(...data) * 1.15
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * W},${H - 14 - (v / max) * (H - 34)}`)
-  const area = `0,${H - 14} ${pts.join(' ')} ${W},${H - 14}`
-  const last = pts[pts.length - 1].split(',').map(Number)
-  return (
-    <div>
-      <div className="flex items-center gap-1.5 text-[10px] text-black/40">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-        {unit}
-      </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-1 w-full">
-        {[0.25, 0.5, 0.75].map((t) => (
-          <line key={t} x1="0" x2={W} y1={(H - 14) * t} y2={(H - 14) * t} stroke="rgba(0,0,0,0.05)" strokeWidth="1" />
-        ))}
-        <polygon points={area} fill={color} opacity="0.07" />
-        <motion.polyline key={data.length + unit} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6, ease: EASE }} points={pts.join(' ')} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
-        {pts.map((p, i) => {
-          const [x, y] = p.split(',').map(Number)
-          return <circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 3 : 1.6} fill="#fff" stroke={color} strokeWidth="1.4" />
-        })}
-        <rect x={Math.min(last[0] + 4, W - 64)} y={last[1] - 12} rx="4" width="62" height="16" fill={color} />
-        <text x={Math.min(last[0] + 4, W - 64) + 31} y={last[1]} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="600">
-          {data[data.length - 1]} {unit}
-        </text>
-      </svg>
-    </div>
-  )
+function TrendChart({data,unit,color='#819c56'}:{data:number[];unit:string;color?:string}) {
+ return <InteractiveChart values={data} labels={data.map((_,i)=>`第 ${i+1} 天`)} unit={unit} color={color}/>
 }
 
 /* ================= 预警详情 ================= */
@@ -49,6 +25,9 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
   const [trendTab, setTrendTab] = useState<'pest' | 'env'>('pest')
   const [days, setDays] = useState<7 | 15 | 30>(7)
   const [openCtl, setOpenCtl] = useState<number>(0)
+  const farm=useFarm();const {needAdmin}=usePerm()
+  const incidentId=alert.fromPatrol?alert.id.replace(/^patrol-/, ''):alert.id
+  const incident=farm.state.incidents.find(i=>i.id===incidentId)
   const risk = RISK[alert.level]
   const trend = useMemo(
     () => (trendTab === 'pest' ? pestTrend(alert.id, days, alert.trendBase) : envTrend(alert.id, days)),
@@ -94,6 +73,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
       </div>
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-3 space-y-3 px-4">
+        <div className="workflow-panel"><div className="row-between"><b>处置进度</b><span className="status-pill">{incident?.status??'待核查'}</span></div><div className="incident-steps">{['待核查','已派工','处理中','已解决'].map((label,i)=><span key={label} data-done={i<=['待核查','已派工','处理中','已解决'].indexOf(incident?.status??'待核查')}>{label}</span>)}</div><p>知晓仅标记已读；完成现场任务验收后，预警自动归档。</p><div className="work-actions"><button onClick={()=>farm.openField(validFieldId(alert.field))}>地块档案</button><button onClick={()=>{if(incident?.taskId)farm.openTask(incident.taskId);else if(needAdmin())farm.dispatchIncident(incidentId)}}>{incident?.taskId?'查看处置任务':'分派复核任务'}</button></div></div>
         {/* 风险大卡（按 1.png：4 指标） */}
         <Reveal>
           <div className="rounded-[14px] border p-4" style={{ background: risk.bg, borderColor: risk.border }}>
@@ -301,7 +281,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
           </ProCard>
         </Reveal>
 
-        <p className="px-2 text-center text-[9.5px] text-black/30">ⓘ 以上预警信息由智能监测系统提供，仅供参考，请结合实际情况采取防治措施。</p>
+        <p className="px-2 text-center text-[9.5px] text-black/30">本页为预警流程演示，趋势、风险和处置内容均为示例；实际田间异常需现场复核。</p>
       </motion.div>
 
       {/* 吸底：我已知晓 */}
@@ -357,7 +337,7 @@ export default function Alerts() {
         <div>
           <h1 className="text-[19px] font-semibold tracking-[-0.02em] text-[#1a2b23]">病虫害预警</h1>
           <p className="mt-0.5 text-[11px] text-black/40">
-            {unread > 0 ? `${unread} 条待处理预警` : '全部预警已知晓'}
+            {unread > 0 ? `${unread} 条未读预警` : '全部预警已知晓'}
           </p>
         </div>
         <button
@@ -369,6 +349,7 @@ export default function Alerts() {
         </button>
       </header>
 
+      <button className="bottom-task-link full-width" onClick={()=>setScreen('notifications')}>查看全部预警处置与通知 <ChevronRight size={16}/></button>
       <section className="alert-summary" aria-label="预警概况">
         <div className="summary-eyebrow">FIELD HEALTH / 田间健康</div>
         <div className="summary-main"><div><strong><CountUp to={unread} /></strong><p>条预警，等待你的关注</p></div><span className="summary-chip">{unread ? '及时关注 · 从容应对' : '全部已知晓'}</span></div>

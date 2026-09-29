@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-export type ScreenKey = 'overview' | 'irrigation' | 'alerts' | 'identify' | 'patrol' | 'team' | 'prediction' | 'spray'
+export type ScreenKey = 'overview' | 'irrigation' | 'alerts' | 'identify' | 'patrol' | 'team' | 'prediction' | 'spray' | 'fields' | 'tasks' | 'history' | 'demo' | 'notifications'
 
 export interface IdentifyRecord {
+  fieldId?: string
+  at?: number
   id: string
   crop: string
   disease: string
@@ -21,12 +23,16 @@ export interface ChatMessage {
 }
 
 export interface CheckinPhoto {
+  fieldId?: string
+  at?: number
   id: string
   img: string
   time: string
 }
 
 export interface RoverShot {
+  fieldId?: string
+  at?: number
   id: string
   img: string
   time: string
@@ -34,6 +40,8 @@ export interface RoverShot {
 
 /* 土壤检测记录（近红外光谱 → 四项指标） */
 export interface SoilTest {
+  fieldId?: string
+  at?: number
   id: string
   point: string // 检测点编号 B-01…
   time: string
@@ -48,6 +56,8 @@ export interface SoilTest {
 
 /* 巡检预警任务（疑似病斑 → 待确认） */
 export interface PatrolAlert {
+  fieldId?: string
+  at?: number
   id: string
   zone: string // 分区编号 B-03…
   kind: string
@@ -59,6 +69,8 @@ export interface PatrolAlert {
 
 /* 施药任务记录（4 步向导完成后持久化） */
 export interface SprayRecord {
+  fieldId?: string
+  at?: number
   id: string
   code: string // RW+日期+序号
   field: string // 地块名
@@ -104,10 +116,10 @@ export function nowHM() {
 function seed(): Persisted {
   return {
     identifyRecords: [
-      { id: 'r1', crop: '南瓜', disease: '早疫病', confidence: 92, date: '05-20', tone: '#8fae4c' },
-      { id: 'r2', crop: '南瓜', disease: '霜霉病', confidence: 88, date: '05-18', tone: '#6d9e3f' },
-      { id: 'r3', crop: '南瓜', disease: '蚜虫', confidence: 95, date: '05-15', tone: '#7ba23e' },
-      { id: 'r4', crop: '南瓜', disease: '白粉病', confidence: 90, date: '05-12', tone: '#9dbb6a' },
+      { id: 'r1', fieldId:'A1', crop: '水稻', disease: '叶片异常（示例）', confidence: 92, date: '05-20', tone: '#8fae4c' },
+      { id: 'r2', fieldId:'B2', crop: '蔬菜', disease: '霜霉病', confidence: 88, date: '05-18', tone: '#6d9e3f' },
+      { id: 'r3', fieldId:'B1', crop: '大豆', disease: '蚜虫', confidence: 95, date: '05-15', tone: '#7ba23e' },
+      { id: 'r4', fieldId:'C1', crop: '小麦（试验）', disease: '白粉病', confidence: 90, date: '05-12', tone: '#9dbb6a' },
     ],
     chat: [
       { id: 'c1', who: 'other', name: '张师傅', text: '田块A1施肥已完成一半，土壤墒情良好。', time: '09:21' },
@@ -132,11 +144,7 @@ function load(key: string): Persisted {
     if (raw) {
       const merged = { ...seed(), ...(JSON.parse(raw) as Partial<Persisted>) }
       merged.valves = Array.from({ length: 5 }, (_, i) => merged.valves?.[i] === true)
-      /* 旧数据迁移：历史作物名统一改为南瓜 */
-      const OLD_CROPS = ['番茄', '黄瓜', '辣椒', '葡萄']
-      merged.identifyRecords = merged.identifyRecords.map((r) =>
-        OLD_CROPS.includes(r.crop) ? { ...r, crop: '南瓜' } : r,
-      )
+      // Historical observations keep their original crop labels.
       return merged
     }
   } catch {
@@ -169,7 +177,7 @@ export function StoreProvider({ children, storageKey = BASE_STORAGE_KEY }: { chi
   const [persisted, setPersisted] = useState<Persisted>(() => load(storageKey))
   const [screen, setScreenState] = useState<ScreenKey>(() => {
     const h = window.location.hash.replace('#', '') as ScreenKey
-    const valid: ScreenKey[] = ['overview', 'irrigation', 'alerts', 'identify', 'patrol', 'team', 'prediction', 'spray']
+    const valid: ScreenKey[] = ['overview', 'irrigation', 'alerts', 'identify', 'patrol', 'team', 'prediction', 'spray', 'fields', 'tasks', 'history', 'demo', 'notifications']
     return valid.includes(h) ? h : 'overview'
   })
 
@@ -181,7 +189,7 @@ export function StoreProvider({ children, storageKey = BASE_STORAGE_KEY }: { chi
   useEffect(() => {
     const onHash = () => {
       const h = window.location.hash.replace('#', '') as ScreenKey
-      const valid: ScreenKey[] = ['overview', 'irrigation', 'alerts', 'identify', 'patrol', 'team', 'prediction', 'spray']
+      const valid: ScreenKey[] = ['overview', 'irrigation', 'alerts', 'identify', 'patrol', 'team', 'prediction', 'spray', 'fields', 'tasks', 'history', 'demo', 'notifications']
       if (valid.includes(h)) setScreenState(h)
     }
     window.addEventListener('hashchange', onHash)
@@ -202,19 +210,19 @@ export function StoreProvider({ children, storageKey = BASE_STORAGE_KEY }: { chi
       screen,
       setScreen,
       addIdentifyRecord: (r) =>
-        setPersisted((p) => ({ ...p, identifyRecords: [{ ...r, id: uid('r') }, ...p.identifyRecords] })),
+        setPersisted((p) => ({ ...p, identifyRecords: [{ ...r, id: uid('r'), at: Date.now() }, ...p.identifyRecords] })),
       addChat: (m) => setPersisted((p) => ({ ...p, chat: [...p.chat, { ...m, id: uid('c') }] })),
-      addCheckin: (ph) => setPersisted((p) => ({ ...p, checkins: [{ ...ph, id: uid('p') }, ...p.checkins] })),
+      addCheckin: (ph) => setPersisted((p) => ({ ...p, checkins: [{ ...ph, id: uid('p'), at: Date.now() }, ...p.checkins] })),
       setValve: (i, on) =>
         setPersisted((p) => ({ ...p, valves: p.valves.map((v, idx) => (idx === i ? on : v)) })),
       setValves: (v) => setPersisted((p) => ({ ...p, valves: v })),
       setPlanEnabled: (b) => setPersisted((p) => ({ ...p, planEnabled: b })),
       setHeadlight: (b) => setPersisted((p) => ({ ...p, headlight: b })),
-      addRoverShot: (s) => setPersisted((p) => ({ ...p, roverShots: [{ ...s, id: uid('s') }, ...p.roverShots] })),
-      addSoilTest: (t) => setPersisted((p) => ({ ...p, soilTests: [{ ...t, id: uid('t') }, ...p.soilTests] })),
+      addRoverShot: (s) => setPersisted((p) => ({ ...p, roverShots: [{ ...s, id: uid('s'), at: Date.now() }, ...p.roverShots] })),
+      addSoilTest: (t) => setPersisted((p) => ({ ...p, soilTests: [{ ...t, id: uid('t'), at: Date.now() }, ...p.soilTests] })),
       addPatrolAlert: (a) => {
         const id = uid('a')
-        setPersisted((p) => ({ ...p, patrolAlerts: [{ ...a, id }, ...p.patrolAlerts] }))
+        setPersisted((p) => ({ ...p, patrolAlerts: [{ ...a, id, at: Date.now() }, ...p.patrolAlerts] }))
         return id
       },
       confirmPatrolAlert: (id) =>
@@ -225,7 +233,7 @@ export function StoreProvider({ children, storageKey = BASE_STORAGE_KEY }: { chi
       ackAlert: (id) =>
         setPersisted((p) => (p.ackAlerts.includes(id) ? p : { ...p, ackAlerts: [...p.ackAlerts, id] })),
       addSprayRecord: (r) =>
-        setPersisted((p) => ({ ...p, sprayRecords: [{ ...r, id: uid('spray') }, ...p.sprayRecords] })),
+        setPersisted((p) => ({ ...p, sprayRecords: [{ ...r, id: uid('spray'), at: Date.now() }, ...p.sprayRecords] })),
     }),
     [persisted, screen],
   )

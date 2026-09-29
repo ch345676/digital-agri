@@ -56,6 +56,7 @@ export default function Profile({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
+        <a className="bottom-task-link" href={navigator.userAgent.includes('HuinongAndroid')?'https://ch345676.github.io/digital-agri/m/':'https://ch345676.github.io/digital-agri/m/downloads/huinong-farm-1.0.0.apk'}>{navigator.userAgent.includes('HuinongAndroid')?'打开网站在线版':'下载安卓安装包'} <span>↗</span></a>
         {/* 身份卡 */}
         <div className="mt-4 flex items-center gap-3 rounded-[14px] border border-black/[0.07] bg-black/[0.03] p-4">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#16a34a] text-[17px] font-bold text-white">

@@ -19,7 +19,9 @@ const IRRIGATION_BRANCHES: Record<string, string> = {
 }
 export interface MapLayers { fields: boolean; monitors: boolean; irrigation: boolean }
 
-export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol, markers = [], fieldMoisture, fieldValves }: {
+export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol, markers = [], fieldMoisture, fieldValves, focusPoint, currentMoisture }: {
+  focusPoint?: [number,number,number]
+  currentMoisture?: Record<string,number>
   fieldMoisture?: Record<string,number>
   fieldValves?: Record<string,boolean>
   layers: MapLayers
@@ -35,7 +37,8 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
   const selected=PLOTS.find(p=>p.id===selectedField)
   const info=FIELDS.find(f=>f.id===selectedField)
   const [rx,ry,heading] = patrol?.position ?? routePosition(patrol?.progress ?? 0)
-  return <svg viewBox="0 0 1000 560" className="real-farm-map h-full w-full" preserveAspectRatio="xMidYMid meet" aria-label={patrol ? '真实农田遥感照片上的仿真巡航路线' : '真实农田卫星影像演示地图'}>
+  const viewBox=focusPoint?`${Math.max(0,Math.min(560,focusPoint[0]-220))} ${Math.max(0,Math.min(314,focusPoint[1]-123))} 440 246`:'0 0 1000 560'
+  return <motion.svg initial={false} animate={{viewBox}} transition={{duration:reduced?0:.5}} className="real-farm-map h-full w-full" preserveAspectRatio="xMidYMid meet" aria-label={patrol ? '真实农田遥感照片上的仿真巡航路线' : '真实农田卫星影像演示地图'}>
     <rect width="1000" height="560" fill="#18342e"/>
     <g className="map-zoom-layer" transform={`translate(500 280) scale(${zoom}) translate(-500 -280)`}>
       <image className="satellite-photo" href={FARM_IMAGERY.image} width="1000" height="560" preserveAspectRatio="none"/>
@@ -58,9 +61,9 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
             <text className="field-label-title" y="-2" fill="#f7f8ef" fontSize="25" fontWeight="600"><tspan className="field-label-id">{p.id}</tspan><tspan className="field-label-crop"> {p.id==='C1'?'试验田':field.crop}</tspan></text>
             <text className="field-label-area" y="23" fill="#d2dfc9" fontSize="19">{fieldMoisture?`${fieldMoisture[p.id].toFixed(0)}% · ${fieldValves?.[p.id]?'灌溉中':'阀门关'}`:`${field.area} 亩`}</text>
           </motion.g></g>})}
-      {selected&&info&&<g key={'info-'+selected.id} className="field-map-callout" transform={'translate('+selected.x+' '+(selected.id==='B2'?375:423)+')'} pointerEvents="none"><path d="M0-12V-30" stroke="#e8f1dc" strokeWidth="1"/><rect x="-83" y="-11" width="166" height="50" rx="7" fill="#f7f9ef" stroke="#d3dfc4"/><text y="8" textAnchor="middle" fill="#365b42" fontSize="13" fontWeight="600">{selected.id} · 土壤采样</text><text y="27" textAnchor="middle" fill="#55744e" fontSize="12">水分 {(fieldMoisture?.[selected.id]??info.soilMoisture).toFixed(0)}% · pH {info.ph}</text></g>}
+      {selected&&info&&<g key={'info-'+selected.id} className="field-map-callout" transform={'translate('+selected.x+' '+(selected.id==='B2'?375:423)+')'} pointerEvents="none"><path d="M0-12V-30" stroke="#e8f1dc" strokeWidth="1"/><rect x="-83" y="-11" width="166" height="50" rx="7" fill="#f7f9ef" stroke="#d3dfc4"/><text y="8" textAnchor="middle" fill="#365b42" fontSize="13" fontWeight="600">{selected.id} · 土壤采样</text><text y="27" textAnchor="middle" fill="#55744e" fontSize="12">水分 {(fieldMoisture?.[selected.id]??currentMoisture?.[selected.id]??info.soilMoisture).toFixed(0)}% · pH {info.ph}</text></g>}
       {markers.map(p=><g className="farm-marker-arrival" key={p.id} transform={`translate(${p.x} ${p.y})`} pointerEvents="none"><circle r="12" fill={p.kind==='soil'?'#e8f1cc':'#f5b558'} stroke="#fff" strokeWidth="2"/><text y="4" textAnchor="middle" fontSize="12" fill="#203a2d">{p.kind==='soil'?'S':'!'}</text></g>)}
       {patrol&&<g className="rover-position" transform={`translate(${rx} ${ry})`}><circle r="20" fill="#d4ff7c12" className={patrol.running?'scan-pulse':''}/><g transform="scale(.85)"><ProjectRoverMarker heading={heading}/></g></g>}
     </g>
-  </svg>
+  </motion.svg>
 }

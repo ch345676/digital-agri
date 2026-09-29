@@ -1,3 +1,4 @@
+import { useFarm } from '../FarmContext'
 import { Reveal, Disclosure, MotionLabel, SuccessMark } from '../components/motion'
 import FarmMap from '../components/FarmMap'
 import { FIELDS } from '../farm-data'
@@ -35,12 +36,13 @@ export default function Irrigation() {
     applyIrrigation(label)
     return false
   }
+  const farm=useFarm()
   const geo = useGeoLocation()
   const { data: wx, source } = useWeather(geo.lat, geo.lon)
   const live = source === 'live'
   const NowIcon = WX_ICONS[weatherCodeGroup(wx.weatherCode)]
   const willRain = rainSoon(wx)
-  const [moisture, setMoisture] = useState(ZONES.map((z) => z.base))
+  const [moisture, setMoisture] = useState(ZONES.map((z) => farm.state.moisture[z.fieldId]??z.base))
   const [water, setWater] = useState(28.6)
   const [running, setRunning] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -49,6 +51,8 @@ export default function Irrigation() {
 
   useEffect(() => () => { timers.current.forEach(clearTimeout); animations.current.forEach(animation => animation.stop()) }, [])
 
+  useEffect(()=>{if(!running)setMoisture(ZONES.map(z=>farm.state.moisture[z.fieldId]??z.base))},[farm.state.moisture,running])
+  const changeValve=(index:number,on:boolean)=>{setValve(index,on);farm.record({fieldId:ZONES[index].fieldId,kind:'irrigation',title:`${ZONES[index].fieldId} 阀门${on?'开启':'关闭'}`,detail:'手动操作 · 演示设备状态'})}
   const startIrrigation = () => {
     if (running) return
     timers.current.forEach(clearTimeout)
@@ -85,6 +89,7 @@ export default function Irrigation() {
     // 完成
     timers.current.push(
       setTimeout(() => {
+        ZONES.forEach((z,i)=>{const value=Math.max(moisture[i],Math.min(90,z.base+4));farm.setMoisture(z.fieldId,value);farm.record({fieldId:z.fieldId,kind:'irrigation',title:'分区灌溉演示完成',detail:'按推荐方案开启阀门并更新墒情',moisture:value})})
         setRunning(false)
         setToast('五地块灌溉演示完成')
         timers.current.push(setTimeout(() => setToast(null), 2400))
@@ -100,7 +105,7 @@ export default function Irrigation() {
           <ChevronLeft className="h-5 w-5 text-black/60" strokeWidth={1.5} />
         </button>
         <h1 className="text-[17px] font-semibold tracking-[-0.02em] text-[#1a2b23]">智能灌溉</h1>
-        <button className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
+        <button aria-label="查看灌溉历史" onClick={()=>setScreen('history')} className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
           <MoreHorizontal className="h-5 w-5 text-black/60" strokeWidth={1.5} />
         </button>
       </header>
@@ -138,7 +143,7 @@ export default function Irrigation() {
         </Reveal>
 
         <Reveal>
-          <FarmMap irrigation={{moisture:Object.fromEntries(ZONES.map((z,i)=>[z.fieldId,moisture[i]])),valves:Object.fromEntries(ZONES.map((z,i)=>[z.fieldId,valves[i]])),busy:running,onValve:(id)=>{const index=ZONES.findIndex(z=>z.fieldId===id);if(index>=0&&guardValve(`${id} ${ZONES[index].crop} 阀门`))setValve(index,!valves[index])}}}/>
+          <FarmMap irrigation={{moisture:Object.fromEntries(ZONES.map((z,i)=>[z.fieldId,moisture[i]])),valves:Object.fromEntries(ZONES.map((z,i)=>[z.fieldId,valves[i]])),busy:running,onValve:(id)=>{const index=ZONES.findIndex(z=>z.fieldId===id);if(index>=0&&guardValve(`${id} ${ZONES[index].crop} 阀门`))changeValve(index,!valves[index])}}}/>
           <p className="farm-credit">五块田与电脑端一致；墒情和灌溉过程为演示数据。</p>
         </Reveal>
 
@@ -149,7 +154,7 @@ export default function Irrigation() {
             <div className="valve-list">
               {ZONES.map((z, i) => {
                 const on = valves[i]
-                return <button key={z.id} data-valve-field={z.fieldId} aria-pressed={on} aria-label={`${z.name} ${z.crop} 阀门，${on?'已开启':'已关闭'}`} disabled={running} onClick={()=>guardValve(`${z.name} ${z.crop} 阀门`)&&setValve(i,!on)} className={`valve-row ${on?'is-on':''}`}>
+                return <button key={z.id} data-valve-field={z.fieldId} aria-pressed={on} aria-label={`${z.name} ${z.crop} 阀门，${on?'已开启':'已关闭'}`} disabled={running} onClick={()=>guardValve(`${z.name} ${z.crop} 阀门`)&&changeValve(i,!on)} className={`valve-row ${on?'is-on':''}`}>
                   <span className="valve-icon" key={String(on)}><Droplets size={17} strokeWidth={1.6}/></span>
                   <span className="valve-name"><b>{z.name}</b><small>{z.crop}</small></span>
                   {!isAdmin&&<Lock size={12} className="valve-lock"/>}

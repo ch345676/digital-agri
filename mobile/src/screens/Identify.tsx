@@ -5,25 +5,31 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Glass, SectionTitle, stagger, EASE } from '../components/anim'
 import { useStore } from '../store'
 import { usePerm } from '../auth'
+import { useFarm } from '../FarmContext'
+import { fieldById, freshId } from '../workflow-model'
+import { FieldSelect, readPhoto } from '../components/workflow'
+import { toast } from 'sonner'
 
 type Phase = 'idle' | 'scanning' | 'done'
 
 const STEPS = [
-  { icon: Leaf, title: '清除病叶', desc: '减少病源' },
-  { icon: SprayCan, title: '药剂防治', desc: '交替用药' },
-  { icon: Wind, title: '加强管理', desc: '通风降湿' },
+  { icon: Leaf, title: '查看叶片', desc: '记录症状' },
+  { icon: SprayCan, title: '现场复核', desc: '确认原因' },
+  { icon: Wind, title: '安排处置', desc: '生成任务' },
   { icon: ShieldCheck, title: '持续监测', desc: '定期巡查' },
 ]
 
 const EXPERT_REPLIES = [
-  '您好，我是张农业。从识别结果看属于早疫病典型症状，建议先摘除病叶并带出田外销毁。',
-  '药剂可选择代森锰锌或苯醚甲环唑，7-10 天喷一次，注意交替用药避免抗药性。',
+  '这是咨询流程的示例回复。请补充地块、作物和叶片近照，现场复核后再确认病因。',
+  '可以把此次观察转为复核任务，安排人员到地块查看并上传照片。',
   '近期湿度偏高，请加强通风降湿，灌溉避免叶面长时间积水。',
 ]
 
 export default function Identify() {
   const { setScreen, identifyRecords, addIdentifyRecord } = useStore()
   const { isGuest, needLogin } = usePerm()
+  const farm=useFarm()
+  const [resultField,setResultField]=useState(farm.activeField)
   const [phase, setPhase] = useState<Phase>('idle')
   const [img, setImg] = useState<string | null>(null)
   const [consultOpen, setConsultOpen] = useState(false)
@@ -37,13 +43,16 @@ export default function Identify() {
 
   const runIdentify = (dataUrl: string | null) => {
     if (phase === 'scanning') return
+    const field=fieldById(farm.activeField)
+    setResultField(field.id)
     setImg(dataUrl)
     setPhase('scanning')
     timers.current.push(setTimeout(() => {
       setPhase('done')
       addIdentifyRecord({
-        crop: '南瓜',
-        disease: '早疫病',
+        fieldId:field.id,
+        crop:field.crop,
+        disease:'疑似叶片病斑（示例）',
         confidence: 92,
         date: new Date().toISOString().slice(5, 10),
         img: dataUrl ?? undefined,
@@ -52,13 +61,10 @@ export default function Identify() {
     }, 2000))
   }
 
-  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => runIdentify(reader.result as string)
-    reader.readAsDataURL(file)
-    e.target.value = ''
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file=e.target.files?.[0];if(!file)return
+    try {runIdentify(await readPhoto(file))}catch(error){toast((error as Error).message)}
+    e.target.value=''
   }
 
   const sendConsult = () => {
@@ -82,12 +88,14 @@ export default function Identify() {
           <ChevronLeft className="h-5 w-5 text-black/60" strokeWidth={1.5} />
         </button>
         <h1 className="text-[17px] font-semibold tracking-[-0.02em] text-[#1a2b23]">病虫害识别</h1>
-        <button className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
+        <button aria-label="查看识别记录" onClick={()=>setScreen('history')} className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
           <ClipboardList className="h-[18px] w-[18px] text-black/60" strokeWidth={1.5} />
         </button>
       </header>
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
+        <FieldSelect value={farm.activeField} onChange={farm.selectField}/>
+        <p className="muted">本页演示识别流程，结果为示例。现场诊断需由农艺人员复核。</p>
         {/* 取景框 */}
         <Reveal>
           <div ref={sceneRef} data-phase={phase} data-scene-playing={playing} className="identify-frame relative h-[300px] overflow-hidden rounded-[14px] border border-black/[0.09]">
@@ -155,7 +163,7 @@ export default function Identify() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[16px] font-semibold text-[#1a2b23]">
-                      南瓜 <span className="text-[#e8a04c]">早疫病</span>
+                      {fieldById(resultField).crop} <span className="text-[#e8a04c]">疑似叶片病斑</span>
                     </div>
                     <div className="mt-1.5 flex items-center gap-2">
                       <span className="text-[11px] text-black/40">置信度</span>
@@ -185,10 +193,11 @@ export default function Identify() {
           )}
         </AnimatePresence>
 
+        {phase==='done'&&<button className="work-primary" onClick={()=>{if(!needLogin())return;farm.reportIncident(freshId('identify-alert'),resultField,'疑似叶片病斑 · 待现场复核');setScreen('notifications')}}>转入预警中心，安排现场复核</button>}
         {/* 防治建议 */}
         <Reveal>
           <Glass className="p-4">
-            <SectionTitle title="防治建议" />
+            <SectionTitle title="处置流程示例" />
             <div className="flex items-start justify-between">
               {STEPS.map((s, i) => {
                 const lit = phase === 'done'
@@ -251,7 +260,7 @@ export default function Identify() {
           <SectionTitle
             title="识别记录"
             extra={
-              <button className="flex items-center text-[11px] text-black/40">
+              <button onClick={()=>setScreen('history')} className="flex items-center text-[11px] text-black/40">
                 全部记录 <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
               </button>
             }
@@ -297,7 +306,7 @@ export default function Identify() {
                   <img src="images/avatar-expert.jpg" alt="张农业" className="h-9 w-9 rounded-full border border-black/[0.12] object-cover" />
                   <div>
                     <div className="text-[13.5px] font-medium text-[#1a2b23]">张农业 · 高级农艺师</div>
-                    <div className="text-[10px] text-[#16a34a]">在线，通常 5 分钟内回复</div>
+                    <div className="text-[10px] text-[#16a34a]">演示会话 · 自动示例回复</div>
                   </div>
                 </div>
                 <button onClick={() => setConsultOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/[0.07]">
@@ -307,7 +316,7 @@ export default function Identify() {
               <div className="flex-1 space-y-2.5 overflow-y-auto p-4">
                 {consultMsgs.length === 0 && (
                   <p className="pt-16 text-center text-[11.5px] text-black/40">
-                    向专家描述田间情况，例如「南瓜叶片出现褐色斑点」
+                    描述田间情况，例如「叶片出现褐色斑点」
                   </p>
                 )}
                 {consultMsgs.map((m, i) => (

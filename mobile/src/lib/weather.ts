@@ -176,25 +176,25 @@ interface CachedWx {
   data: WeatherData
 }
 
-function readCachedWx(key: string): WeatherData | null {
+function readCachedWx(key: string): CachedWx | null {
   try {
     const raw = localStorage.getItem(WX_KEY)
     if (!raw) return null
     const c = JSON.parse(raw) as CachedWx
-    if (c.key === key && Date.now() - c.ts < WX_TTL) return c.data
+    if (c.key === key && Date.now() - c.ts < WX_TTL) return c
   } catch {
     /* ignore */
   }
   return null
 }
 
-async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
+async function fetchWeather(lat: number, lon: number, signal: AbortSignal): Promise<WeatherData> {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m` +
     `&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
-    `&forecast_days=3&timezone=auto`
-  const res = await fetch(url)
+    `&forecast_days=3&timezone=auto&wind_speed_unit=ms`
+  const res = await fetch(url, {signal})
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const j = await res.json()
   const nowHour = new Date().getHours()
@@ -222,23 +222,32 @@ export interface WeatherState {
   data: WeatherData
   /** live=Open-Meteo 实时；demo=演示/离线回退 */
   source: DataSource
+  loading: boolean
+  error: boolean
+  updatedAt: number | null
+  refresh: () => void
 }
 
 export function useWeather(lat: number, lon: number): WeatherState {
   const key = `${lat.toFixed(2)},${lon.toFixed(2)}`
-  const [state, setState] = useState<WeatherState>(() => {
+  const [revision, setRevision] = useState(0)
+  const refresh = useCallback(() => setRevision(v => v + 1), [])
+  const [state, setState] = useState<Omit<WeatherState, 'refresh'>>(() => {
     const c = readCachedWx(key)
-    return c ? { data: c, source: 'live' } : { data: DEMO_WEATHER, source: 'demo' }
+    return c ? { data: c.data, source: 'live', loading:false, error:false, updatedAt:c.ts } : { data: DEMO_WEATHER, source: 'demo', loading:true, error:false, updatedAt:null }
   })
 
   useEffect(() => {
     let cancelled = false
-    const cached = readCachedWx(key)
+    const cached = revision ? null : readCachedWx(key)
     if (cached) {
-      setState({ data: cached, source: 'live' })
+      setState({ data: cached.data, source: 'live', loading:false, error:false, updatedAt:cached.ts })
       return
     }
-    fetchWeather(lat, lon)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 12000)
+    setState(s => ({...s, loading:true, error:false}))
+    fetchWeather(lat, lon, controller.signal)
       .then((data) => {
         if (cancelled) return
         try {
@@ -246,17 +255,20 @@ export function useWeather(lat: number, lon: number): WeatherState {
         } catch {
           /* ignore */
         }
-        setState({ data, source: 'live' })
+        setState({ data, source: 'live', loading:false, error:false, updatedAt:Date.now() })
       })
       .catch(() => {
-        if (!cancelled) setState({ data: DEMO_WEATHER, source: 'demo' })
+        if (!cancelled) setState({ data: DEMO_WEATHER, source: 'demo', loading:false, error:true, updatedAt:null })
       })
+      .finally(() => clearTimeout(timeout))
     return () => {
       cancelled = true
+      clearTimeout(timeout)
+      controller.abort()
     }
-  }, [key, lat, lon])
+  }, [key, lat, lon, revision])
 
-  return state
+  return {...state, refresh}
 }
 
 /** 未来 24 小时是否有明显降雨可能（任一小时 ≥40%） */

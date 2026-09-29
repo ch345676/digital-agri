@@ -1,3 +1,4 @@
+import { FIELDS as FARM_FIELDS } from '../farm-data'
 import { Reveal, SuccessMark } from '../components/motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -13,16 +14,7 @@ import { stagger, fadeUp, EASE } from '../components/anim'
 
 /* ================= 基础数据 ================= */
 
-const FIELDS = [
-  { name: '1号南瓜田', area: 320, stage: '坐果期' },
-  { name: '2号南瓜田', area: 280, stage: '开花期' },
-  { name: '3号南瓜田', area: 300, stage: '伸蔓期' },
-  { name: '4号南瓜田', area: 350, stage: '坐果期' },
-  { name: '5号南瓜田', area: 260, stage: '开花期' },
-  { name: '6号南瓜田', area: 310, stage: '坐果期' },
-  { name: '7号南瓜田', area: 290, stage: '伸蔓期' },
-  { name: '8号南瓜田', area: 330, stage: '膨大期' },
-]
+const FIELDS = FARM_FIELDS.map(f=>({...f,name:`${f.id} ${f.crop}`,stage:f.stageName}))
 
 interface Pesticide {
   name: string
@@ -139,7 +131,7 @@ function Receipt({ rec, onHistory, onHome }: { rec: SprayRecord; onHistory: () =
       <ProCard className="p-4">
         <BlockTitle icon={ClipboardList} title="备注信息" />
         <p className="mt-2 text-[11.5px] leading-relaxed text-black/55">
-          本次施药过程正常，设备运行稳定，药剂喷淋均匀。{rec.field}（南瓜）{rec.target}防治，{rec.pesticide} {rec.dosagePerMu} 克/亩，共 {rec.totalDosage} 克。
+          本次施药过程正常，设备运行稳定，药剂喷淋均匀。{rec.field}（演示作业）{rec.target}防治，{rec.pesticide} {rec.dosagePerMu} 克/亩，共 {rec.totalDosage} 克。
         </p>
       </ProCard>
 
@@ -209,6 +201,7 @@ export default function Spray() {
           id: `spray-${Date.now().toString(36)}`,
           code,
           field: field.name,
+          fieldId: field.id,
           area: field.area,
           pesticide: pest.name,
           target: pest.target,
@@ -328,7 +321,7 @@ export default function Spray() {
                         {fieldIdx === i && <CircleCheck className="h-4 w-4 text-[#15803d]" strokeWidth={2} />}
                       </div>
                       <div className="mt-1.5 text-[11px] text-black/45">
-                        南瓜 · {f.stage} · <span className="font-num font-semibold text-[#1a2b23]">{f.area}</span> 亩
+                        {f.crop} · {f.stage} · <span className="font-num font-semibold text-[#1a2b23]">{f.area}</span> 亩
                       </div>
                     </button>
                   ))}
@@ -393,8 +386,8 @@ export default function Spray() {
                       <div className="mt-1">
                         <InfoRow label="任务编号"><span className="font-num">{code}</span></InfoRow>
                         <InfoRow label="地块名称">{field.name}</InfoRow>
-                        <InfoRow label="作物类型">南瓜（{field.stage}）</InfoRow>
-                        <InfoRow label="施药方案">南瓜{pest.target}防治方案</InfoRow>
+                        <InfoRow label="作物类型">{field.crop}（{field.stage}）</InfoRow>
+                        <InfoRow label="施药方案">{field.crop}{pest.target}演示方案</InfoRow>
                         <InfoRow label="计划时间">{new Date().toISOString().slice(0, 10)} {nowHM()}</InfoRow>
                         <InfoRow label="预计用时" divider={false}>30 分钟</InfoRow>
                       </div>

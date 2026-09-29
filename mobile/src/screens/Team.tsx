@@ -1,33 +1,16 @@
 import { Reveal, Disclosure } from '../components/motion'
 import { useEffect, useRef, useState } from 'react'
-import { Search, Bell, ChevronRight, Camera, Send, AlertTriangle, Wrench, Droplets, Bug, Tractor, Car, Sprout, Lock } from 'lucide-react'
+import { Search, Bell, ChevronRight, Camera, Send, AlertTriangle, Droplets, Bug, Car, Lock } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import FarmMap from '../components/FarmMap'
 import { Glass, SectionTitle, Ring, CountUp, stagger, EASE } from '../components/anim'
 
 import { useStore, nowHM } from '../store'
 import { usePerm } from '../auth'
-
-const STAFF = [
-  { name: '张师傅', task: '施肥作业 · 2块地', status: '进行中', cls: 'bg-[rgba(22,163,74,0.08)] text-[#16a34a]', tone: 'from-[#2f4234] to-[#18241c]' },
-  { name: '李师傅', task: '喷药作业 · 3块地', status: '进行中', cls: 'bg-[rgba(22,163,74,0.08)] text-[#16a34a]', tone: 'from-[#3a3a2a] to-[#211f16]' },
-  { name: '王师傅', task: '巡田检查 · 4块地', status: '待开始', cls: 'bg-[rgba(232,160,76,0.1)] text-[#e8a04c]', tone: 'from-[#2a3a42] to-[#161f24]' },
-]
-
-/* 拍照打卡示例照片（真实作业照） */
-const TEAM_PHOTOS = ['images/team-1.jpg', 'images/team-2.jpg', 'images/team-3.jpg']
-
-const MACHINES = [
-  { icon: Car, name: '植保小车', pct: 78, status: '作业中 · 田块A1', active: true },
-  { icon: Tractor, name: '智能拖拉机', pct: 65, status: '作业中 · 田块B2', active: true },
-  { icon: Sprout, name: '播种机', pct: 0, status: '待命中 · 田块C3', active: false },
-]
-
-const ALERTS = [
-  { icon: Droplets, tone: '#e8a04c', title: '土壤湿度偏低', desc: '田块A2土壤湿度低于设定值', time: '08:45' },
-  { icon: Bug, tone: '#e8a04c', title: '病虫害风险', desc: '田块C1检测到病虫害风险', time: '08:30' },
-  { icon: Wrench, tone: '#60a5fa', title: '设备维护提醒', desc: '智能拖拉机需进行定期维护', time: '昨天 17:30' },
-]
+import { useFarm } from '../FarmContext'
+import { FieldSelect, PhotoGallery, readPhoto } from '../components/workflow'
+import { toast } from 'sonner'
+import { PEOPLE, fieldLabel } from '../workflow-model'
 
 const REPLIES = [
   '收到，我马上过去看看。',
@@ -37,7 +20,13 @@ const REPLIES = [
 ]
 
 export default function Team() {
-  const { chat, addChat, checkins, addCheckin } = useStore()
+  const { chat, addChat, checkins, addCheckin, setScreen, valves } = useStore()
+  const {state,activeField,selectField}=useFarm()
+  const [gallery,setGallery]=useState<number|null>(null)
+  const STAFF=PEOPLE.slice(0,3).map(name=>{const tasks=state.tasks.filter(t=>t.assignee===name&&t.status!=='已完成');return {name,task:tasks[0]?.title??'暂无待办',status:tasks.length?`${tasks.length} 项`:'空闲',cls:'text-[#637823]',tone:'from-[#e3edb5] to-[#e9f3de]'}})
+  const MACHINES=[{icon:Car,name:'巡检小车',device:'巡检小车'},{icon:Droplets,name:'灌溉系统',device:'灌溉系统'},{icon:Bug,name:'喷淋系统',device:'喷淋系统'}].map(m=>{const tasks=state.tasks.filter(t=>t.device.startsWith(m.device));const complete=tasks.filter(t=>t.status==='已完成').length;const running=tasks.filter(t=>t.status==='执行中').length;return {...m,pct:Math.round(complete/Math.max(1,tasks.length)*100),active:running>0,status:m.device==='灌溉系统'?`${valves.filter(Boolean).length} / 5 阀门开启`:`${running} 项执行中 · ${complete} 项完成`}})
+  const ALERTS=state.incidents.filter(i=>i.status!=='已解决').slice(0,3).map(i=>({icon:Bug,tone:'#c79a50',title:i.title,desc:`${fieldLabel(i.fieldId)} · ${i.status}`,time:new Date(i.at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}))
+  const completion=Math.round(state.tasks.filter(t=>t.status==='已完成').length/Math.max(1,state.tasks.length)*100)
   const { isGuest, needLogin } = usePerm()
   const reduced = useReducedMotion()
   const [pending, setPending] = useState(0)
@@ -69,13 +58,11 @@ export default function Team() {
     }, 2000))
   }
 
-  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => addCheckin({ img: reader.result as string, time: nowHM() })
-    reader.readAsDataURL(file)
-    e.target.value = ''
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file=e.target.files?.[0];if(!file)return
+    try {addCheckin({img:await readPhoto(file),time:nowHM(),fieldId:activeField});toast('打卡照片已加入地块档案')}
+    catch(error){toast((error as Error).message)}
+    e.target.value=''
   }
 
   return (
@@ -86,10 +73,10 @@ export default function Team() {
           <p className="mt-0.5 text-[11px] text-black/40">人机高效配合，任务高效落地</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
+          <button aria-label="搜索农事任务" onClick={()=>setScreen('tasks')} className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
             <Search className="h-[18px] w-[18px] text-black/60" strokeWidth={1.5} />
           </button>
-          <button className="relative flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
+          <button aria-label="查看通知" onClick={()=>setScreen('notifications')} className="relative flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
             <Bell className="h-[18px] w-[18px] text-black/60" strokeWidth={1.5} />
             <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#e8a04c]" />
           </button>
@@ -103,18 +90,18 @@ export default function Team() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-[15px] font-medium text-[#1a2b23]">今日任务</span>
-                <span className="rounded-md bg-[rgba(22,163,74,0.08)] px-1.5 py-0.5 text-[9.5px] font-medium text-[#16a34a]">8项进行中</span>
+                <span className="rounded-md bg-[rgba(22,163,74,0.08)] px-1.5 py-0.5 text-[9.5px] font-medium text-[#16a34a]">{state.tasks.filter(t=>t.status==='执行中').length}项进行中</span>
               </div>
-              <button className="flex items-center text-[11px] text-black/40">
+              <button onClick={()=>setScreen('tasks')} className="flex items-center text-[11px] text-black/40">
                 查看全部 <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
               </button>
             </div>
             <div className="mt-3 flex items-center">
               <div className="grid flex-1 grid-cols-3 text-center">
                 {[
-                  [8, '全部任务'],
-                  [5, '进行中'],
-                  [2, '已完成'],
+                  [state.tasks.length, '全部任务'],
+                  [state.tasks.filter(t=>t.status==='执行中').length, '进行中'],
+                  [state.tasks.filter(t=>t.status==='已完成').length, '已完成'],
                 ].map(([v, label]) => (
                   <div key={label as string}>
                     <div className="font-num text-[26px] font-semibold tracking-[-0.02em] text-[#1a2b23]">
@@ -124,9 +111,9 @@ export default function Team() {
                   </div>
                 ))}
               </div>
-              <Ring value={62} size={68} stroke={6}>
+              <Ring value={completion} size={68} stroke={6}>
                 <span className="text-[15px] font-semibold text-[#16a34a]">
-                  <CountUp to={62} />%
+                  <CountUp to={completion} />%
                 </span>
                 <span className="text-[8.5px] text-black/40">完成进度</span>
               </Ring>
@@ -137,7 +124,7 @@ export default function Team() {
         {/* 人员分配 + 农机调度 */}
         <Reveal className="grid grid-cols-2 gap-3.5">
           <Glass className="p-3.5">
-            <SectionTitle title="人员分配" extra={<ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5} />} />
+            <SectionTitle title="人员分配" extra={<button aria-label="查看相关任务" onClick={()=>setScreen('tasks')}><ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5}/></button>} />
             <ul className="space-y-2.5">
               {STAFF.map((s) => (
                 <li key={s.name} className="flex items-center gap-2">
@@ -156,7 +143,7 @@ export default function Team() {
             </ul>
           </Glass>
           <Glass className="p-3.5">
-            <SectionTitle title="农机调度" extra={<ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5} />} />
+            <SectionTitle title="农机调度" extra={<button aria-label="查看相关任务" onClick={()=>setScreen('tasks')}><ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5}/></button>} />
             <ul className="space-y-2.5">
               {MACHINES.map((m, i) => (
                 <li key={m.name}>
@@ -195,18 +182,14 @@ export default function Team() {
             </div>
           </Glass>
           <Glass className="p-3.5">
-            <SectionTitle title="拍照打卡" extra={<ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5} />} />
+            <SectionTitle title="拍照打卡" extra={<button aria-label="查看相关任务" onClick={()=>setScreen('tasks')}><ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5}/></button>} />
+            <FieldSelect value={activeField} onChange={selectField}/>
             <div className="grid grid-cols-2 gap-2">
-              {checkins.slice(0, 3).map((c) => (
+              {checkins.slice(0, 3).map((c,i) => (
                 <motion.div layout initial={{opacity:0,scale:.85}} animate={{opacity:1,scale:1}} key={c.id} className="relative h-[62px] overflow-hidden rounded-lg">
-                  <img src={c.img} alt="打卡" className="h-full w-full object-cover" />
+                  <button aria-label="查看打卡照片" className="h-full w-full" onClick={()=>setGallery(i)}><img src={c.img} alt="打卡" className="h-full w-full object-cover" /></button>
                   <span className="absolute bottom-1 right-1 rounded bg-[rgba(10,15,11,0.75)] px-1 text-[8.5px] text-[rgba(217,249,157,0.9)]">{c.time}</span>
                 </motion.div>
-              ))}
-              {TEAM_PHOTOS.slice(0, Math.max(0, 3 - checkins.length)).map((src) => (
-                <div key={src} className="relative h-[62px] overflow-hidden rounded-lg">
-                  <img src={src} alt="田间作业" className="h-full w-full object-cover" />
-                </div>
               ))}
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
               <button
@@ -223,7 +206,7 @@ export default function Team() {
         {/* 团队沟通 + 预警提醒 */}
         <Reveal className="grid grid-cols-2 gap-3.5">
           <Glass className="flex flex-col p-3.5">
-            <SectionTitle title="团队沟通" />
+            <SectionTitle title="团队沟通 · 模拟回复" />
             <div ref={messages} role="log" aria-label="团队消息" aria-live="polite" onScroll={e => { const el=e.currentTarget; followMessages.current=el.scrollHeight-el.scrollTop-el.clientHeight<40 }} className="max-h-[190px] flex-1 space-y-2.5 overflow-y-auto">
               {chat.map((m) => (
                 <motion.div layout="position" key={m.id} initial={{ opacity: 0, x: m.who === 'me' ? 12 : -12, scale: .96 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.25, ease: EASE }} className="flex items-start gap-2">
@@ -257,7 +240,7 @@ export default function Team() {
             </div>
           </Glass>
           <Glass className="p-3.5">
-            <SectionTitle title="预警提醒" extra={<ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5} />} />
+            <SectionTitle title="预警提醒" extra={<button aria-label="查看全部预警" onClick={()=>setScreen('notifications')}><ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5}/></button>} />
             <ul className="space-y-2.5">
               {ALERTS.map((a, i) => (
                 <motion.li
@@ -287,6 +270,7 @@ export default function Team() {
           </Glass>
         </Reveal>
       </motion.div>
+      <PhotoGallery photos={checkins.map(c=>({id:c.id,src:c.img,note:`${c.fieldId??"A1"} · ${c.time}`}))} index={gallery} onClose={()=>setGallery(null)}/>
     </div>
   )
 }
