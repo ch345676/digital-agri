@@ -28,7 +28,10 @@ export function Glass({
   return (
     <div
       onClick={onClick}
-      className={`surface-card ${className}`}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
+      className={`surface-card ${onClick ? 'surface-action' : ''} ${className}`}
     >
       {children}
     </div>
@@ -61,12 +64,13 @@ export function CountUp({
   const reduced = useReducedMotion()
   const inView = useInView(ref, { once: true, margin: '-20px' })
   const [val, setVal] = useState(0)
+  const current = useRef(0)
   useEffect(() => {
     if (!inView) return
-    const controls = animate(0, to, {
+    const controls = animate(current.current, to, {
       duration: reduced ? 0 : duration,
       ease: EASE,
-      onUpdate: (v) => setVal(v),
+      onUpdate: (v) => { current.current = v; setVal(v) },
     })
     return () => controls.stop()
   }, [inView, to, duration, reduced])
@@ -143,16 +147,19 @@ export function SectionTitle({
 
 /* 开关：安静 */
 export function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  const reduced = useReducedMotion()
   return (
     <button
       role="switch"
       aria-checked={on}
       aria-label="切换开关"
       onClick={() => onChange(!on)}
-      className={`relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors duration-200 ${on ? 'bg-[#16a34a]' : 'bg-black/10'}`}
+      className={`motion-toggle relative h-[22px] w-[38px] shrink-0 rounded-full ${on ? 'is-on' : ''}`}
     >
-      <span
-        className={`absolute top-[3px] h-[16px] w-[16px] rounded-full bg-white transition-all duration-200 ${on ? 'left-[19px]' : 'left-[3px]'}`}
+      <motion.span
+        initial={false} animate={{ x: on ? 16 : 0 }}
+        transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 520, damping: 28 }}
+        className="absolute left-[3px] top-[3px] h-[16px] w-[16px] rounded-full bg-white"
       />
     </button>
   )

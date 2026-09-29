@@ -148,10 +148,10 @@ export default function Profile({ onClose }: { onClose: () => void }) {
                       暂无注册用户
                     </p>
                   )}
-                  {users
+                  <AnimatePresence initial={false}>{users
                     .filter((u) => u.role === 'user')
                     .map((u) => (
-                      <div
+                      <motion.div layout initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} style={{overflow:'hidden'}}
                         key={u.username}
                         className="flex items-center gap-2.5 rounded-[10px] border border-black/[0.07] bg-black/[0.03] px-3 py-2.5"
                       >
@@ -182,8 +182,8 @@ export default function Profile({ onClose }: { onClose: () => void }) {
                         >
                           <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} />
                         </button>
-                      </div>
-                    ))}
+                      </motion.div>
+                    ))}</AnimatePresence>
                 </div>
               </div>
             )}

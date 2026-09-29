@@ -14,7 +14,7 @@ export default function TabBar() {
   return <nav className="app-tabbar" aria-label="主要导航"><div className="app-tabs">
     {TABS.map(({ key, label, icon: Icon }) => <button key={key} className="app-tab" aria-current={screen === key ? 'page' : undefined} onClick={() => setScreen(key)}>
       {screen === key && <motion.span className="tab-highlight" layoutId="active-tab" transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 36 }} />}
-      <Icon size={20} strokeWidth={screen === key ? 2 : 1.6} /><span>{label}</span>
+      <motion.span animate={{ y: screen === key && !reduced ? [0, -3, 0] : 0 }} transition={{ duration: reduced ? 0 : .32 }}><Icon size={20} strokeWidth={screen === key ? 2 : 1.6} /></motion.span><span>{label}</span>
     </button>)}
   </div></nav>
 }

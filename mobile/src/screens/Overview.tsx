@@ -1,8 +1,9 @@
+import { Reveal } from '../components/motion'
 import FieldMotion from '../components/FieldMotion'
 import { ChevronDown, ScanBarcode, Bell, ChevronRight, AlertTriangle, CloudRain, Sun, CloudSun, CloudFog, CloudLightning, Snowflake } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { Glass, Ring, CountUp, SectionTitle, DrawnLine, stagger, fadeUp, LIME } from '../components/anim'
+import { Glass, Ring, CountUp, SectionTitle, DrawnLine, stagger, LIME } from '../components/anim'
 import { useStore } from '../store'
 import { useAuth, greeting } from '../auth'
 import { ProfileSheet } from './Profile'
@@ -114,7 +115,7 @@ export default function Overview() {
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-4 px-4">
         {/* 四格统计 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="grid grid-cols-4 divide-x divide-black/[0.08] p-3.5 text-center">
             {[
               ['种植面积', 1250, '亩'],
@@ -131,10 +132,10 @@ export default function Overview() {
               </div>
             ))}
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 地块一览：真实田照 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <SectionTitle
             title="地块一览"
             extra={
@@ -175,10 +176,10 @@ export default function Overview() {
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </Reveal>
 
         {/* 大卡（墒情）配小卡（天气） */}
-        <motion.div variants={fadeUp} className="grid grid-cols-5 gap-3.5">
+        <Reveal className="grid grid-cols-5 gap-3.5">
           <Glass className="col-span-3 p-4">
             <SectionTitle title="土壤墒情" sub="30cm土层含水率" />
             <div className="font-num text-[30px] font-semibold leading-none tracking-[-0.02em] text-[#1a2b23]">
@@ -220,10 +221,10 @@ export default function Overview() {
               ))}
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 灌溉状态 + 告警提醒 */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-4">
+        <Reveal className="grid grid-cols-2 gap-4">
           <Glass className="p-3.5">
             <SectionTitle title="灌溉状态" sub="今日灌溉时长" />
             <div className="flex items-center gap-3">
@@ -263,10 +264,10 @@ export default function Overview() {
               查看全部 <ChevronRight className="h-3 w-3" strokeWidth={1.5} />
             </button>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 产量预测卡（焦点元素 + 渐变描边） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="grad-border p-4" onClick={() => setScreen('prediction')}>
             <div className="flex items-center justify-between">
               <SectionTitle title="产量预测" sub="南瓜 | 1号地块" />
@@ -296,7 +297,7 @@ export default function Overview() {
               <span>9月(预估)</span>
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
       </motion.div>
 
       {/* 个人中心 */}

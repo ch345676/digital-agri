@@ -1,3 +1,4 @@
+import { Reveal, SuccessMark } from '../components/motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -74,7 +75,7 @@ function Receipt({ rec, onHistory, onHome }: { rec: SprayRecord; onHistory: () =
           transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.1 }}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#15803d]"
         >
-          <CircleCheck className="h-7 w-7 text-white" strokeWidth={1.8} />
+          <SuccessMark size={40}/>
         </motion.span>
         <div>
           <div className="text-[16px] font-bold text-[#17352a]">施药任务已接收并执行</div>
@@ -258,18 +259,18 @@ export default function Spray() {
         /* ================= 施药记录列表 ================= */
         <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3">
           {!isAdmin && (
-            <motion.div variants={fadeUp} className="rounded-[12px] border border-black/[0.07] bg-white px-3.5 py-2.5 text-[11px] text-black/45">
+            <Reveal className="rounded-[12px] border border-black/[0.07] bg-white px-3.5 py-2.5 text-[11px] text-black/45">
               普通用户可查看施药记录，发起施药需管理员权限
-            </motion.div>
+            </Reveal>
           )}
           {sprayRecords.length === 0 && (
-            <motion.div variants={fadeUp}>
+            <Reveal>
               <ProCard className="p-8 text-center">
                 <SprayCan className="mx-auto h-8 w-8 text-black/20" strokeWidth={1.4} />
                 <p className="mt-2 text-[12px] text-black/40">暂无施药记录</p>
                 <ProPrimaryBtn onClick={() => setView('wizard')} className="mx-auto mt-4 px-6">发起施药</ProPrimaryBtn>
               </ProCard>
-            </motion.div>
+            </Reveal>
           )}
           {sprayRecords.map((r) => (
             <motion.button

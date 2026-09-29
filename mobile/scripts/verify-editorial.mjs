@@ -5,7 +5,7 @@ try {
 const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const click=async text=>{await page.evaluate(t=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.includes(t));if(!b)throw Error('Missing button: '+t);b.click()},text);await sleep(650)};
-const goto=async route=>{await page.evaluate(r=>location.hash=r,route);await sleep(950)};
+const goto=async route=>{await page.evaluate(r=>location.hash=r,route);await page.waitForSelector(`.page-${route}`);await sleep(550)};
 await page.setViewport({width:390,height:844,isMobile:true,hasTouch:true});await page.goto(base+'/#alerts',{waitUntil:'networkidle2'});
 await page.type('input[type="password"]','admin123');await page.click('button[type="submit"]');await sleep(4500);
 const results=[];

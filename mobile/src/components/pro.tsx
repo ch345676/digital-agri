@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { Check, type LucideIcon } from 'lucide-react'
+import { useSceneMotion } from './motion'
 
 /* ================= 专业绿白农企风 设计组件 =================
    主色 #15803d（沉稳深绿），风险色 红/橙/黄绿 分级 */
@@ -88,12 +89,12 @@ export function StepBar({ steps, current }: { steps: string[]; current: number }
           <div key={s} className="relative flex flex-1 flex-col items-center">
             {i > 0 && (
               <span
-                className="absolute left-[-50%] right-[50%] top-[13px] h-[2px]"
-                style={{ background: done || active ? '#15803d' : 'rgba(0,0,0,0.08)' }}
-              />
+                className="step-connector absolute left-[-50%] right-[50%] top-[13px] h-[2px] bg-black/[0.08]"
+              ><i style={{transform: `scaleX(${done || active ? 1 : 0})`}}/></span>
             )}
             <span
-              className="relative z-10 flex h-[26px] w-[26px] items-center justify-center rounded-full text-[12px] font-bold"
+              aria-current={active ? 'step' : undefined}
+              className="step-node relative z-10 flex h-[26px] w-[26px] items-center justify-center rounded-full text-[12px] font-bold"
               style={{
                 background: done || active ? '#15803d' : 'rgba(0,0,0,0.06)',
                 color: done || active ? '#fff' : 'rgba(0,0,0,0.35)',
@@ -122,8 +123,9 @@ export function Timeline({
   steps: { label: string; time?: string }[]
   current: number // 已完成的步数（含进行中的那步之前）
 }) {
+  const { ref, playing } = useSceneMotion<HTMLDivElement>()
   return (
-    <div className="flex items-start justify-between px-1">
+    <div ref={ref} data-scene-playing={playing} className="flex items-start justify-between px-1">
       {steps.map((s, i) => {
         const done = i < current
         const active = i === current
@@ -137,9 +139,8 @@ export function Timeline({
             )}
             <motion.span
               initial={false}
-              animate={{ scale: active ? [1, 1.15, 1] : 1 }}
-              transition={active ? { repeat: Infinity, duration: 1.2 } : undefined}
-              className="relative z-10 flex h-[22px] w-[22px] items-center justify-center rounded-full"
+              data-active={active}
+              className="timeline-node relative z-10 flex h-[22px] w-[22px] items-center justify-center rounded-full"
               style={{
                 background: done || active ? '#15803d' : 'rgba(0,0,0,0.07)',
               }}

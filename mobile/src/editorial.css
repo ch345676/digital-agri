@@ -104,3 +104,68 @@ input:focus, textarea:focus { box-shadow: 0 0 0 4px #5c9edf15; }
 .valve-name{display:flex;align-items:baseline;gap:9px;flex:1;min-width:0}.valve-name b{font-size:12px;font-weight:650}.valve-name small{font-size:11px;color:#7b877f;white-space:nowrap}.valve-state{font-size:10px;color:#97a19b}.valve-row.is-on .valve-state{color:#617e43}.valve-lock{color:#94a198}
 .valve-switch{width:34px;height:20px;padding:3px;border-radius:99px;background:#dce3df;flex:none;transition:background-color 220ms}.valve-switch i{display:block;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform 220ms cubic-bezier(.22,1,.36,1)}.is-on .valve-switch{background:#819c56}.is-on .valve-switch i{transform:translateX(14px)}.valve-row:disabled{opacity:.55}
 @media(prefers-reduced-motion:reduce){.field-motion img,.field-sunlight{animation:none;transform:none}.valve-switch,.valve-switch i{transition:none}}
+
+/* Motion language: short touch response, gentle reveals, purposeful field activity. */
+.app-shell { overflow-x: clip; }
+.motion-disclosure { overflow: hidden; }
+.motion-label { position: relative; display: inline-grid; vertical-align: baseline; }
+.motion-label > span { grid-area: 1 / 1; }
+.motion-toggle { background: #dce3df; }
+.motion-toggle.is-on { background: #819c56; }
+.motion-toggle > span { box-shadow: 0 1px 3px #0002; }
+.surface-action { cursor: pointer; touch-action: manipulation; transition: scale 180ms var(--ease), box-shadow 250ms; }
+.surface-action:active { scale: .98; }
+.surface-action:focus-visible { outline: 3px solid #619cdc; outline-offset: 3px; }
+.farm-canvas { transition: width 300ms var(--ease); }
+.farm-expanded { transform-origin: center top; }
+.field-label-box { transition: fill 240ms; }
+.field-spotlight, .field-map-callout { animation: field-focus 320ms var(--ease) both; }
+.field-trace { stroke-dasharray: 100; stroke-dashoffset: 0; animation: field-outline 750ms var(--ease) both; }
+.irrigation-flow { animation: water-travel 1.4s linear infinite; animation-play-state: paused; }
+[data-scene-playing="true"] .irrigation-flow { animation-play-state: running; }
+.farm-marker-arrival circle { transform-box: fill-box; transform-origin: center; animation: marker-arrival 450ms var(--ease) both; }
+.valve-icon { overflow: hidden; position: relative; transition: background-color 220ms, color 220ms; }
+.valve-row.is-on .valve-icon::before { content: ''; position: absolute; inset: 0; background: #cbdca3; animation: valve-fill 600ms var(--ease) both; }
+.valve-row.is-on .valve-icon svg { position: relative; animation: drop-arrival 450ms var(--ease); }
+.task-action { position: relative; overflow: hidden; isolation: isolate; }
+.task-action > span:not(.task-action-fill) { position: relative; z-index: 1; }
+.task-action-fill { position: absolute; inset: 0; background: #a0bb4e45; transform-origin: left; animation: task-fill 4.8s linear both; }
+.task-action[data-running="true"] .lucide-droplets { animation: drop-breathe 1s ease-in-out infinite; }
+.task-scan { position: relative; overflow: hidden; }
+.task-scan::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg,transparent 20%,#a5c7e733 50%,transparent 80%); animation: task-scan 1.7s ease-in-out infinite; }
+.task-scan progress { height: 5px; accent-color: #839d4e; }
+.timeline-node[data-active="true"] { animation: node-breathe 1.3s ease-in-out infinite; animation-play-state: paused; }
+[data-scene-playing="true"] .timeline-node[data-active="true"] { animation-play-state: running; }
+.step-connector { transition: background-color 250ms; overflow: hidden; }
+.step-connector i { display: block; height: 100%; width: 100%; background: #15803d; transform-origin: left; transition: transform 350ms var(--ease); }
+.step-node { transition: color 250ms, background-color 250ms, box-shadow 250ms; }
+.step-node[aria-current="step"] { box-shadow: 0 0 0 4px #91a84220; }
+.typing-dots { display: inline-flex; align-items: center; gap: 3px; padding: 8px 10px; background: #eef3e5; border-radius: 12px; }
+.typing-dots i { height: 3px; width: 3px; border-radius: 50%; background: #738c48; animation: typing-dot 1s ease-in-out infinite; }
+.typing-dots i:nth-child(2) { animation-delay: 120ms; }.typing-dots i:nth-child(3) { animation-delay: 240ms; }
+.identify-frame[data-phase="scanning"] > img { filter: saturate(.75); transition: filter 400ms; }
+.identify-frame[data-phase="done"] { box-shadow: inset 0 0 0 2px #a1b96b; }
+.identify-frame[data-scene-playing="false"] .scan-line-fast { animation-play-state: paused; }
+.identify-lock { position: absolute; inset: 19%; border: 1px solid #e5f6c8; border-radius: 14px; box-shadow: 0 0 0 100px #15382418; pointer-events: none; animation: lock-focus 450ms var(--ease) both; }
+.login-page form { animation: none; overflow: hidden; }
+.success-mark { flex-shrink: 0; }
+html[data-page-hidden="true"] *, html[data-page-hidden="true"] *::before, html[data-page-hidden="true"] *::after { animation-play-state: paused !important; }
+@keyframes field-focus { from { opacity: 0; } }
+@keyframes field-outline { from { stroke-dashoffset: 100; } }
+@keyframes water-travel { to { stroke-dashoffset: -40; } }
+@keyframes marker-arrival { from { transform: scale(.4); opacity: 0; } }
+@keyframes valve-fill { from { transform: translateY(100%); opacity: .8; } to { transform: translateY(0); opacity: .3; } }
+@keyframes drop-arrival { from { transform: translateY(-5px); opacity: .2; } }
+@keyframes task-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes drop-breathe { 50% { transform: translateY(2px); opacity: .6; } }
+@keyframes task-scan { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes node-breathe { 50% { box-shadow: 0 0 0 5px #91a84220; } }
+@keyframes typing-dot { 50% { transform: translateY(-3px); opacity: .4; } }
+@keyframes lock-focus { from { transform: scale(1.12); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .field-trace { animation: none; stroke-dashoffset: 0; }
+  .task-action-fill { animation: none; transform: scaleX(1); }
+  .task-scan::before, .identify-lock { display: none; }
+  .surface-action:active, button:not(:disabled):active { scale: 1; }
+  .irrigation-flow, .timeline-node, .typing-dots i, .task-action .lucide-droplets { animation: none !important; }
+}

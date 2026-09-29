@@ -1,6 +1,7 @@
+import { Reveal } from '../components/motion'
 import { ChevronLeft, HelpCircle, Sprout, CalendarDays, Sun, CloudRain, SunSnow, TrendingUp } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { Glass, SectionTitle, CountUp, DrawnLine, stagger, fadeUp, EASE } from '../components/anim'
+import { Glass, SectionTitle, CountUp, DrawnLine, stagger, EASE } from '../components/anim'
 import { useStore } from '../store'
 
 /* 生长曲线数据（吨/亩，x：播种/伸蔓/开花/坐果/膨大/成熟） */
@@ -63,7 +64,7 @@ export default function Prediction() {
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
         {/* 作物卡 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.08] bg-black/[0.05]">
@@ -79,10 +80,10 @@ export default function Prediction() {
               <div className="text-[15px] font-medium text-[#16a34a]">坐果期</div>
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 产量 + 收获倒计时 */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3.5">
+        <Reveal className="grid grid-cols-2 gap-3.5">
           <Glass className="p-4">
             <div className="label-caps text-[10px] font-medium text-black/40">预计产量（鲜瓜）</div>
             <div className="mt-1.5 font-num text-[64px] font-bold leading-none tracking-[-0.03em] text-[#16a34a]">
@@ -103,10 +104,10 @@ export default function Prediction() {
               还有 <span className="text-[15px] font-semibold text-[#16a34a]">{days}</span> 天
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 生长曲线 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-4">
             <SectionTitle
               title="作物生长曲线"
@@ -153,10 +154,10 @@ export default function Prediction() {
               </motion.div>
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 田块对比 + 天气影响 */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3.5">
+        <Reveal className="grid grid-cols-2 gap-3.5">
           <Glass className="p-3.5">
             <SectionTitle title="田块产量对比" sub="单位：吨/亩" />
             <div className="space-y-2.5">
@@ -194,10 +195,10 @@ export default function Prediction() {
               ))}
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 价格趋势 + AI建议 */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3.5">
+        <Reveal className="grid grid-cols-2 gap-3.5">
           <Glass className="p-3.5">
             <SectionTitle title="价格趋势预测" sub="单位：元/吨" />
             <div className="font-num text-[24px] font-semibold tracking-[-0.02em] text-[#1a2b23]">
@@ -236,10 +237,10 @@ export default function Prediction() {
               ))}
             </ul>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 综合分析结论 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <div className="flex items-center gap-2.5 rounded-[14px] border border-[rgba(22,163,74,0.15)] bg-[rgba(22,163,74,0.05)] p-3.5">
             <Sun className="h-4 w-4 shrink-0 text-[#16a34a]" strokeWidth={1.5} />
             <p className="text-[11.5px] leading-snug text-black/55">
@@ -247,7 +248,7 @@ export default function Prediction() {
               今年有望获得丰收，建议加强后期管理，确保产量目标达成
             </p>
           </div>
-        </motion.div>
+        </Reveal>
       </motion.div>
     </div>
   )

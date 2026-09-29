@@ -1,3 +1,4 @@
+import { Reveal, Disclosure, MotionLabel } from '../components/motion'
 import AmbientVideo from '../components/AmbientVideo'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -8,7 +9,7 @@ import {
 import { AnimatePresence, motion, animate } from 'framer-motion'
 import FarmMap from '../components/FarmMap'
 import { ROUTE as FARM_ROUTE, routePosition } from '../farm-route'
-import { Glass, stagger, fadeUp, EASE } from '../components/anim'
+import { Glass, stagger, EASE } from '../components/anim'
 
 
 import { useStore, nowHM, type SoilTest, type PatrolAlert } from '../store'
@@ -378,16 +379,16 @@ export default function Patrol() {
       <div className="farm-fleet" aria-label="巡检机器人">{ROBOTS.map((r,i)=><button key={r.id} aria-pressed={i===selectedRobot} disabled={soilBusy||scanPhase!=='idle'||status==='returning'} onClick={()=>chooseRobot(i)}><strong>机器人 #{r.id} · {r.field}</strong><small>{r.job}</small><small>{i===3?'充电待机':fleet[i].progress>=100?'已完成':fleet[i].running?'巡检中':'已暂停'} · {fleet[i].progress.toFixed(1)}%</small><progress value={fleet[i].progress} max="100"/></button>)}</div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
         {/* 巡检路线地图（真实卫星影像 + 网格分区语义） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <FarmMap patrol={{progress,running:cruising&&visible&&mode==='auto'&&status==='cruise',position}} markers={[...soilTests.map(t=>({id:t.id,x:t.x*1000/360,y:t.y*560/210,kind:'soil' as const})),...patrolAlerts.map(t=>({id:t.id,x:t.x*1000/360,y:t.y*560/210,kind:'alert' as const}))]}/>
           <div className="farm-patrol-controls"><span>路线进度 <b data-patrol-progress>{progress.toFixed(1)}%</b></span><button onClick={()=>{if(progress>=100){progressRef.current=0;setProgress(0);setStatus('cruise')}setMode('auto');setCruising(progress>=100?true:!cruising)}} disabled={selectedRobot===3||status==='returning'||soilBusy||scanPhase!=='idle'}>{selectedRobot===3?'充电待机':progress>=100?'重新演示':cruising?'暂停演示':'继续演示'}</button></div>
           <p className="farm-credit">路线、读数和扫描结果均为仿真，不代表实时 GPS 或硬件采集。</p>
-        </motion.div>
+        </Reveal>
 
-        {(soilBusy || scanPhase!=='idle') && <Glass className="p-4"><div role="status" className="text-[13px] font-medium">{soilBusy ? (soilPhase==='descend'?'准备土壤采样…':`土壤采集中 ${Math.round(soilProgress*100)}%`) : scanPhase==='lock'?'已锁定疑似病斑，生成复核预警…':'正在扫描作物…'}</div>{soilBusy&&<progress className="mt-3 w-full" value={soilProgress} max="1"/>}</Glass>}
+        <Disclosure open={soilBusy || scanPhase!=='idle'}><Glass className="task-scan p-4"><div role="status" className="text-[13px] font-medium">{soilBusy ? (soilPhase==='descend'?'准备土壤采样…':`土壤采集中 ${Math.round(soilProgress*100)}%`) : scanPhase==='lock'?'已锁定疑似病斑，生成复核预警…':'正在扫描作物…'}</div>{soilBusy&&<progress className="mt-3 w-full" value={soilProgress} max="1"/>}</Glass></Disclosure>
 
         {/* 车型卡（真实渲染车 + 结构图鉴入口） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="overflow-hidden p-0">
             <div className="relative h-[150px]">
               <img src="images/rover-real.jpg" alt="巡检小车实拍渲染" className="h-full w-full object-cover" />
@@ -404,10 +405,10 @@ export default function Patrol() {
               </button>
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 操控区：模式切换 + 巡航控制 / 虚拟摇杆 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-4">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-[#1a2b23]">操控</span>
@@ -501,10 +502,10 @@ export default function Patrol() {
             )}
             </motion.div></AnimatePresence>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 遥测四格 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="grid grid-cols-4 divide-x divide-black/[0.08] p-3.5 text-center">
             <div>
               <div className="text-[10px] text-black/40">电量</div>
@@ -537,17 +538,18 @@ export default function Patrol() {
               <div className="mt-1 text-[9px] text-black/40">4G</div>
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         <Glass className="p-4"><div className="mb-2 text-[14px] font-semibold">叶面采集预览</div><AmbientVideo src={cruising||scanPhase!=='idle'?'./media/glass/leaf.mp4':undefined} poster="./media/glass/leaf.jpg" muted loop playsInline className="farm-leaf-video w-full rounded-2xl"/><p className="mt-2 text-[11px] text-black/50">{robot.job} · RGB / 多光谱 / 热红外辅助</p><button className="farm-action" onClick={()=>setScreen('alerts')}>查看识别预警</button><p className="farm-credit">视觉示意素材，未连接真实摄像头。</p></Glass>
         {/* 硬件功能键（对齐真实硬件） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <div className="grid grid-cols-3 gap-2">
             {hwKeys.map(({ icon: Icon, label, active, fn, locked }) => (
               <motion.button
                 key={label}
                 whileTap={{ scale: 0.96 }}
                 onClick={fn}
+                aria-pressed={active}
                 className={`relative flex items-center justify-center gap-1.5 rounded-[12px] border py-3 ${
                   active
                     ? 'border-[rgba(22,163,74,0.35)] bg-[rgba(22,163,74,0.08)] text-[#16a34a]'
@@ -573,11 +575,10 @@ export default function Patrol() {
               <span className="text-[9px] opacity-70">已上线</span>
             </button>
           </div>
-        </motion.div>
+        </Reveal>
 
         {/* 云台控制 pad（四向，45° 范围内 15° 步进） */}
-        {showGimbal && (
-          <motion.div variants={fadeUp} initial="hidden" animate="show">
+        <Disclosure open={showGimbal}>
             <Glass className="flex items-center gap-4 p-4">
               <div className="grid shrink-0 grid-cols-3 gap-1.5">
                 <span />
@@ -600,21 +601,20 @@ export default function Patrol() {
                 <div className="mt-1.5 space-y-1 text-[12px]">
                   <div className="flex justify-between">
                     <span className="text-black/45">水平转向</span>
-                    <span className="font-num font-medium text-[#1a2b23]">{gimbal.pan > 0 ? '+' : ''}{gimbal.pan}°</span>
+                    <span className="font-num font-medium text-[#1a2b23]">{gimbal.pan > 0 ? '+' : ''}<MotionLabel value={gimbal.pan}>{gimbal.pan}°</MotionLabel></span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-black/45">上下俯仰</span>
-                    <span className="font-num font-medium text-[#1a2b23]">{gimbal.tilt > 0 ? '+' : ''}{gimbal.tilt}°</span>
+                    <span className="font-num font-medium text-[#1a2b23]">{gimbal.tilt > 0 ? '+' : ''}<MotionLabel value={gimbal.tilt}>{gimbal.tilt}°</MotionLabel></span>
                   </div>
                 </div>
                 <div className="mt-1.5 text-[9px] text-black/30">范围 ±45° · 步进 15°</div>
               </div>
             </Glass>
-          </motion.div>
-        )}
+        </Disclosure>
 
         {/* 土壤检测记录（持久化，可回看光谱） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-3.5">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-[#1a2b23]">土壤检测记录</span>
@@ -642,10 +642,10 @@ export default function Patrol() {
               </div>
             )}
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 预警任务（疑似病斑 → 待确认） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-3.5">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-[#1a2b23]">预警任务</span>
@@ -683,10 +683,10 @@ export default function Patrol() {
               </div>
             )}
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 巡检相册 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-3.5">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-[#1a2b23]">巡检相册</span>
@@ -699,18 +699,18 @@ export default function Patrol() {
             ) : (
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
                 {roverShots.map((s) => (
-                  <div key={s.id} className="shrink-0">
+                  <motion.div layout key={s.id} initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} className="shrink-0">
                     <img src={s.img} alt="巡检照片" className="h-16 w-24 rounded-[8px] border border-black/[0.09] object-cover" />
                     <div className="mt-1 text-center font-num text-[9px] text-black/40">{s.time}</div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 本次巡航进度 + 一键回充 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="flex items-center gap-4 p-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between">
@@ -745,14 +745,15 @@ export default function Patrol() {
               </span>
             </motion.button>
           </Glass>
-        </motion.div>
+        </Reveal>
       </motion.div>
 
       {/* ========== 土壤检测结果卡（复刻检测屏：光谱 + 四指标） ========== */}
-      {soilResult && (
-        <div className="fixed inset-0 z-[1100] flex items-end justify-center bg-[rgba(6,9,7,0.7)] backdrop-blur-sm" onClick={() => setSoilResult(null)}>
+      <AnimatePresence>{soilResult && (
+        <motion.div key="soil-result" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-[1100] flex items-end justify-center bg-[rgba(6,9,7,0.7)] backdrop-blur-sm" onClick={() => setSoilResult(null)}>
           <motion.div
             initial={{ y: 80, opacity: 0 }}
+            exit={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.35, ease: EASE }}
             onClick={(e) => e.stopPropagation()}
@@ -773,7 +774,7 @@ export default function Patrol() {
                 {[22, 44, 66].map((y) => (
                   <line key={y} x1="0" y1={y} x2="300" y2={y} stroke="rgba(0,0,0,0.07)" strokeWidth="1" />
                 ))}
-                <polyline points={spectrumPoints(soilResult.spectrum)} fill="none" stroke="#16a34a" strokeWidth="1.5" strokeLinejoin="round" />
+                <motion.polyline initial={{pathLength:0}} animate={{pathLength:1}} transition={{duration:.8,ease:EASE}} points={spectrumPoints(soilResult.spectrum)} fill="none" stroke="#16a34a" strokeWidth="1.5" strokeLinejoin="round" />
               </svg>
               <div className="mt-1 flex justify-between text-[8px] text-black/30">
                 <span>900nm</span>
@@ -806,14 +807,15 @@ export default function Patrol() {
               完成
             </button>
           </motion.div>
-        </div>
-      )}
+        </motion.div>
+      )}</AnimatePresence>
 
       {/* ========== 病斑预警卡（复刻预警流文案） ========== */}
-      {alertCard && (
-        <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-[rgba(6,9,7,0.7)] px-6 backdrop-blur-sm" onClick={() => setAlertCard(null)}>
+      <AnimatePresence>{alertCard && (
+        <motion.div key="alert-result" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-[1100] flex items-center justify-center bg-[rgba(6,9,7,0.7)] px-6 backdrop-blur-sm" onClick={() => setAlertCard(null)}>
           <motion.div
             initial={{ scale: 0.92, opacity: 0 }}
+            exit={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.3, ease: EASE }}
             onClick={(e) => e.stopPropagation()}
@@ -861,12 +863,12 @@ export default function Patrol() {
               </button>
             </div>
           </motion.div>
-        </div>
-      )}
+        </motion.div>
+      )}</AnimatePresence>
 
       {/* ========== 结构图鉴层（整机爆炸结构总览） ========== */}
-      {showExploded && (
-        <div className="fixed inset-0 z-[1100] flex flex-col bg-[rgba(245,247,248,0.98)] backdrop-blur-md">
+      <AnimatePresence>{showExploded && (
+        <motion.div key="structure" initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} exit={{opacity:0,y:24}} transition={{duration:.28,ease:EASE}} className="fixed inset-0 z-[1100] flex flex-col bg-[rgba(245,247,248,0.98)] backdrop-blur-md">
           <div className="flex items-center justify-between px-4 pt-5">
             <div>
               <div className="text-[15px] font-semibold text-[#1a2b23]">结构图鉴 · 整机爆炸结构</div>
@@ -894,15 +896,15 @@ export default function Patrol() {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        </motion.div>
+      )}</AnimatePresence>
 
       {/* 轻提示 */}
-      {toast && (
-        <div className="fixed bottom-[96px] left-1/2 z-[1100] center-x rounded-full border border-black/10 bg-[rgba(255,255,255,0.94)] px-4 py-2 text-[12px] text-black/70 backdrop-blur-md">
+      <AnimatePresence>{toast && (
+        <motion.div key={toast} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}} className="fixed bottom-[96px] left-1/2 z-[1100] center-x rounded-full border border-black/10 bg-[rgba(255,255,255,0.94)] px-4 py-2 text-[12px] text-black/70 backdrop-blur-md">
           {toast}
-        </div>
-      )}
+        </motion.div>
+      )}</AnimatePresence>
     </div>
   )
 }

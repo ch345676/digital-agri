@@ -1,9 +1,10 @@
+import { Reveal, Disclosure, MotionLabel, SuccessMark } from '../components/motion'
 import FarmMap from '../components/FarmMap'
 import { FIELDS } from '../farm-data'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, MoreHorizontal, Droplets, CalendarClock, Sparkles, ArrowRight, CheckCircle2, Sun, CloudSun, CloudFog, CloudRain, CloudLightning, Snowflake } from 'lucide-react'
+import { ChevronLeft, MoreHorizontal, Droplets, CalendarClock, Sparkles, ArrowRight, Sun, CloudSun, CloudFog, CloudRain, CloudLightning, Snowflake } from 'lucide-react'
 import { AnimatePresence, animate, motion } from 'framer-motion'
-import { Glass, SectionTitle, Toggle, DrawnLine, CountUp, stagger, fadeUp, EASE } from '../components/anim'
+import { Glass, SectionTitle, Toggle, DrawnLine, CountUp, stagger, EASE } from '../components/anim'
 import { useStore, nowHM } from '../store'
 import { useAuth, usePerm } from '../auth'
 import { Lock, Send, SprayCan } from 'lucide-react'
@@ -43,12 +44,18 @@ export default function Irrigation() {
   const [water, setWater] = useState(28.6)
   const [running, setRunning] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const animations = useRef<ReturnType<typeof animate>[]>([])
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  useEffect(() => () => { timers.current.forEach(clearTimeout); animations.current.forEach(animation => animation.stop()) }, [])
 
   const startIrrigation = () => {
     if (running) return
+    timers.current.forEach(clearTimeout)
+    timers.current = []
+    animations.current.forEach(animation => animation.stop())
+    animations.current = []
+    setToast(null)
     setRunning(true)
     // 阀门依次开启
     ZONES.forEach((_, i) => {
@@ -57,7 +64,7 @@ export default function Irrigation() {
     // 墒情逐渐上升到适宜
     moisture.forEach((m, i) => {
       const target = Math.max(m, Math.min(90, ZONES[i].base + 4))
-      animate(m, target, {
+      animations.current.push(animate(m, target, {
         duration: 3.2,
         delay: 0.4 + i * 0.25,
         ease: 'easeInOut',
@@ -67,14 +74,14 @@ export default function Irrigation() {
             next[i] = Math.round(v * 10) / 10
             return next
           }),
-      })
+      }))
     })
     // 用水量上升
-    animate(water, water + 1.2, {
+    animations.current.push(animate(water, water + 1.2, {
       duration: 3.4,
       ease: 'easeInOut',
       onUpdate: (v) => setWater(Math.round(v * 10) / 10),
-    })
+    }))
     // 完成
     timers.current.push(
       setTimeout(() => {
@@ -100,7 +107,7 @@ export default function Irrigation() {
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
         {/* 天气条 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="flex items-center justify-between p-3.5">
             <div className="flex items-center gap-3">
               <NowIcon className="h-9 w-9 text-black/60" strokeWidth={1.5} />
@@ -128,34 +135,34 @@ export default function Irrigation() {
               </div>
             )}
           </Glass>
-        </motion.div>
+        </Reveal>
 
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <FarmMap irrigation={{moisture:Object.fromEntries(ZONES.map((z,i)=>[z.fieldId,moisture[i]])),valves:Object.fromEntries(ZONES.map((z,i)=>[z.fieldId,valves[i]])),busy:running,onValve:(id)=>{const index=ZONES.findIndex(z=>z.fieldId===id);if(index>=0&&guardValve(`${id} ${ZONES[index].crop} 阀门`))setValve(index,!valves[index])}}}/>
           <p className="farm-credit">五块田与电脑端一致；墒情和灌溉过程为演示数据。</p>
-        </motion.div>
+        </Reveal>
 
         {/* 阀门状态 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-4">
             <SectionTitle title="阀门控制" extra={<span className="valve-summary">{valves.filter(Boolean).length} / 5 已开启</span>} />
             <div className="valve-list">
               {ZONES.map((z, i) => {
                 const on = valves[i]
                 return <button key={z.id} data-valve-field={z.fieldId} aria-pressed={on} aria-label={`${z.name} ${z.crop} 阀门，${on?'已开启':'已关闭'}`} disabled={running} onClick={()=>guardValve(`${z.name} ${z.crop} 阀门`)&&setValve(i,!on)} className={`valve-row ${on?'is-on':''}`}>
-                  <span className="valve-icon"><Droplets size={17} strokeWidth={1.6}/></span>
+                  <span className="valve-icon" key={String(on)}><Droplets size={17} strokeWidth={1.6}/></span>
                   <span className="valve-name"><b>{z.name}</b><small>{z.crop}</small></span>
                   {!isAdmin&&<Lock size={12} className="valve-lock"/>}
-                  <span className="valve-state">{running?'执行中':on?'开启':'关闭'}</span>
+                  <MotionLabel className="valve-state" value={`${running}-${on}`}>{running?'执行中':on?'开启':'关闭'}</MotionLabel>
                   <span className="valve-switch" aria-hidden="true"><i/></span>
                 </button>
               })}
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 今日用水量 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-4">
             <div className="flex items-end justify-between">
               <div>
@@ -179,10 +186,10 @@ export default function Irrigation() {
               <span>24:00</span>
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 自动灌溉计划 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -201,7 +208,7 @@ export default function Irrigation() {
                 </span>
               </div>
             </div>
-            <div className="mt-3 flex items-center justify-between rounded-[10px] bg-black/[0.04] px-3.5 py-2.5">
+            <Disclosure open={planEnabled}><div className="mt-3 flex items-center justify-between rounded-[10px] bg-black/[0.04] px-3.5 py-2.5">
               <div>
                 <div className="text-[10.5px] text-black/40">下次灌溉时间</div>
                 <div className="text-[14px] font-medium text-[#1a2b23]">明天 06:00</div>
@@ -211,12 +218,12 @@ export default function Irrigation() {
                 <div className="text-[14px] font-medium text-[#1a2b23]">60 分钟</div>
               </div>
               <ChevronLeft className="h-4 w-4 rotate-180 text-black/40" strokeWidth={1.5} />
-            </div>
+            </div></Disclosure>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* AI 灌溉建议 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="flex items-center gap-3 p-4">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-black/[0.08] bg-black/[0.05]">
               <Sparkles className="h-[18px] w-[18px] text-black/60" strokeWidth={1.5} />
@@ -235,9 +242,9 @@ export default function Irrigation() {
               {isAdmin ? '推荐执行' : '申请执行'}
             </button>
           </Glass>
-        </motion.div>
+        </Reveal>
         {/* 施药管理入口 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="flex items-center gap-3 p-4" onClick={() => setScreen('spray')}>
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(21,128,61,0.25)] bg-[rgba(21,128,61,0.07)]">
               <SprayCan className="h-[18px] w-[18px] text-[#15803d]" strokeWidth={1.5} />
@@ -250,7 +257,7 @@ export default function Irrigation() {
             </div>
             <ArrowRight className="h-4 w-4 shrink-0 text-black/30" strokeWidth={1.5} />
           </Glass>
-        </motion.div>
+        </Reveal>
       </motion.div>
       <div className="fixed bottom-[86px] left-1/2 z-30 w-full max-w-[420px] center-x px-4">
         <div className="rounded-[15px] p-[1px]" style={{ background: 'linear-gradient(135deg, rgba(22,163,74,0.75), rgba(22,163,74,0.08) 55%, transparent)' }}>
@@ -258,8 +265,11 @@ export default function Irrigation() {
             whileTap={{ scale: 0.98 }}
             onClick={() => (isAdmin ? startIrrigation() : applyIrrigation('一键灌溉'))}
             disabled={running}
-            className="flex w-full items-center justify-between rounded-[14px] bg-[#16a34a] px-5 py-3.5 disabled:opacity-70"
+            aria-busy={running}
+            data-running={running}
+            className="task-action flex w-full items-center justify-between rounded-[14px] bg-[#16a34a] px-5 py-3.5 disabled:opacity-70"
           >
+            {running && <span className="task-action-fill" aria-hidden="true"/>}
             <span className="flex items-center gap-2 text-[15px] font-semibold text-white">
               {isAdmin ? (
                 <Droplets className="h-5 w-5" strokeWidth={1.5} />
@@ -289,7 +299,7 @@ export default function Irrigation() {
             transition={{ duration: 0.3, ease: EASE }}
             className="fixed left-1/2 top-6 z-50 flex center-x items-center gap-2 rounded-full border border-black/[0.1] bg-white px-4 py-2.5 shadow-lg"
           >
-            <CheckCircle2 className="h-4 w-4 text-[#16a34a]" strokeWidth={1.5} />
+            <SuccessMark size={20}/>
             <span className="whitespace-nowrap text-[12.5px] font-medium text-[#1a2b23]">{toast}</span>
           </motion.div>
         )}

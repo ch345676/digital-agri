@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react'
+import { Reveal, Disclosure } from '../components/motion'
+import { useEffect, useRef, useState } from 'react'
 import { Search, Bell, ChevronRight, Camera, Send, AlertTriangle, Wrench, Droplets, Bug, Tractor, Car, Sprout, Lock } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import FarmMap from '../components/FarmMap'
-import { Glass, SectionTitle, Ring, CountUp, stagger, fadeUp, EASE } from '../components/anim'
+import { Glass, SectionTitle, Ring, CountUp, stagger, EASE } from '../components/anim'
 
 import { useStore, nowHM } from '../store'
 import { usePerm } from '../auth'
@@ -38,6 +39,13 @@ const REPLIES = [
 export default function Team() {
   const { chat, addChat, checkins, addCheckin } = useStore()
   const { isGuest, needLogin } = usePerm()
+  const reduced = useReducedMotion()
+  const [pending, setPending] = useState(0)
+  const replies = useRef<ReturnType<typeof setTimeout>[]>([])
+  const messages = useRef<HTMLDivElement>(null)
+  const followMessages = useRef(true)
+  useEffect(() => () => replies.current.forEach(clearTimeout), [])
+  useEffect(() => { if (followMessages.current) messages.current?.scrollTo({top:messages.current.scrollHeight,behavior:reduced?'instant':'smooth'}) }, [chat.length,pending,reduced])
   const [input, setInput] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const replyIdx = useRef(0)
@@ -47,7 +55,9 @@ export default function Team() {
     if (!text) return
     addChat({ who: 'me', name: '我', text, time: nowHM() })
     setInput('')
-    setTimeout(() => {
+    followMessages.current = true
+    setPending(n => n + 1)
+    replies.current.push(setTimeout(() => {
       addChat({
         who: 'other',
         name: '张师傅',
@@ -55,7 +65,8 @@ export default function Team() {
         time: nowHM(),
       })
       replyIdx.current += 1
-    }, 2000)
+      setPending(n => n - 1)
+    }, 2000))
   }
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +98,7 @@ export default function Team() {
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
         {/* 今日任务 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -121,10 +132,10 @@ export default function Team() {
               </Ring>
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 人员分配 + 农机调度 */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3.5">
+        <Reveal className="grid grid-cols-2 gap-3.5">
           <Glass className="p-3.5">
             <SectionTitle title="人员分配" extra={<ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5} />} />
             <ul className="space-y-2.5">
@@ -168,10 +179,10 @@ export default function Team() {
               ))}
             </ul>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 任务地图 + 拍照打卡 */}
-        <motion.div variants={fadeUp} className="grid grid-cols-1 gap-3.5">
+        <Reveal className="grid grid-cols-1 gap-3.5">
           <Glass className="p-3.5">
             <SectionTitle title="任务地图" />
             <div className="overflow-hidden rounded-[10px] border border-black/[0.08]">
@@ -187,10 +198,10 @@ export default function Team() {
             <SectionTitle title="拍照打卡" extra={<ChevronRight className="h-3.5 w-3.5 text-black/40" strokeWidth={1.5} />} />
             <div className="grid grid-cols-2 gap-2">
               {checkins.slice(0, 3).map((c) => (
-                <div key={c.id} className="relative h-[62px] overflow-hidden rounded-lg">
+                <motion.div layout initial={{opacity:0,scale:.85}} animate={{opacity:1,scale:1}} key={c.id} className="relative h-[62px] overflow-hidden rounded-lg">
                   <img src={c.img} alt="打卡" className="h-full w-full object-cover" />
                   <span className="absolute bottom-1 right-1 rounded bg-[rgba(10,15,11,0.75)] px-1 text-[8.5px] text-[rgba(217,249,157,0.9)]">{c.time}</span>
-                </div>
+                </motion.div>
               ))}
               {TEAM_PHOTOS.slice(0, Math.max(0, 3 - checkins.length)).map((src) => (
                 <div key={src} className="relative h-[62px] overflow-hidden rounded-lg">
@@ -207,15 +218,15 @@ export default function Team() {
               </button>
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 团队沟通 + 预警提醒 */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3.5">
+        <Reveal className="grid grid-cols-2 gap-3.5">
           <Glass className="flex flex-col p-3.5">
             <SectionTitle title="团队沟通" />
-            <div className="max-h-[190px] flex-1 space-y-2.5 overflow-y-auto">
+            <div ref={messages} role="log" aria-label="团队消息" aria-live="polite" onScroll={e => { const el=e.currentTarget; followMessages.current=el.scrollHeight-el.scrollTop-el.clientHeight<40 }} className="max-h-[190px] flex-1 space-y-2.5 overflow-y-auto">
               {chat.map((m) => (
-                <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: EASE }} className="flex items-start gap-2">
+                <motion.div layout="position" key={m.id} initial={{ opacity: 0, x: m.who === 'me' ? 12 : -12, scale: .96 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.25, ease: EASE }} className="flex items-start gap-2">
                   <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-medium ${m.who === 'me' ? 'bg-[#16a34a] text-white' : 'border border-black/[0.1] bg-black/[0.09] text-[#1a2b23]'}`}>
                     {m.name.slice(0, 1)}
                   </div>
@@ -230,6 +241,7 @@ export default function Team() {
                   </div>
                 </motion.div>
               ))}
+              <Disclosure open={pending>0}><span className="typing-dots" role="status" aria-label="模拟回复中"><i/><i/><i/></span></Disclosure>
             </div>
             <div className="mt-2 flex items-center gap-1.5">
               <input
@@ -239,7 +251,7 @@ export default function Team() {
                 placeholder="发送消息…"
                 className="min-w-0 flex-1 rounded-lg border border-black/[0.1] bg-black/[0.06] px-2.5 py-2 text-[11px] text-[#1a2b23] outline-none placeholder:text-black/40"
               />
-              <button onClick={send} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#16a34a]">
+              <button aria-label="发送消息" onClick={send} disabled={!input.trim()} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#16a34a]">
                 <Send className="h-3.5 w-3.5 text-white" strokeWidth={1.5} />
               </button>
             </div>
@@ -273,7 +285,7 @@ export default function Team() {
               ))}
             </ul>
           </Glass>
-        </motion.div>
+        </Reveal>
       </motion.div>
     </div>
   )

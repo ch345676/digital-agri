@@ -1,3 +1,4 @@
+import { Reveal } from '../components/motion'
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -94,7 +95,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-3 space-y-3 px-4">
         {/* 风险大卡（按 1.png：4 指标） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <div className="rounded-[14px] border p-4" style={{ background: risk.bg, borderColor: risk.border }}>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-[15px] font-bold" style={{ color: risk.color }}>
@@ -119,10 +120,10 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
               ))}
             </div>
           </div>
-        </motion.div>
+        </Reveal>
 
         {/* 5 格统计条（按 2.png） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <ProCard>
             <StatBar
               items={[
@@ -134,10 +135,10 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
               ]}
             />
           </ProCard>
-        </motion.div>
+        </Reveal>
 
         {/* 预警信息 2x2 网格（按 2.png） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <ProCard className="p-4">
             <BlockTitle icon={FileText} title="预警信息" />
             <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
@@ -159,10 +160,10 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
               </div>
             </div>
           </ProCard>
-        </motion.div>
+        </Reveal>
 
         {/* 预警详情信息表（按 1.png） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <ProCard className="p-4">
             <BlockTitle icon={ClipboardList} title="预警详情" />
             <div className="mt-2">
@@ -174,10 +175,10 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
               <InfoRow label="建议关注时间" divider={false}>{alert.focusDays}</InfoRow>
             </div>
           </ProCard>
-        </motion.div>
+        </Reveal>
 
         {/* 病害/虫害详情（按 2.png） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <ProCard className="p-4">
             <BlockTitle icon={alert.kind === 'pest' ? Bug : ShieldAlert} title={alert.kind === 'pest' ? '虫害详情' : '病害详情'} />
             <div className="mt-3 flex gap-3">
@@ -189,10 +190,10 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
               </div>
             </div>
           </ProCard>
-        </motion.div>
+        </Reveal>
 
         {/* 趋势分析（双 Tab + 7/15/30 天） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <ProCard className="p-4">
             <BlockTitle icon={CloudSun} title="趋势分析" />
             <div className="mt-3 flex items-center justify-between">
@@ -222,18 +223,18 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
                 ))}
               </div>
             </div>
-            <div className="mt-2">
+            <motion.div key={`${trendTab}-${days}`} initial={{opacity:0}} animate={{opacity:1}} transition={{duration:.22}} className="mt-2">
               <TrendChart
                 data={trend}
                 unit={trendTab === 'pest' ? `${alert.trendName}（${alert.trendUnit}）` : '湿度（%）'}
                 color={trendTab === 'pest' ? '#15803d' : '#3b82f6'}
               />
-            </div>
+            </motion.div>
           </ProCard>
-        </motion.div>
+        </Reveal>
 
         {/* 防治建议（三类可展开，内嵌编号列表） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <ProCard className="p-4">
             <BlockTitle icon={ClipboardList} title="防治建议" />
             <div className="mt-2 divide-y divide-black/[0.05]">
@@ -242,7 +243,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
                 const open = openCtl === i
                 return (
                   <div key={c.title}>
-                    <button onClick={() => setOpenCtl(open ? -1 : i)} className="flex w-full items-center gap-2.5 py-3 text-left">
+                    <button aria-expanded={open} onClick={() => setOpenCtl(open ? -1 : i)} className="flex w-full items-center gap-2.5 py-3 text-left">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(21,128,61,0.09)]">
                         <Icon className="h-4 w-4 text-[#15803d]" strokeWidth={1.6} />
                       </span>
@@ -275,10 +276,10 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
               })}
             </div>
           </ProCard>
-        </motion.div>
+        </Reveal>
 
         {/* 环境趋势（未来 3 天，按 1.png） */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <ProCard className="p-4">
             <BlockTitle icon={CloudSun} title="环境趋势（未来 3 天）" extra={<span className="text-[9.5px] text-black/35">— 温度(℃)　— 湿度(%)</span>} />
             <div className="mt-3 grid grid-cols-3 divide-x divide-black/[0.06] text-center">
@@ -298,7 +299,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
               ))}
             </div>
           </ProCard>
-        </motion.div>
+        </Reveal>
 
         <p className="px-2 text-center text-[9.5px] text-black/30">ⓘ 以上预警信息由智能监测系统提供，仅供参考，请结合实际情况采取防治措施。</p>
       </motion.div>

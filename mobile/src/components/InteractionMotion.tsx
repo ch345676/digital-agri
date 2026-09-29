@@ -3,10 +3,13 @@ import { useEffect } from 'react'
 /** Small, non-blocking pointer feedback shared by all native and motion buttons. */
 export default function InteractionMotion() {
   useEffect(() => {
+    const visibility = () => { document.documentElement.dataset.pageHidden = String(document.hidden) }
+    visibility()
+    document.addEventListener('visibilitychange', visibility)
     const feedback = (event: PointerEvent) => {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      const button = (event.target as Element).closest('button')
-      if (!button || button.disabled || event.button !== 0) return
+      const button = (event.target as Element).closest<HTMLElement>('button, [role="button"], a[href]')
+      if (!button || button.matches(':disabled') || event.button !== 0) return
       const ring = document.createElement('i')
       ring.className = 'ui-ripple'
       ring.setAttribute('aria-hidden', 'true')
@@ -17,6 +20,8 @@ export default function InteractionMotion() {
     }
     document.addEventListener('pointerdown', feedback, { passive: true })
     return () => {
+      document.removeEventListener('visibilitychange', visibility)
+      delete document.documentElement.dataset.pageHidden
       document.removeEventListener('pointerdown', feedback)
       document.querySelectorAll('.ui-ripple').forEach(el => el.remove())
     }

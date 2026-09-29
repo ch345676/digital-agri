@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { Reveal, SuccessMark, useSceneMotion } from '../components/motion'
+import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ClipboardList, Camera, Image as ImageIcon, Leaf, SprayCan, Wind, ShieldCheck, ChevronRight, X, Send, BadgeCheck, Lock } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Glass, SectionTitle, stagger, fadeUp, EASE } from '../components/anim'
+import { Glass, SectionTitle, stagger, EASE } from '../components/anim'
 import { useStore } from '../store'
 import { usePerm } from '../auth'
 
@@ -30,11 +31,15 @@ export default function Identify() {
   const [consultInput, setConsultInput] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const replyIdx = useRef(0)
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+  const {ref:sceneRef,playing} = useSceneMotion<HTMLDivElement>()
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   const runIdentify = (dataUrl: string | null) => {
+    if (phase === 'scanning') return
     setImg(dataUrl)
     setPhase('scanning')
-    setTimeout(() => {
+    timers.current.push(setTimeout(() => {
       setPhase('done')
       addIdentifyRecord({
         crop: '南瓜',
@@ -44,7 +49,7 @@ export default function Identify() {
         img: dataUrl ?? undefined,
         tone: '#8fae4c',
       })
-    }, 2000)
+    }, 2000))
   }
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,13 +66,13 @@ export default function Identify() {
     if (!text) return
     setConsultMsgs((m) => [...m, { who: 'me', text }])
     setConsultInput('')
-    setTimeout(() => {
+    timers.current.push(setTimeout(() => {
       setConsultMsgs((m) => [
         ...m,
         { who: 'expert', text: EXPERT_REPLIES[replyIdx.current % EXPERT_REPLIES.length] },
       ])
       replyIdx.current += 1
-    }, 1200)
+    }, 1200))
   }
 
   return (
@@ -84,8 +89,8 @@ export default function Identify() {
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
         {/* 取景框 */}
-        <motion.div variants={fadeUp}>
-          <div className="relative h-[300px] overflow-hidden rounded-[14px] border border-black/[0.09]">
+        <Reveal>
+          <div ref={sceneRef} data-phase={phase} data-scene-playing={playing} className="identify-frame relative h-[300px] overflow-hidden rounded-[14px] border border-black/[0.09]">
             {img ? (
               <img src={img} alt="识别照片" className="h-full w-full object-cover" />
             ) : (
@@ -98,23 +103,25 @@ export default function Identify() {
             ))}
             {/* 扫描线 */}
             <span
-              className={`absolute left-4 right-4 h-[2px] rounded-full bg-[#16a34a] ${phase === 'scanning' ? 'scan-line-fast' : 'scan-line'}`}
+              className={`absolute left-4 right-4 h-[2px] rounded-full bg-[#16a34a] ${phase === 'scanning' ? 'scan-line-fast' : 'hidden'}`}
             />
-            {phase === 'scanning' && (
-              <div className="absolute inset-x-0 bottom-5 flex justify-center">
+            <AnimatePresence>{phase === 'scanning' && (
+              <motion.div key="scan-status" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} className="absolute inset-x-0 bottom-5 flex justify-center">
                 <span className="rounded-full bg-[rgba(255,255,255,0.9)] px-4 py-1.5 text-[12px] font-medium text-[#16a34a]">
                   AI 识别中，正在分析叶片特征…
                 </span>
-              </div>
-            )}
+              </motion.div>
+            )}</AnimatePresence>
+            {phase==='done'&&<><span className="identify-lock"/><div className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-[11px] text-[#637823]"><SuccessMark size={20}/>分析完成 · 示例结果</div></>}
           </div>
-        </motion.div>
+        </Reveal>
 
         {/* 拍照按钮 */}
-        <motion.div variants={fadeUp} className="flex gap-3">
+        <Reveal className="flex gap-3">
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
           <motion.button
             whileTap={{ scale: 0.98 }}
+            disabled={phase==='scanning'}
             onClick={() => needLogin() && fileRef.current?.click()}
             className="flex flex-1 items-center justify-center gap-2 rounded-[14px] bg-[#16a34a] py-3 text-[15px] font-semibold text-white"
           >
@@ -122,21 +129,23 @@ export default function Identify() {
             拍照识别
           </motion.button>
           <button
+            disabled={phase==='scanning'}
             onClick={() => needLogin() && runIdentify(null)}
             className="flex items-center justify-center gap-1.5 rounded-[14px] border border-black/[0.1] bg-black/[0.05] px-4 text-[13px] font-medium text-black/60"
           >
             {isGuest ? <Lock className="h-4 w-4" strokeWidth={1.5} /> : <ImageIcon className="h-4 w-4" strokeWidth={1.5} />}
             使用示例图
           </button>
-        </motion.div>
+        </Reveal>
 
         {/* 识别结果 */}
         <AnimatePresence>
           {phase === 'done' && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{overflow:'hidden'}}
               transition={{ duration: 0.3, ease: EASE }}
             >
               <Glass className="p-4">
@@ -177,7 +186,7 @@ export default function Identify() {
         </AnimatePresence>
 
         {/* 防治建议 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-4">
             <SectionTitle title="防治建议" />
             <div className="flex items-start justify-between">
@@ -205,10 +214,10 @@ export default function Identify() {
               })}
             </div>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 专家复核 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <Glass className="p-4">
             <SectionTitle title="专家复核" />
             <div className="flex items-center gap-3">
@@ -235,10 +244,10 @@ export default function Identify() {
               建议及时防治，注意田间通风与排水。
             </p>
           </Glass>
-        </motion.div>
+        </Reveal>
 
         {/* 识别记录 */}
-        <motion.div variants={fadeUp}>
+        <Reveal>
           <SectionTitle
             title="识别记录"
             extra={
@@ -262,7 +271,7 @@ export default function Identify() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </Reveal>
       </motion.div>
 
       {/* 专家咨询弹窗 */}

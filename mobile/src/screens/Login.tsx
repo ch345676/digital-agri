@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Sprout, Eye, EyeOff, ShieldCheck, UserRound, UserPlus, Compass, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '../auth'
@@ -58,6 +58,7 @@ function Field({
 }
 
 export default function Login() {
+  const reduced = useReducedMotion()
   const { login, register, enterGuest } = useAuth()
   const [mode, setMode] = useState<Mode>('admin')
   const [username, setUsername] = useState('')
@@ -131,7 +132,7 @@ export default function Login() {
           ))}
         </div>
 
-        <form key={mode} onSubmit={submit} className="mt-5 space-y-4">
+        <AnimatePresence mode="wait" initial={false}><motion.form initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} transition={{duration:reduced?0:.25,ease:EASE}} key={mode} onSubmit={submit} className="mt-5 space-y-4">
           <Field
             label="用户名"
             value={mode === 'admin' ? username || 'admin' : username}
@@ -167,6 +168,7 @@ export default function Login() {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={busy}
+            aria-busy={busy}
             className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[#16a34a] py-3 text-[15px] font-semibold text-white disabled:opacity-60"
           >
             <Lock className="h-4 w-4" strokeWidth={1.8} />
@@ -176,7 +178,7 @@ export default function Login() {
           {mode === 'admin' && (
             <p className="text-center text-[11px] text-black/35">内置管理员账号 admin · 初始密码 admin123</p>
           )}
-        </form>
+        </motion.form></AnimatePresence>
       </motion.div>
 
       {/* 游客入口 */}

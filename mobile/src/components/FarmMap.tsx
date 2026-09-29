@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Plus, Minus, RotateCcw, Maximize2, X, Droplets } from 'lucide-react'
 import { FarmMapSVG, type MapLayers } from './FarmMapSVG'
 import { FIELDS } from '../farm-data'
 import { useStore } from '../store'
+import { useSceneMotion } from './motion'
+import { EASE } from './anim'
 
 type Props = Pick<Parameters<typeof FarmMapSVG>[0], 'patrol' | 'markers'> & { compact?: boolean; irrigation?: {moisture:Record<string,number>;valves:Record<string,boolean>;busy:boolean;onValve:(id:string)=>void} }
 export default function FarmMap({ patrol, markers, compact = false, irrigation }: Props) {
@@ -12,19 +14,30 @@ export default function FarmMap({ patrol, markers, compact = false, irrigation }
   const [zoom, setZoom] = useState(1)
   const [selected, setSelected] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [height, setHeight] = useState(0)
+  const reduced = useReducedMotion()
+  const { ref, playing } = useSceneMotion<HTMLDivElement>()
+  useEffect(() => {
+    if (!expanded) return
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setExpanded(false) }
+    window.addEventListener('keydown', escape)
+    return () => { document.body.style.overflow = overflow; window.removeEventListener('keydown', escape) }
+  }, [expanded])
   const field = FIELDS.find(f => f.id === selected)
-  return <section className={`farm-demo ${expanded ? 'farm-expanded' : ''} ${compact ? 'farm-compact' : ''}`} aria-label="电脑端同源农场地图">
-    <div className="farm-map-heading"><div><b>{irrigation?'地块分区墒情':patrol?'田间巡航':'田间地图'}</b><small>电脑端同源底图 · 仿真演示</small></div><button aria-label={expanded ? '收起地图' : '展开地图'} onClick={() => setExpanded(!expanded)}>{expanded ? <X size={18}/> : <Maximize2 size={18}/>}</button></div>
+  return <div ref={ref} className="farm-map-slot" style={{ minHeight: expanded ? height : undefined }} data-scene-playing={playing}><motion.section layout={!reduced} layoutDependency={expanded} transition={{ duration: reduced ? 0 : .32, ease: EASE }} className={`farm-demo ${expanded ? 'farm-expanded' : ''} ${compact ? 'farm-compact' : ''}`} aria-label="电脑端同源农场地图">
+    <div className="farm-map-heading"><div><b>{irrigation?'地块分区墒情':patrol?'田间巡航':'田间地图'}</b><small>电脑端同源底图 · 仿真演示</small></div><button aria-label={expanded ? '收起地图' : '展开地图'} aria-expanded={expanded} onClick={() => { if (!expanded) setHeight(ref.current?.getBoundingClientRect().height ?? 0); setExpanded(!expanded) }}><motion.span animate={{ rotate: expanded ? 90 : 0 }} transition={{duration: reduced ? 0 : .25}}>{expanded ? <X size={18}/> : <Maximize2 size={18}/>}</motion.span></button></div>
     <div className="farm-layer-tabs">{([['fields','地块'],['monitors','监测点'],['irrigation','灌溉管线']] as const).map(([key,label])=><button key={key} aria-pressed={layers[key]} onClick={()=>setLayers(s=>({...s,[key]:!s[key]}))}>{label}</button>)}</div>
     <div className="farm-canvas-scroll"><div className="farm-canvas" style={{width:`${zoom*100}%`}}><FarmMapSVG layers={layers} selectedField={selected} onFieldClick={setSelected} patrol={patrol} markers={markers} fieldMoisture={irrigation?.moisture} fieldValves={irrigation?.valves}/></div></div>
     <div className="farm-map-tools"><span>缩放 {Math.round(zoom*100)}%</span><div><button aria-label="缩小地图" disabled={zoom<=1} onClick={()=>setZoom(z=>Math.max(1,z-.25))}><Minus size={16}/></button><button aria-label="放大地图" disabled={zoom>=2.5} onClick={()=>setZoom(z=>Math.min(2.5,z+.25))}><Plus size={16}/></button><button aria-label="复位地图" onClick={()=>{setZoom(1);setSelected(null)}}><RotateCcw size={16}/></button></div></div>
     <div className="farm-field-tabs">{FIELDS.map(f=><button key={f.id} aria-pressed={selected===f.id} onClick={()=>setSelected(f.id)}>{f.id} {f.id==='C1'?'试验田':f.crop}</button>)}</div>
-    <AnimatePresence mode="wait">{field&&<motion.div key={field.id} className="farm-field-detail" initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}}>
+    <AnimatePresence mode="wait">{field&&<motion.div key={field.id} className="farm-field-detail" initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} transition={{duration: reduced ? 0 : .25,ease:EASE}}>
       <div className="farm-map-heading"><div><b>{field.id} {field.crop}</b><small>{field.variety} · {field.area} 亩</small></div><button aria-label="关闭地块详情" onClick={()=>setSelected(null)}><X size={16}/></button></div>
       <dl><div><dt>土壤湿度</dt><dd>{(irrigation?.moisture[field.id] ?? field.soilMoisture).toFixed(0)}%</dd></div><div><dt>土壤 pH</dt><dd>{field.ph}</dd></div><div><dt>健康评分</dt><dd>{field.health} 分</dd></div><div><dt>预计收获</dt><dd>{field.harvest.slice(5)}</dd></div></dl>
-      <p>生长阶段：{field.stageName} · {field.stagePct}%</p><div className="farm-growth"><i style={{width:`${field.stagePct}%`}}/></div><p>下一农事：{field.nextAction}</p>
+      <p>生长阶段：{field.stageName} · {field.stagePct}%</p><div className="farm-growth"><motion.i initial={{width:0}} animate={{width:`${field.stagePct}%`}} transition={{duration: reduced ? 0 : .6,ease:EASE}}/></div><p>下一农事：{field.nextAction}</p>
       {irrigation?<button className="farm-action" data-map-valve={field.id} disabled={irrigation.busy} aria-pressed={irrigation.valves[field.id]} onClick={()=>irrigation.onValve(field.id)}><Droplets size={15}/>{field.id} 阀门 · {irrigation.valves[field.id]?'开启中，点击关闭':'已关闭，点击开启'}</button>:<button className="farm-action" onClick={()=>{setExpanded(false);setScreen('irrigation')}}><Droplets size={15}/>打开灌溉演示</button>}
     </motion.div>}</AnimatePresence>
     <p className="farm-credit">戴维斯农田遥感影像 · 地块、路线为演示覆盖物<br/>Esri, Vantor, Earthstar Geographics, GIS User Community</p>
-  </section>
+  </motion.section></div>
 }
