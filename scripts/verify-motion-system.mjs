@@ -26,6 +26,7 @@ try {
   const start = await page.$eval('.task-status-tabs', e => getComputedStyle(e, '::before').transform)
   await click('待完成（', '.task-status-tabs'); await wait(75)
   const during = await page.$eval('.task-status-tabs', e => getComputedStyle(e, '::before').transform)
+  await page.$$eval('.motion-ghost', nodes => nodes.forEach(node => node.getAnimations().forEach(a => a.pause())))
   await wait(450)
   const end = await page.$eval('.task-status-tabs', e => getComputedStyle(e, '::before').transform)
   assert.notEqual(start, end); assert.notEqual(during, end)
@@ -33,7 +34,7 @@ try {
   await page.evaluate(() => { const buttons = [...document.querySelectorAll('.task-status-tabs button')]; buttons[2].click(); buttons[0].click(); buttons[1].click() }); await wait(500)
   assert.equal(await page.$$eval('.task-status-tabs [aria-pressed="true"]', nodes => nodes.length), 1)
   await page.screenshot({ path: 'qa/motion-system-tasks.png' })
-  checks.push('Selection background travels; rapid filtering keeps one selection and removes departing copies')
+  checks.push('Selection background travels; rapid filtering and paused rendering leave no departing copies')
 
   await go('devices'); await click('离线', '.device-toolbar'); await wait(600)
   assert.equal(await page.$('.motion-ghost'), null)

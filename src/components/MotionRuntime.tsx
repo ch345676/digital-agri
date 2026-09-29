@@ -16,6 +16,7 @@ export default function MotionRuntime() {
     const seen = new WeakSet<Element>()
     const waiting = new Set<HTMLElement>()
     const ghosts = new Set<HTMLElement>()
+    const ghostTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>()
     const tracks = new Set<HTMLElement>()
     const dirtyTracks = new Set<HTMLElement>()
     const ambient = new Set<HTMLElement>()
@@ -111,7 +112,9 @@ export default function MotionRuntime() {
           Object.assign(clone.style, { position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, margin: '0', zIndex: '31' })
           document.body.appendChild(clone); ghosts.add(clone)
           const a = play(clone, [{ opacity: .65, transform: 'none' }, { opacity: 0, transform: 'translateY(-6px) scale(.97)' }], 190)
-          const remove = () => { clone.remove(); ghosts.delete(clone) }
+          const remove = () => { clone.remove(); ghosts.delete(clone); clearTimeout(ghostTimers.get(clone)); ghostTimers.delete(clone); a?.cancel() }
+          // Renderer throttling must never leave a duplicate card over live content.
+          ghostTimers.set(clone, setTimeout(remove, 260))
           if (a) a.finished.finally(remove).catch(() => {}); else remove()
         }
       })
@@ -156,6 +159,7 @@ export default function MotionRuntime() {
     return () => {
       observer.disconnect(); ambientObserver.disconnect(); mutations.disconnect(); resize.disconnect(); cancelAnimationFrame(frame); cancelAnimationFrame(trackFrame)
       animations.forEach(a => a.cancel()); ghosts.forEach(n => n.remove())
+      ghostTimers.forEach(clearTimeout); ghostTimers.clear()
       waiting.forEach(n => n.classList.remove('motion-pending')); tracks.forEach(n => { delete n.dataset.motionTrack })
       ambient.forEach(n => { delete n.dataset.motionVisible }); delete document.documentElement.dataset.motionPaused
       events.forEach(name => document.removeEventListener(name, snapshot, true))
