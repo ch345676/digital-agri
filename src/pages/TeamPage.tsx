@@ -62,7 +62,7 @@ export default function TeamPage() {
         {/* 成员网格 */}
         <div className="grid min-w-0 flex-1 grid-cols-3 gap-5 max-[1500px]:grid-cols-2">
           {members.map((m, i) => (
-            <PageCard key={m.id}>
+            <PageCard key={m.id} data-motion-item={`member-${m.id}`}>
               <div className="flex items-start justify-between">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br text-[17px] font-bold text-white ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
                   {m.name.slice(0, 1)}

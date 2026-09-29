@@ -23,7 +23,7 @@ function CropCard({ field }: { field: FieldInfo }) {
   const healthColor = field.health >= 85 ? '#178a45' : field.health >= 78 ? '#e08a00' : '#e05252'
 
   return (
-    <PageCard className="!p-0 overflow-hidden">
+    <PageCard data-motion-item={`crop-${field.id}`} className="!p-0 overflow-hidden">
       <CropPhoto fieldId={field.id} className="crop-photo" />
       <button aria-expanded={open} aria-controls={`crop-details-${field.id}`} onClick={() => setOpen((v) => !v)} className="w-full p-5 text-left">
         <div className="flex items-start justify-between">

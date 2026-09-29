@@ -1,0 +1,108 @@
+/* A shared rhythm: tactile controls, travelling selections, then quiet settlement. */
+:root { --motion-ease: cubic-bezier(.22,1,.36,1); --route-direction: 1; }
+.page-stage { animation: workspace-arrive 400ms var(--motion-ease) both; }
+html[data-route-transition='true'] .page-stage { animation: none; }
+::view-transition-old(agri-page) { animation: workspace-leave 180ms ease-out both; }
+::view-transition-new(agri-page) { animation: workspace-arrive 420ms var(--motion-ease) both; }
+@keyframes workspace-arrive { from { opacity: 0; transform: translateX(calc(18px * var(--route-direction))) translateY(5px); } to { opacity: 1; transform: none; } }
+@keyframes workspace-leave { to { opacity: 0; transform: translateX(calc(-10px * var(--route-direction))); } }
+.topbar { position: relative; }
+.reading-progress { position: absolute; inset: auto 0 0; height: 2px; overflow: hidden; pointer-events: none; }
+.reading-progress>div { height: 100%; background: linear-gradient(90deg,#426c58,#a4b976); transform: scaleX(0); transform-origin: left; transition: transform 100ms linear; opacity: .7; }
+.interaction-wave { display: block; position: absolute; border-radius: 50%; pointer-events: none; z-index: 3; opacity: 0; background: radial-gradient(circle,#bdd7a54d 0%,#8faf7e1a 58%,transparent 70%); border: 1px solid #99b58926; }
+.primary-btn>.interaction-wave,.nav-item>.interaction-wave { background: radial-gradient(circle,#f0ffe95c 0%,#d8f2c31a 55%,transparent 70%); }
+html[data-motion='on'] button:not(:disabled):active { transform: translateY(1px) scale(.98); }
+button[aria-expanded] .lucide-chevron-down { transition: rotate 320ms var(--motion-ease); }
+button[aria-expanded='true'] .lucide-chevron-down { rotate: 180deg; }
+.nav-item.active>svg:first-child { filter: drop-shadow(0 2px 5px #9bb68144); }
+
+[data-motion-track='true'] { position: relative; isolation: isolate; }
+[data-motion-track='true']:before { content: ''; position: absolute; left: 0; top: 0; width: var(--selection-w); height: var(--selection-h); transform: translate(var(--selection-x),var(--selection-y)); border: 1px solid #cfdbc1; background: linear-gradient(145deg,#eff4e5,#e2ebd5); box-shadow: 0 2px 5px #3149360b,inset 0 1px #fff9; border-radius: 8px; pointer-events: none; transition: transform 360ms var(--motion-ease),width 360ms var(--motion-ease),height 360ms var(--motion-ease); z-index: -1; }
+[data-motion-track='true']>button { position: relative; background: transparent!important; border-color: transparent!important; box-shadow: none!important; }
+[data-motion-track='true']>button.active,[data-motion-track='true']>button[aria-pressed='true'] { background: transparent!important; color: #365137!important; }
+[data-motion-track='true']>button:hover { transform: none; }
+.field-tabs[data-motion-track='true']:before { border-radius: 12px; }
+
+/* Restrained light follows the cursor on actionable surfaces, without tilting text. */
+html[data-motion='on'] [data-pointer-light='true'] { background-image: radial-gradient(340px circle at var(--pointer-x) var(--pointer-y),#dce9c64d,transparent 75%)!important; border-color: #b7c9a6!important; box-shadow: 0 5px 18px #35492d0b!important; }
+.board-task,.device-card,.harvest-card,.robot-card { transition: border-color 240ms,box-shadow 260ms,background-color 220ms; }
+.board-column { transition: background-color 250ms,border-color 250ms,box-shadow 250ms; }
+.board-column.drop-ready { box-shadow: inset 0 0 0 2px #90a971,0 0 0 5px #9eb88112; }
+.board-task.dragging { scale: .98; opacity: .45; }
+.board-task { transition: scale 200ms,opacity 200ms,border-color 250ms,box-shadow 250ms; }
+.completion-check polyline { stroke-dasharray: 30; stroke-dashoffset: 0; animation: completion-ink 380ms var(--motion-ease) both; }
+@keyframes completion-ink { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
+.motion-ghost { contain: layout paint; }
+.map-workspace>.map-detail-shell { width: 320px; flex: 0 0 auto; overflow: hidden; opacity: 1; margin-left: 0; animation: none!important; }
+.map-detail-shell>.field-detail-enter { height: 100%; animation: none; }
+.irrigation-overlay[data-closing='true'],.monitor-overlay[data-closing='true'] { animation: veil-out 220ms ease both; }
+.real-field { transition: fill 300ms,stroke 300ms,stroke-opacity 220ms; }
+.presentation-controls { animation: presentation-arrive 400ms var(--motion-ease) both; }
+.presentation-controls[data-closing='true'] { animation: presentation-leave 180ms ease both; pointer-events: none; }
+@keyframes presentation-arrive { from { opacity: 0; translate: 0 20px; } to { opacity: 1; translate: 0 0; } }
+@keyframes presentation-leave { to { opacity: 0; translate: 0 15px; } }
+@media(max-width:760px) {
+ .page-map .map-workspace>.map-detail-shell { width: 100%; margin-left: 0; }
+ .map-detail-shell>.field-detail-enter { width: 100%; }
+}
+
+.agri-modal>div { animation: none!important; }
+.agri-modal[data-closing='true']>div { animation: none!important; }
+.modal-body,.modal-body>div { min-width: 0; }
+.agri-modal:not([data-closing='true']) .modal-body>*,.motion-expand[data-open='true']>[data-motion-stagger]>* { animation: detail-unfold 380ms var(--motion-ease) both; }
+.agri-modal:not([data-closing='true']) .modal-body>div>*,.motion-expand[data-open='true']>[data-motion-stagger]>div>* { animation: detail-unfold 360ms var(--motion-ease) both; }
+.modal-body>div>:nth-child(2),.motion-expand [data-motion-stagger]>div>:nth-child(2) { animation-delay: 35ms!important; }
+.modal-body>div>:nth-child(3),.motion-expand [data-motion-stagger]>div>:nth-child(3) { animation-delay: 70ms!important; }
+.modal-body>div>:nth-child(n+4),.motion-expand [data-motion-stagger]>div>:nth-child(n+4) { animation-delay: 100ms!important; }
+.motion-expand[data-open='true']>[data-motion-stagger]>:nth-child(2) { animation-delay: 35ms; }
+.motion-expand[data-open='true']>[data-motion-stagger]>:nth-child(3) { animation-delay: 70ms; }
+.motion-expand[data-open='true']>[data-motion-stagger]>:nth-child(n+4) { animation-delay: 100ms; }
+@keyframes detail-unfold { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.mobile-scrim[data-closing='true'] { animation: veil-out 180ms ease both; pointer-events: none; }
+.notification-panel:not([data-closing='true']) .notice-row { animation: detail-unfold 350ms var(--motion-ease) both; }
+.notification-panel .notice-row:nth-child(3) { animation-delay: 35ms; }
+.notification-panel .notice-row:nth-child(4) { animation-delay: 70ms; }
+.notice-row { transition: opacity 260ms,background-color 260ms; }
+.notice-row.read { opacity: .62; }
+.workflow-steps>span { position: relative; overflow: hidden; }
+.workflow-steps>span:after { content: ''; position: absolute; inset: auto 0 0; height: 2px; background: #8fa766; transform: scaleX(0); transform-origin: left; transition: transform 500ms var(--motion-ease); }
+.workflow-steps>span.active:after { transform: scaleX(1); }
+
+/* Reading changes illuminate only the affected value or connected detail. */
+.motion-count { font-variant-numeric: tabular-nums; }
+.device-values { position: relative; overflow: hidden; }
+.device-values[data-irrigating='true']:after { content: ''; position: absolute; inset: auto 0 0; height: 3px; background: linear-gradient(90deg,transparent,#8ebec6,transparent); background-size: 50% 100%; animation: irrigation-travel 2300ms linear infinite paused; }
+.device-values[data-motion-visible='true']:after { animation-play-state: running; }
+html[data-motion-paused='true'] *,html[data-motion-paused='true'] *:before,html[data-motion-paused='true'] *:after { animation-play-state: paused!important; }
+@keyframes irrigation-travel { from { background-position: -100% 0; } to { background-position: 200% 0; } }
+.sampling-days button { transition: background-color 250ms,box-shadow 250ms,transform 250ms; }
+.sampling-days button.selected { box-shadow: 0 0 0 3px #94ac7024; }
+.sampling-days button.selected:before { content: ''; position: absolute; inset: 0; border-radius: inherit; border: 2px solid #9aae70; pointer-events: none; animation: date-accent 500ms var(--motion-ease) both; }
+@keyframes date-accent { from { opacity: .8; scale: .88; } to { opacity: 0; scale: 1.06; } }
+.replay-transport input[type='range'],.resource-controls input[type='range'] { cursor: ew-resize; }
+input[type='range']::-webkit-slider-thumb { transition: box-shadow 180ms,scale 180ms; }
+input[type='range']:active::-webkit-slider-thumb { box-shadow: 0 0 0 7px #8da76825; scale: 1.12; }
+.replay-play svg { transform-origin: center; }
+.soil-metric-picker button,.soil-scene-tabs button,.soil-element-node { transition: background-color 220ms,border-color 220ms,box-shadow 240ms; }
+.soil-element-node[aria-pressed='true'] { box-shadow: 0 0 0 4px #d3e4b815,0 0 22px #bacf8920; }
+[role='switch']>span { transition: left 300ms var(--motion-ease),box-shadow 250ms!important; }
+[role='switch']:active>span { box-shadow: 0 0 0 3px #ffffff35; }
+input:focus,select:focus,textarea:focus { box-shadow: 0 0 0 4px #9bb6761c!important; border-color: #96ac7c!important; }
+.form-label:focus-within,label.block:focus-within>span { color: #496b40; }
+
+.feedback-item { display: grid; grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows 180ms,opacity 180ms,transform 180ms; }
+.feedback-item[data-closing='true'] { grid-template-rows: 0fr; opacity: 0; transform: translateY(8px) scale(.98); pointer-events: none; }
+.feedback-item>div { min-height: 0; overflow: hidden; padding: 3px; }
+.feedback-toast { animation: feedback-enter 360ms var(--motion-ease); }
+.feedback-symbol { position: relative; display: grid; place-items: center; flex: 0 0 32px!important; width: 32px; height: 32px; border-radius: 50%; background: #e9f0e0; }
+.feedback-symbol svg { width: 19px; height: 19px; }
+.feedback-symbol[data-complete='true']:after { content: ''; position: absolute; inset: 0; border: 1px solid #9bb777; border-radius: inherit; animation: feedback-seal 650ms var(--motion-ease) both; pointer-events: none; }
+.feedback-symbol[data-complete='true'] polyline { stroke-dasharray: 30; animation: completion-ink 400ms var(--motion-ease) both; }
+.feedback-error .feedback-symbol { background: #f5e5d8; }
+@keyframes feedback-seal { from { opacity: .7; scale: .9; } to { opacity: 0; scale: 1.6; } }
+
+@media (max-width:760px) { .page-stage { animation-duration: 300ms; } ::view-transition-new(agri-page) { animation-duration: 320ms; } }
+html[data-motion='off'] .interaction-wave,html[data-motion='off'] .motion-ghost { display: none!important; }
+html[data-motion='off'] *,html[data-motion='off'] *:before,html[data-motion='off'] *:after { animation: none!important; transition: none!important; }
+@media (prefers-reduced-motion:reduce) { *,*:before,*:after { animation: none!important; transition: none!important; } .interaction-wave,.motion-ghost { display: none!important; } }
+@media print { .reading-progress,.feedback-stack,.interaction-wave,.motion-ghost { display: none!important; } .motion-pending { opacity: 1!important; } *,*:before,*:after { animation: none!important; transition: none!important; } }

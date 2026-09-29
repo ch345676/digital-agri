@@ -2,8 +2,8 @@ import puppeteer from 'puppeteer-core'
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 const base=process.env.TEST_BASE||'http://127.0.0.1:5184/'
-const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox']})
-const page=await browser.newPage(), errors=[], checks=[]
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox','--disable-background-timer-throttling','--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding','--disable-features=CalculateNativeWinOcclusion','--run-all-compositor-stages-before-draw','--disable-gpu']})
+const page=await browser.newPage(), errors=[], checks=[];await page.bringToFront()
 page.on('pageerror',e=>errors.push(e.message))
 await page.evaluateOnNewDocument(()=>{
  window.motionAudit={animations:0,routes:0}

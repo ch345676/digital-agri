@@ -2,6 +2,7 @@ import {useId} from 'react'
 import { ProjectRoverMarker } from './ProjectRoverMarker'
 import { FIELDS } from '../store'
 import { FARM_IMAGERY } from '../real-media'
+import { usePresence } from './use-presence'
 
 // Delineated against actual image field edges; IDs and crop data are demo overlays.
 const PLOTS = [
@@ -39,6 +40,8 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
   patrol?: { progress:number; running:boolean }
 }) {
   const maskId=useId().replaceAll(':','')
+  const irrigationPresent=usePresence(layers.irrigation,220)
+  const monitorsPresent=usePresence(layers.monitors,220)
   const selected=PLOTS.find(p=>p.id===selectedField)
   const info=FIELDS.find(f=>f.id===selectedField)
   const [rx,ry,heading] = routePosition(patrol?.progress ?? 0)
@@ -57,8 +60,8 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
       })}
       {selected&&layers.fields&&<polygon key={selected.id} className="field-trace" points={selected.points} pathLength="100" fill="none" stroke="#f0ffab" strokeWidth="1.7" pointerEvents="none"/>}
 
-      {layers.irrigation && <g className="irrigation-overlay" pointerEvents="none"><path d="M150 62H523V386H151M246 62V386M332 62V386M424 62V386M523 175H882" stroke="#153c48" strokeWidth="7" fill="none"/><path d="M150 62H523V386H151M246 62V386M332 62V386M424 62V386M523 175H882" stroke="#8ddaf5" strokeWidth="2.5" fill="none"/>{[[150,62],[246,62],[332,386],[424,62],[523,175],[882,175]].map(([x,y])=><circle key={`${x}-${y}`} cx={x} cy={y} r="5" fill="#80daf8" stroke="#fff" strokeWidth="1.5"/>)}</g>}
-      {layers.monitors && <g className="monitor-overlay" pointerEvents="none">{[[180,95],[310,340],[395,100],[490,340],[805,220]].map(([x,y],i)=><g key={i} transform={`translate(${x} ${y})`}><circle r="11" fill="#ecffda" stroke="#285941" strokeWidth="2"/><circle r="3" fill="#2b7955"/><path d="M-6-5Q0-11 6-5M-4-2Q0-6 4-2" stroke="#2b7955" strokeWidth="1.5" fill="none"/></g>)}</g>}
+      {irrigationPresent && <g data-closing={!layers.irrigation} className="irrigation-overlay" pointerEvents="none"><path d="M150 62H523V386H151M246 62V386M332 62V386M424 62V386M523 175H882" stroke="#153c48" strokeWidth="7" fill="none"/><path d="M150 62H523V386H151M246 62V386M332 62V386M424 62V386M523 175H882" stroke="#8ddaf5" strokeWidth="2.5" fill="none"/>{[[150,62],[246,62],[332,386],[424,62],[523,175],[882,175]].map(([x,y])=><circle key={`${x}-${y}`} cx={x} cy={y} r="5" fill="#80daf8" stroke="#fff" strokeWidth="1.5"/>)}</g>}
+      {monitorsPresent && <g data-closing={!layers.monitors} className="monitor-overlay" pointerEvents="none">{[[180,95],[310,340],[395,100],[490,340],[805,220]].map(([x,y],i)=><g key={i} transform={`translate(${x} ${y})`}><circle r="11" fill="#ecffda" stroke="#285941" strokeWidth="2"/><circle r="3" fill="#2b7955"/><path d="M-6-5Q0-11 6-5M-4-2Q0-6 4-2" stroke="#2b7955" strokeWidth="1.5" fill="none"/></g>)}</g>}
       {patrol && <g pointerEvents="none"><path d={ROUTE_PATH} fill="none" stroke="#143626" strokeWidth="5" strokeLinejoin="round"/><path className="patrol-route" d={ROUTE_PATH} fill="none" stroke="#d9eab8" strokeWidth="1.7" strokeDasharray="6 6"/><path className="patrol-completed" d={ROUTE_PATH} fill="none" stroke="#e0f0c5" strokeWidth="2.2" pathLength="100" strokeDasharray={`${Math.max(0,Math.min(100,patrol.progress))} 100`}/></g>}
       {PLOTS.map(p=>{const field=FIELDS.find(f=>f.id===p.id)!;return <g key={'label-'+p.id}>{layers.fields && <g className={`field-map-label ${selectedField===p.id?'selected':''}`} transform={`translate(${p.x} ${p.y})`} pointerEvents="none" textAnchor="middle">
             <rect className="field-label-box" x="-49" y="-22" width="98" height="48" rx="6" fill="#16392eef" stroke="#e0efcf88" strokeWidth=".7"/>

@@ -30,11 +30,14 @@ import './devices-media.css'
 import './workbench.css'
 import './insights.css'
 import './insight-scenes.css'
+import './motion-system.css'
 import NavIndicator from './components/NavIndicator'
 import PresentationMode from './components/PresentationMode'
 import BrandMark from './components/BrandMark'
 import FeedbackHost, {SaveIndicator} from './components/FeedbackHost'
 import MotionRuntime from './components/MotionRuntime'
+import ButtonMotion from './components/ButtonMotion'
+import ScrollProgress from './components/ScrollProgress'
 import { usePresence } from './components/use-presence'
 
 const NAV: { key: PageKey; icon: LucideIcon; label: string; group: string }[] = [
@@ -59,6 +62,7 @@ function Shell() {
   const { page, setPage, settings, notifications, markAllRead, tasks } = useStore()
   const { enabled, toggle } = useMotion()
   const [menu, setMenu] = useState(false)
+  const menuPresent = usePresence(menu)
   const [notice, setNotice] = useState(false)
   const noticePresent = usePresence(notice)
   const [clock, setClock] = useState(new Date())
@@ -83,8 +87,8 @@ function Shell() {
   return <div className="agri-shell">
     <div className="landscape-backdrop" aria-hidden="true" />
     <div className="landscape-mist" aria-hidden="true" />
-    <MotionRuntime /><FeedbackHost/>
-    {menu && <button className="mobile-scrim" aria-label="关闭菜单" onClick={() => setMenu(false)} />}
+    <MotionRuntime /><ButtonMotion /><FeedbackHost/>
+    {menuPresent && <button className="mobile-scrim" data-closing={!menu} inert={!menu} aria-hidden={!menu} aria-label="关闭菜单" onClick={() => setMenu(false)} />}
     <aside className={`sidebar ${menu ? 'is-open' : ''}`}>
       <button className="brand" onClick={() => go('dashboard')}><span className="brand-mark"><BrandMark/></span><span><b>惠农<span className="brand-dot">.</span></b><small>HUINONG · SMART AGRI</small></span></button>
       <nav aria-label="平台导航"><NavIndicator page={page}/>{NAV.map(n => <div key={n.key}>{n.group && <div className="nav-group">{n.group}</div>}<button className={`nav-item ${page === n.key ? 'active' : ''}`} title={n.label} aria-label={n.label} aria-current={page === n.key ? 'page' : undefined} onClick={() => go(n.key)}><n.icon size={20} strokeWidth={1.6} /><span>{n.label}</span>{n.key === 'alerts' && pending > 0 ? <i>{pending}</i> : page === n.key ? <ChevronRight size={14} /> : null}</button></div>)}</nav>
@@ -92,10 +96,11 @@ function Shell() {
     </aside>
     <div className="workspace">
       <header className="topbar">
+        <ScrollProgress target={main} page={page}/>
         <button className="icon-btn mobile-menu" aria-label="打开导航" onClick={() => setMenu(!menu)}>{menu ? <X size={20} /> : <Menu size={20} />}</button>
-        <div className="breadcrumb"><span>惠农控制中心</span><ChevronRight size={13} /><b>{NAV.find(n => n.key === page)?.label}</b></div>
+        <div className="breadcrumb"><span>惠农控制中心</span><ChevronRight size={13} /><b data-motion-key={page}>{NAV.find(n => n.key === page)?.label}</b></div>
         <div className="topbar-tools"><PresentationMode/><span className="clock">{clock.toLocaleDateString('zh-CN', {month:'2-digit', day:'2-digit'})} <b>{clock.toLocaleTimeString('zh-CN', {hour12:false})}</b></span><span className="demo-label">演示数据</span><button className="icon-btn motion-toggle" aria-label={enabled ? '关闭动画' : '开启动画'} title={enabled ? '关闭动画' : '开启动画'} onClick={toggle}>{enabled ? <Pause size={16} /> : <Play size={16} />}</button><button className="icon-btn notification-trigger" aria-label="通知中心" aria-expanded={notice} onClick={() => setNotice(!notice)}><Bell size={18} />{unread > 0 && <i />}</button><span className="avatar mini">{settings.displayName.slice(0, 1)}</span></div>
-        {noticePresent && <section className="notification-panel" data-closing={!notice} inert={!notice} aria-hidden={!notice}><div className="panel-heading"><h3>通知中心</h3><button className="text-btn" onClick={markAllRead}>全部标为已读</button></div>{notifications.map(n => <div className={`notice-row ${n.read ? 'read' : ''}`} key={n.id}><span className={`signal ${n.tone}`} /><div><b>{n.title}</b><p>{n.desc}</p><small>{n.time}{n.read ? ' · 已读' : ''}</small></div></div>)}<button className="text-btn" onClick={() => go('alerts')}>打开预警中心 <ArrowUpRight size={14} /></button></section>}
+        {noticePresent && <section className="notification-panel" data-closing={!notice} inert={!notice} aria-hidden={!notice}><div className="panel-heading"><h3>通知中心</h3><button className="text-btn" onClick={markAllRead}>全部标为已读</button></div>{notifications.map(n => <div className={`notice-row ${n.read ? 'read' : ''}`} key={n.id} data-status={n.read?'read':'unread'}><span className={`signal ${n.tone}`} /><div><b>{n.title}</b><p>{n.desc}</p><small>{n.time}{n.read ? ' · 已读' : ''}</small></div></div>)}<button className="text-btn" onClick={() => go('alerts')}>打开预警中心 <ArrowUpRight size={14} /></button></section>}
       </header>
       <main ref={main} className={`main-content ${settings.density === 'compact' ? 'compact' : ''}`}>
         <div className="farm-context"><span><MapPin size={13} />{settings.farmName}<span className="context-divider">/</span>数字农业协作平台</span><button onClick={locate} disabled={locating}><LocateFixed size={13} />{locating ? '定位中…' : '获取位置'}</button></div>

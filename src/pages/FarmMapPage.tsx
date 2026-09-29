@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import {
   Plus,
   Minus,
@@ -15,6 +15,8 @@ import { useStore, FIELDS, nowTimeStr, todayStr } from '../store'
 import { FarmMapSVG, type MapLayers } from '../components/FarmMapSVG'
 import { ImageryCredit } from '../components/ImageryCredit'
 import { PageHeader, btnPrimary, btnGhost } from '../components/bits'
+import { usePresence } from '../components/use-presence'
+import { useMotion } from '../components/motion-context'
 
 const LAYER_ITEMS: { key: keyof MapLayers; label: string }[] = [
   { key: 'fields', label: '地块标注' },
@@ -26,10 +28,43 @@ export default function FarmMapPage() {
   const { addTask, setPage, settings } = useStore()
   const [layers, setLayers] = useState<MapLayers>({ fields: true, monitors: true, irrigation: true })
   const [zoom, setZoom] = useState(1)
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelectedState] = useState<string | null>(null)
+  const [retained, setRetained] = useState<string | null>(null)
+  const detailPresent = usePresence(selected !== null, 280)
+  const detailOpen = selected !== null
+  const { enabled } = useMotion()
+  const detailRef = useRef<HTMLDivElement>(null)
+  const detailMounted = useRef(false)
+  const setSelected = (id: string | null) => { if (id) setRetained(id); setSelectedState(id) }
   const [irrigated, setIrrigated] = useState<string | null>(null)
 
-  const field = FIELDS.find((f) => f.id === selected) ?? null
+  const field = FIELDS.find((f) => f.id === (selected ?? retained)) ?? null
+
+  useLayoutEffect(() => {
+    const node = detailRef.current
+    if (!node) { detailMounted.current = false; return }
+    const mobile = matchMedia('(max-width:760px)')
+    const dimension = mobile.matches ? 'height' : 'width'
+    const start = detailMounted.current ? node.getBoundingClientRect()[dimension] : 0
+    detailMounted.current = true
+    const settle = () => {
+      node.style.width = mobile.matches ? '100%' : detailOpen ? '320px' : '0px'
+      node.style.height = mobile.matches && !detailOpen ? '0px' : 'auto'
+      node.style.marginLeft = !mobile.matches && !detailOpen ? '-20px' : '0px'
+      node.style.marginTop = mobile.matches && !detailOpen ? '-20px' : '0px'
+      node.style.opacity = detailOpen ? '1' : '0'
+    }
+    settle()
+    const target = detailOpen ? node.getBoundingClientRect()[dimension] : 0
+    const animate = enabled && !matchMedia('(prefers-reduced-motion:reduce)').matches
+    const animation = animate ? node.animate([
+      { [dimension]: `${start}px`, opacity: detailOpen ? .1 : 1, [mobile.matches ? 'marginTop' : 'marginLeft']: detailOpen ? '-20px' : '0px' },
+      { [dimension]: `${target}px`, opacity: detailOpen ? 1 : 0, [mobile.matches ? 'marginTop' : 'marginLeft']: detailOpen ? '0px' : '-20px' },
+    ], { duration: 280, easing: 'cubic-bezier(.22,1,.36,1)' }) : undefined
+    const resize = () => { animation?.cancel(); settle() }
+    mobile.addEventListener('change', resize)
+    return () => { node.style[dimension] = `${node.getBoundingClientRect()[dimension]}px`; animation?.cancel(); mobile.removeEventListener('change', resize) }
+  }, [detailOpen, detailPresent, enabled])
 
   const zoomIn = () => setZoom((z) => Math.min(2, Math.round((z + 0.2) * 10) / 10))
   const zoomOut = () => setZoom((z) => Math.max(1, Math.round((z - 0.2) * 10) / 10))
@@ -60,6 +95,7 @@ export default function FarmMapPage() {
             {LAYER_ITEMS.map((l) => (
               <button
                 key={l.key}
+                aria-pressed={layers[l.key]}
                 onClick={() => setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))}
                 className={`rounded-lg px-3 py-1.5 text-[13px] transition-colors ${
                   layers[l.key]
@@ -106,8 +142,9 @@ export default function FarmMapPage() {
         </div>
 
         {/* 地块详情侧栏 */}
-        {field && (
-          <div key={field.id} className="field-detail-enter flex w-[320px] shrink-0 flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)]">
+        {field && detailPresent && (
+          <div ref={detailRef} className="map-detail-shell" data-closing={!selected} inert={!selected} aria-hidden={!selected}>
+          <div data-motion-key={field.id} className="field-detail-enter flex w-[320px] shrink-0 flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)]">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-[18px] font-extrabold text-[#17352a]">
@@ -118,6 +155,7 @@ export default function FarmMapPage() {
                 </p>
               </div>
               <button
+                aria-label="收起地块详情"
                 onClick={() => setSelected(null)}
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8aa398] hover:bg-[#f2f9f5]"
               >
@@ -174,6 +212,7 @@ export default function FarmMapPage() {
             <p className="mt-2 text-center text-[11px] text-[#a4bcb1]">
               操作人：{settings.displayName}
             </p>
+          </div>
           </div>
         )}
       </div>

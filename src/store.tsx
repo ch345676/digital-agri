@@ -330,8 +330,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const currentPage = useRef(page)
   const changePage = useCallback((p: PageKey) => {
     if (currentPage.current === p) return
+    const order: PageKey[] = ['dashboard', 'map', 'inspection', 'alerts', 'tasks', 'soil', 'history', 'harvest', 'crops', 'devices', 'analytics', 'inventory', 'team', 'settings']
+    const direction = order.indexOf(p) >= order.indexOf(currentPage.current) ? 1 : -1
     currentPage.current = p
-    animatePageChange(() => { if (currentPage.current === p) setPageState(p) })
+    animatePageChange(() => { if (currentPage.current === p) setPageState(p) }, direction)
   }, [])
   const setPage = useCallback((p: PageKey) => {
     changePage(p)

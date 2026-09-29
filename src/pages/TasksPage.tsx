@@ -151,10 +151,11 @@ export default function TasksPage() {
 
       {/* 筛选 + 搜索 */}
       <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex gap-2">
+        <div className="flex gap-2 task-status-tabs" data-motion-tabs>
           {FILTERS.map((f) => (
             <button
               key={f.key}
+              aria-pressed={filter===f.key}
               onClick={() => setFilter(f.key)}
               className={`rounded-lg px-3.5 py-1.5 text-[13px] transition-colors ${
                 filter === f.key
@@ -178,7 +179,7 @@ export default function TasksPage() {
       </div>
 
       <div className="task-view-switch segmented" aria-label="任务视图"><button aria-pressed={view==='list'} className={view==='list'?'active':''} onClick={()=>setView('list')}>列表视图</button><button aria-pressed={view==='board'} className={view==='board'?'active':''} onClick={()=>{setView('board');setFilter('all')}}>看板视图</button></div>
-      {view==='board'?<TaskBoard tasks={list} onCreate={()=>setDialogOpen(true)}/>:<>
+      <div data-motion-key={view}>{view==='board'?<TaskBoard tasks={list} onCreate={()=>setDialogOpen(true)}/>:<>
       {/* 任务列表 */}
       <PageCard className="!p-2">
         {list.length === 0 && (
@@ -253,7 +254,7 @@ export default function TasksPage() {
         </ul>
       </PageCard>
 
-      </>}
+      </>}</div>
       {/* 新建任务对话框 */}
       <Modal open={dialogOpen} title="新建任务" onClose={() => setDialogOpen(false)}>
         <div className="space-y-3.5">

@@ -2,11 +2,12 @@ import puppeteer from 'puppeteer-core'
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-const base=process.env.TEST_BASE || 'http://127.0.0.1:5179/'
+const base=process.env.TEST_BASE || 'http://127.0.0.1:5184/'
 const out=path.resolve('qa')
 await fs.mkdir(out,{recursive:true})
-const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox']})
-const page=await browser.newPage()
+const browser=await puppeteer.launch({executablePath:process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--no-sandbox','--disable-background-timer-throttling','--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding','--disable-features=CalculateNativeWinOcclusion','--run-all-compositor-stages-before-draw','--disable-gpu']})
+const page=await browser.newPage();await page.bringToFront()
+const capture=options=>process.env.SKIP_SCREENSHOTS==='1'?Promise.resolve():page.screenshot(options)
 const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('response',r=>{if(r.status()>=400)errors.push(`${r.status()} ${r.url()}`)})
 const pause=ms=>new Promise(r=>setTimeout(r,ms))
 const click=async(text,scope='body',exact=false)=>{const ok=await page.evaluate((text,scope,exact)=>{const b=[...document.querySelectorAll(`${scope} button`)].find(b=>!b.disabled&&(exact?b.textContent.trim()===text:b.textContent.includes(text)));b?.click();return !!b},text,scope,exact);assert.ok(ok,`button: ${text}`);await pause(120)}
@@ -18,12 +19,12 @@ try{
 await page.setViewport({width:1440,height:1050})
 await go('dashboard');await page.evaluate(()=>localStorage.clear());await page.reload({waitUntil:'networkidle0'})
 await page.waitForSelector('.overview');await pause(1600)
-await page.screenshot({path:path.join(out,'desktop-overview.png')})
-await page.$eval('main',e=>e.scrollTo(0,e.scrollHeight));await pause(200);await page.screenshot({path:path.join(out,'desktop-overview-lower.png')})
+await capture({path:path.join(out,'desktop-overview.png')})
+await page.$eval('main',e=>e.scrollTo(0,e.scrollHeight));await pause(200);await capture({path:path.join(out,'desktop-overview-lower.png')})
 const routes=['dashboard','tasks','soil','history','alerts','inspection','harvest','map','devices','crops','analytics','inventory','team','settings']
 for(const size of [{width:1440,height:1050},{width:390,height:844},{width:768,height:1024}]){
  await page.setViewport(size)
- for(const route of routes){await go(route);const overflow=await page.$eval('main',e=>e.scrollWidth>e.clientWidth+2);if(overflow){console.log('OVERFLOW',size.width,route);const info=await page.evaluate(()=>[...document.querySelectorAll('main *')].filter(e=>e.getBoundingClientRect().right>innerWidth+2).map(e=>({tag:e.tagName,cls:e.className,text:e.textContent?.slice(0,30)})).slice(0,10));console.log(JSON.stringify(info));}assert.equal(overflow,false,`${route} overflow at ${size.width}`);if(size.width!==768)await page.screenshot({path:path.join(out,`${route}-${size.width}.png`)})}
+ for(const route of routes){await go(route);const overflow=await page.$eval('main',e=>e.scrollWidth>e.clientWidth+2);if(overflow){console.log('OVERFLOW',size.width,route);const info=await page.evaluate(()=>[...document.querySelectorAll('main *')].filter(e=>e.getBoundingClientRect().right>innerWidth+2).map(e=>({tag:e.tagName,cls:e.className,text:e.textContent?.slice(0,30)})).slice(0,10));console.log(JSON.stringify(info));}assert.equal(overflow,false,`${route} overflow at ${size.width}`);if(size.width!==768)await capture({path:path.join(out,`${route}-${size.width}.png`)})}
  checks.push(`14 routes without overflow at ${size.width}px`)
 }
 await page.setViewport({width:1440,height:1050})

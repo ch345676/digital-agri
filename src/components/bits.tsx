@@ -1,13 +1,13 @@
 import { X } from 'lucide-react'
-import { useEffect, useRef, useId, type ReactNode } from 'react'
+import { useEffect, useRef, useId, useState, type ReactNode, type HTMLAttributes } from 'react'
 import { createPortal } from 'react-dom'
 import {useMotion} from './motion-context'
 import { usePresence } from './use-presence'
 
 /* 通用页面卡片 */
-export function PageCard({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function PageCard({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`page-card rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)] ${className}`}>
+    <div {...props} className={`page-card rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)] ${className}`}>
       {children}
     </div>
   )
@@ -44,13 +44,17 @@ export function Modal({
 }) {
   const {enabled}=useMotion()
   const present = usePresence(open)
+  const [retainedContent, setRetainedContent] = useState(children)
+  if (open && children !== retainedContent) setRetainedContent(children)
   const dialog = useRef<HTMLDivElement>(null)
+  const trigger = useRef<DOMRect | null>(null)
   const titleId = useId()
   const closeRef = useRef(onClose)
   useEffect(() => { closeRef.current = onClose }, [onClose])
   useEffect(() => {
     if (!open) return
     const previous = document.activeElement as HTMLElement | null
+    trigger.current = previous?.closest('button')?.getBoundingClientRect() ?? null
     const focusable = () => [...(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]') ?? [])]
     focusable()[0]?.focus()
     const key = (e: KeyboardEvent) => {
@@ -66,11 +70,12 @@ export function Modal({
   }, [open])
   useEffect(()=>{
     const node=dialog.current
-    if(!node||!origin||!enabled||matchMedia('(prefers-reduced-motion: reduce)').matches)return
+    if(!node||!enabled||matchMedia('(prefers-reduced-motion: reduce)').matches)return
     const rect=node.getBoundingClientRect()
-    const transform='translate('+(origin.left-rect.left)+'px,'+(origin.top-rect.top)+'px) scale('+origin.width/rect.width+','+origin.height/rect.height+')'
+    const anchor=origin??trigger.current
+    const transform=origin?'translate('+(origin.left-rect.left)+'px,'+(origin.top-rect.top)+'px) scale('+origin.width/rect.width+','+origin.height/rect.height+')':'translateY(18px) scale(.95)'
     const frames=[{transform,opacity:.25,borderRadius:'24px'},{transform:'none',opacity:1,borderRadius:'18px'}]
-    node.style.transformOrigin='top left'
+    node.style.transformOrigin=origin?'top left':anchor?`${Math.max(0,Math.min(rect.width,anchor.left+anchor.width/2-rect.left))}px ${Math.max(0,Math.min(rect.height,anchor.top+anchor.height/2-rect.top))}px`:'50% 60%'
     const animation=node.animate(open?frames:frames.slice().reverse(),{duration:open?280:170,easing:'cubic-bezier(.22,1,.36,1)'})
     return()=>{animation.cancel();node.style.transformOrigin=''}
   },[open,origin,enabled,present])
@@ -101,7 +106,7 @@ export function Modal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        {children}
+        <div className="modal-body" data-motion-stagger>{open ? children : retainedContent}</div>
       </div>
     </div>, document.body
   )

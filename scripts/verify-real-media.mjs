@@ -38,7 +38,7 @@ try{
  await page.click('[aria-label="放大地图"]');assert.ok((await page.$eval('main',e=>e.innerText)).includes('120%'))
  await page.click('[aria-label="复位地图"]');assert.ok((await page.$eval('main',e=>e.innerText)).includes('100%'))
  await click('监测点','.page-heading-actions');assert.equal(await page.$('.monitor-overlay'),null)
- await click('灌溉管线','.page-heading-actions');assert.equal(await page.$('.irrigation-overlay'),null)
+ await click('灌溉管线','.page-heading-actions');await page.waitForFunction(()=>!document.querySelector('.irrigation-overlay'));assert.equal(await page.$('.irrigation-overlay'),null)
  await page.$eval('[data-field="B1"]',e=>e.focus());await page.keyboard.press('Enter');assert.equal(await page.$eval('[data-field="B1"]',e=>e.getAttribute('aria-pressed')),'true')
  checks.push('Map field selection, keyboard activation, irrigation task, zoom/reset and layers')
  await go('inspection');await click('暂停巡检','.robot-card');await wait(1100)

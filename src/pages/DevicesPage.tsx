@@ -12,6 +12,7 @@ import {
 import { useStore, DEVICES, type Device } from '../store'
 import { PageCard, PageHeader, Switch } from '../components/bits'
 import DevicePhoto from '../components/DevicePhoto'
+import { Count } from '../components/Motion'
 
 const KIND_ICONS: Record<Device['kind'], typeof Radar> = {
   soil: Gauge,
@@ -28,7 +29,7 @@ function DeviceCard({ device }: { device: Device }) {
   const Icon = KIND_ICONS[device.kind]
 
   return (
-    <PageCard className={`device-card flex flex-col ${!device.online ? 'device-offline' : ''}`}>
+    <PageCard data-motion-item={`device-${device.id}`} className={`device-card flex flex-col ${!device.online ? 'device-offline' : ''}`}>
       <div className="device-card-heading flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
@@ -53,7 +54,7 @@ function DeviceCard({ device }: { device: Device }) {
         </span>
       </div>
 
-      <div className="device-values mt-4 flex items-end justify-between rounded-xl bg-[#f5faf7] p-3.5">
+      <div data-motion-key={isValve?String(valveOn):device.id} data-irrigating={isValve&&valveOn} data-ambient-motion className="device-values mt-4 flex items-end justify-between rounded-xl bg-[#f5faf7] p-3.5">
         {device.online ? (
           <>
             <div>
@@ -63,7 +64,7 @@ function DeviceCard({ device }: { device: Device }) {
                   <span className="text-[16px] font-bold text-[#8aa398]">已关闭</span>
                 ) : (
                   <>
-                    {r.v1}
+                    <Count value={r.v1} decimals={Number.isInteger(r.v1)?0:1}/>
                     <span className="ml-1 text-[13px] font-semibold text-[#8aa398]">{device.metricUnit}</span>
                   </>
                 )}
@@ -73,7 +74,7 @@ function DeviceCard({ device }: { device: Device }) {
               <div className="text-right">
                 <div className="text-[12px] text-[#8aa398]">{device.metric2Label}</div>
                 <div className="mt-0.5 text-[16px] font-bold text-[#17352a]">
-                  {r.v2}
+                  <Count value={r.v2} decimals={Number.isInteger(r.v2)?0:1}/>
                   <span className="ml-0.5 text-[12px] font-semibold text-[#8aa398]">{device.metric2Unit}</span>
                 </div>
               </div>
@@ -155,7 +156,7 @@ export default function DevicesPage() {
           <div className="text-[12px] text-[#8aa398]">告警数（离线 + 墒情偏低）</div>
         </div>
         <div>
-          <div className="text-[20px] font-extrabold text-[#1e8fe0]">{irrigating}</div>
+          <div className="text-[20px] font-extrabold text-[#1e8fe0]"><Count value={irrigating}/></div>
           <div className="text-[12px] text-[#8aa398]">灌溉中阀门</div>
         </div>
       </PageCard>
