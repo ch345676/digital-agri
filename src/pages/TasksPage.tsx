@@ -4,15 +4,13 @@ import { useMemo, useState } from 'react'
 import { Plus, Search, Play, Check, Trash2, CalendarDays, User } from 'lucide-react'
 import {
   useStore,
-  TASK_TYPE_COLORS,
   todayStr,
   nowTimeStr,
   type TaskStatus,
   type TaskType,
 } from '../store'
-import { PageCard, PageHeader, Modal, Field, inputCls, btnPrimary, btnGhost } from '../components/bits'
+import { PageHeader, Modal, Field, inputCls, btnPrimary, btnGhost } from '../components/bits'
 import { Count } from '../components/Motion'
-import { TaskIllustration } from '../components/TaskIllustration'
 
 type FilterKey = 'all' | TaskStatus
 
@@ -36,7 +34,7 @@ function CompletionRing({ pct }: { pct: number }) {
   const r = 26
   const c = 2 * Math.PI * r
   return (
-    <div className="flex items-center gap-3">
+    <div className="completion-ring">
       <svg width="64" height="64" viewBox="0 0 64 64">
         <circle cx="32" cy="32" r={r} fill="none" stroke="#e0ece5" strokeWidth="7" />
         <circle
@@ -44,7 +42,7 @@ function CompletionRing({ pct }: { pct: number }) {
           cy="32"
           r={r}
           fill="none"
-          stroke="#1fa756"
+          stroke="#28604c"
           strokeWidth="7"
           strokeLinecap="round"
           strokeDasharray={c}
@@ -57,7 +55,7 @@ function CompletionRing({ pct }: { pct: number }) {
       </svg>
       <div>
         <div className="text-[13px] font-semibold text-[#17352a]">今日完成率</div>
-        <div className="text-[12px] text-[#8aa398]">今日任务完成情况</div>
+        <div className="text-[12px] text-[#8aa398]">按今天安排的任务统计</div>
       </div>
     </div>
   )
@@ -114,7 +112,7 @@ export default function TasksPage() {
     date === today ? '今天' : date === todayStr(1) ? '明天' : date.slice(5).replace('-', '/')
 
   return (
-    <div>
+    <div className="task-workspace">
       <PageHeader
         title="任务管理"
         desc="安排与跟踪农场日常作业任务"
@@ -126,135 +124,42 @@ export default function TasksPage() {
         }
       />
 
-      {/* 统计条 */}
-      <PageCard className="mb-5 flex items-center justify-between">
+      <section className="task-summary" aria-label="作业统计">
         <CompletionRing pct={pct} />
-        <div className="flex gap-8 pr-2 text-center">
-          <div>
-            <div className="text-[22px] font-extrabold text-[#17352a]"><Count value={todayTasks.length}/></div>
-            <div className="text-[12px] text-[#8aa398]">今日任务</div>
+        <div className="task-summary-stat"><span>今日安排</span><b><Count value={todayTasks.length}/><small> 项</small></b></div>
+        <div className="task-summary-stat"><span>全部待完成</span><b><Count value={counts.pending}/><small> 项</small></b></div>
+        <div className="task-summary-stat"><span>正在执行</span><b><Count value={counts['in-progress']}/><small> 项</small></b></div>
+      </section>
+      <section className="task-register">
+        <div className="task-toolbar">
+          <div className="task-status-tabs" data-motion-tabs aria-label="任务状态筛选">
+            {FILTERS.map(f => <button key={f.key} aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>{f.label}<span>{counts[f.key]}</span></button>)}
           </div>
-          <div>
-            <div className="text-[22px] font-extrabold text-[#e08a00]"><Count value={counts.pending}/></div>
-            <div className="text-[12px] text-[#8aa398]">待完成</div>
-          </div>
-          <div>
-            <div className="text-[22px] font-extrabold text-[#3b82f6]"><Count value={counts['in-progress']}/></div>
-            <div className="text-[12px] text-[#8aa398]">进行中</div>
-          </div>
-          <div>
-            <div className="text-[22px] font-extrabold text-[#178a45]"><Count value={counts.done}/></div>
-            <div className="text-[12px] text-[#8aa398]">已完成</div>
+          <div className="task-toolbar-tools">
+            <label className="task-search"><Search size={16}/><input aria-label="搜索任务或负责人" value={keyword} onChange={e=>setKeyword(e.target.value)} placeholder="搜索任务或负责人…" className={inputCls}/></label>
+            <div className="task-view-switch segmented" aria-label="任务视图"><button aria-pressed={view==='list'} className={view==='list'?'active':''} onClick={()=>setView('list')}>列表视图</button><button aria-pressed={view==='board'} className={view==='board'?'active':''} onClick={()=>{setView('board');setFilter('all')}}>看板视图</button></div>
           </div>
         </div>
-      </PageCard>
-
-      {/* 筛选 + 搜索 */}
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex gap-2 task-status-tabs" data-motion-tabs>
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              aria-pressed={filter===f.key}
-              onClick={() => setFilter(f.key)}
-              className={`rounded-lg px-3.5 py-1.5 text-[13px] transition-colors ${
-                filter === f.key
-                  ? 'border border-[#1fa756] bg-white font-semibold text-[#178a45]'
-                  : 'border border-transparent bg-[#f2f7f4] text-[#7b9489] hover:text-[#4f6b5f]'
-              }`}
-            >
-              {f.label}（{counts[f.key]}）
-            </button>
-          ))}
-        </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#a4bcb1]" />
-          <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="搜索任务或负责人…"
-            className={`${inputCls} w-[240px] pl-9`}
-          />
-        </div>
-      </div>
-
-      <div className="task-view-switch segmented" aria-label="任务视图"><button aria-pressed={view==='list'} className={view==='list'?'active':''} onClick={()=>setView('list')}>列表视图</button><button aria-pressed={view==='board'} className={view==='board'?'active':''} onClick={()=>{setView('board');setFilter('all')}}>看板视图</button></div>
-      <div data-motion-key={view}>{view==='board'?<TaskBoard tasks={list} onCreate={()=>setDialogOpen(true)}/>:<>
-      {/* 任务列表 */}
-      <PageCard className="!p-2">
-        {list.length === 0 && (
-          <FarmEmpty title="没有符合条件的任务" description="清除筛选重新查看，或创建第一项农事。" action={()=>{setKeyword('');setFilter('all');if(!tasks.length)setDialogOpen(true)}} label={tasks.length?'清除筛选':'新建农事'}/>
-        )}
-        <ul className="divide-y divide-[#f0f6f3]">
-          {list.map((t) => (
-            <li key={t.id} data-motion-item={`task-${t.id}`} data-status={t.status} className="flex items-center gap-3 px-3 py-3.5">
-              <TaskIllustration title={t.title} type={t.type}/>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[14px] font-semibold ${t.status === 'done' ? 'text-[#a4bcb1] line-through' : 'text-[#17352a]'}`}
-                  >
-                    {t.title}
-                  </span>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${TASK_TYPE_COLORS[t.type]}`}>
-                    {t.type}
-                  </span>
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_META[t.status].cls}`}>
-                    {STATUS_META[t.status].label}
-                  </span>
-                </div>
-                <div className="mt-1 flex items-center gap-4 text-[12px] text-[#8aa398]">
-                  <span className="flex items-center gap-1">
-                    <User className="h-3.5 w-3.5" />
-                    {t.assignee}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {dayLabel(t.date)} {t.time}
-                  </span>
-                </div>
+        <div data-motion-key={view}>{view==='board'?<TaskBoard tasks={list} onCreate={()=>setDialogOpen(true)}/>:<>
+          <div className="task-column-head" aria-hidden="true"><span>作业内容</span><span>负责人</span><span>计划时间</span><span>状态</span><span>操作</span></div>
+          {list.length===0 && <FarmEmpty title="没有符合条件的任务" description="清除筛选重新查看，或创建第一项农事。" action={()=>{setKeyword('');setFilter('all');if(!tasks.length)setDialogOpen(true)}} label={tasks.length?'清除筛选':'新建农事'}/>}
+          <ul className="task-list">
+            {list.map(t => <li key={t.id} data-motion-item={`task-${t.id}`} data-status={t.status} className="task-record">
+              <div className="task-record-title"><span className="task-type-label">{t.type}</span><b>{t.title}</b></div>
+              <div className="task-owner"><span className="member-initial" aria-hidden="true">{t.assignee.slice(-2,-1)||t.assignee.slice(0,1)}</span><User size={14}/><span>{t.assignee}</span></div>
+              <div className="task-date"><CalendarDays size={14}/><span>{dayLabel(t.date)}<small>{t.time}</small></span></div>
+              <span className={`task-state state-${t.status}`}><i/>{STATUS_META[t.status].label}</span>
+              <div className="task-record-actions">
+                {t.status==='pending' && <button onClick={()=>setTaskStatus(t.id,'in-progress')} className="task-start"><Play size={13}/>开始</button>}
+                {t.status!=='done' && <button onClick={()=>setTaskStatus(t.id,'done')} className="task-finish"><Check size={14}/>完成</button>}
+                {t.status==='done' && <button onClick={()=>setTaskStatus(t.id,'pending')} className="task-reopen">重新打开</button>}
+                <button onClick={()=>deleteTask(t.id)} title="删除" aria-label={`删除任务：${t.title}`} className="task-delete"><Trash2 size={15}/></button>
               </div>
-              <div className="flex items-center gap-1.5">
-                {t.status === 'pending' && (
-                  <button
-                    onClick={() => setTaskStatus(t.id, 'in-progress')}
-                    className="flex items-center gap-1 rounded-lg bg-[#e3f0fe] px-2.5 py-1.5 text-[12px] font-semibold text-[#3b82f6] hover:bg-[#d5e8fd]"
-                  >
-                    <Play className="h-3.5 w-3.5" />
-                    开始
-                  </button>
-                )}
-                {t.status !== 'done' && (
-                  <button
-                    onClick={() => setTaskStatus(t.id, 'done')}
-                    className="flex items-center gap-1 rounded-lg bg-[#e4f7ec] px-2.5 py-1.5 text-[12px] font-semibold text-[#178a45] hover:bg-[#d5f0e0]"
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                    完成
-                  </button>
-                )}
-                {t.status === 'done' && (
-                  <button
-                    onClick={() => setTaskStatus(t.id, 'pending')}
-                    className="rounded-lg bg-[#f2f7f4] px-2.5 py-1.5 text-[12px] font-semibold text-[#7b9489] hover:bg-[#e7f0ea]"
-                  >
-                    重新打开
-                  </button>
-                )}
-                <button
-                  onClick={() => deleteTask(t.id)}
-                  title="删除"
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-[#c0a8a8] hover:bg-[#fdeeee] hover:text-[#e05252]"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </PageCard>
-
-      </>}</div>
+            </li>)}
+          </ul>
+        </>}</div>
+        <footer className="task-register-footer"><span>共 {list.length} 项作业</span><span>按计划时间排序 · 操作自动保存</span></footer>
+      </section>
       {/* 新建任务对话框 */}
       <Modal open={dialogOpen} title="新建任务" onClose={() => setDialogOpen(false)}>
         <div className="space-y-3.5">

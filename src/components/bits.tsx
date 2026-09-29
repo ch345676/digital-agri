@@ -7,7 +7,7 @@ import { usePresence } from './use-presence'
 /* 通用页面卡片 */
 export function PageCard({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div {...props} className={`page-card rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(23,53,42,0.05)] ${className}`}>
+    <div {...props} className={`page-card ${className}`}>
       {children}
     </div>
   )
@@ -16,10 +16,10 @@ export function PageCard({ children, className = '', ...props }: HTMLAttributes<
 /* 页面标题 */
 export function PageHeader({ title, desc, extra }: { title: string; desc?: string; extra?: ReactNode }) {
   return (
-    <div className="page-heading-glass mb-5 flex items-start justify-between">
+    <div className="page-heading-glass">
       <div className="page-heading-copy">
-        <h1 className="text-[24px] font-extrabold tracking-tight text-[#10291e]">{title}</h1>
-        {desc && <p className="mt-1 text-[13px] text-[#8aa398]">{desc}</p>}
+        <h1>{title}</h1>
+        {desc && <p>{desc}</p>}
       </div>
       <div className="page-heading-actions">{extra}</div>
     </div>
@@ -122,14 +122,11 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   )
 }
 
-export const inputCls =
-  'w-full rounded-xl border border-[#dcebe2] bg-white px-3 py-2 text-[13.5px] text-[#17352a] outline-none focus:border-[#1fa756] focus:ring-2 focus:ring-[#1fa756]/15'
+export const inputCls = 'form-input w-full'
 
-export const btnPrimary =
-  'rounded-xl bg-[#1fa756] px-4 py-2 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#178a45]'
+export const btnPrimary = 'primary-btn'
 
-export const btnGhost =
-  'rounded-xl border border-[#dcebe2] bg-white px-4 py-2 text-[13.5px] font-semibold text-[#5f7a6e] transition-colors hover:bg-[#f2f9f5]'
+export const btnGhost = 'secondary-btn'
 
 /* 开关 */
 export function Switch({ on, onChange }: { on: boolean; onChange: () => void }) {

@@ -32,12 +32,13 @@ function routePosition(progress: number) {
 }
 export interface MapLayers { fields: boolean; monitors: boolean; irrigation: boolean }
 
-export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol }: {
+export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol, cover=false }: {
   layers: MapLayers
   zoom?: number
   selectedField?: string | null
   onFieldClick?: (id:string) => void
   patrol?: { progress:number; running:boolean }
+  cover?: boolean
 }) {
   const maskId=useId().replaceAll(':','')
   const irrigationPresent=usePresence(layers.irrigation,220)
@@ -45,7 +46,7 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
   const selected=PLOTS.find(p=>p.id===selectedField)
   const info=FIELDS.find(f=>f.id===selectedField)
   const [rx,ry,heading] = routePosition(patrol?.progress ?? 0)
-  return <svg viewBox="0 0 1000 560" className="real-farm-map h-full w-full" preserveAspectRatio="xMidYMid meet" aria-label={patrol ? '真实农田遥感照片上的仿真巡航路线' : '真实农田卫星影像演示地图'}>
+  return <svg viewBox="0 0 1000 560" className="real-farm-map h-full w-full" preserveAspectRatio={cover ? 'xMidYMid slice' : 'xMidYMid meet'} aria-label={patrol ? '真实农田遥感照片上的仿真巡航路线' : '真实农田卫星影像演示地图'}>
     <rect width="1000" height="560" fill="#18342e"/>
     <g className="map-zoom-layer" transform={`translate(500 280) scale(${zoom}) translate(-500 -280)`}>
       <image className="satellite-photo" href={FARM_IMAGERY.image} width="1000" height="560" preserveAspectRatio="none"/>

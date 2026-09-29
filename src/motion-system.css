@@ -1,10 +1,10 @@
 /* A shared rhythm: tactile controls, travelling selections, then quiet settlement. */
-:root { --motion-ease: cubic-bezier(.22,1,.36,1); --route-direction: 1; }
+:root { --motion-ease: cubic-bezier(.22,1,.36,1); --route-direction: 1; --route-travel:18px; }
 .page-stage { animation: workspace-arrive 400ms var(--motion-ease) both; }
 html[data-route-transition='true'] .page-stage { animation: none; }
 ::view-transition-old(agri-page) { animation: workspace-leave 180ms ease-out both; }
 ::view-transition-new(agri-page) { animation: workspace-arrive 420ms var(--motion-ease) both; }
-@keyframes workspace-arrive { from { opacity: 0; transform: translateX(calc(18px * var(--route-direction))) translateY(5px); } to { opacity: 1; transform: none; } }
+@keyframes workspace-arrive { from { opacity: 0; transform: translateX(calc(var(--route-travel) * var(--route-direction))) translateY(5px); } to { opacity: 1; transform: none; } }
 @keyframes workspace-leave { to { opacity: 0; transform: translateX(calc(-10px * var(--route-direction))); } }
 .topbar { position: relative; }
 .reading-progress { position: absolute; inset: auto 0 0; height: 2px; overflow: hidden; pointer-events: none; }
@@ -14,14 +14,14 @@ html[data-route-transition='true'] .page-stage { animation: none; }
 html[data-motion='on'] button:not(:disabled):active { transform: translateY(1px) scale(.98); }
 button[aria-expanded] .lucide-chevron-down { transition: rotate 320ms var(--motion-ease); }
 button[aria-expanded='true'] .lucide-chevron-down { rotate: 180deg; }
-.nav-item.active>svg:first-child { filter: drop-shadow(0 2px 5px #9bb68144); }
+.nav-item.active>svg:first-child { filter:none; animation:none; }
 
 [data-motion-track='true'] { position: relative; isolation: isolate; }
-[data-motion-track='true']:before { content: ''; position: absolute; left: 0; top: 0; width: var(--selection-w); height: var(--selection-h); transform: translate(var(--selection-x),var(--selection-y)); border: 1px solid #cfdbc1; background: linear-gradient(145deg,#eff4e5,#e2ebd5); box-shadow: 0 2px 5px #3149360b,inset 0 1px #fff9; border-radius: 8px; pointer-events: none; transition: transform 360ms var(--motion-ease),width 360ms var(--motion-ease),height 360ms var(--motion-ease); z-index: -1; }
+[data-motion-track='true']:before { content: ''; position: absolute; left: 0; top: 0; width: var(--selection-w); height: var(--selection-h); transform: translate(var(--selection-x),var(--selection-y)); border: 1px solid #cfdbc1; background:#eaf1e0; box-shadow:none; border-radius:5px; pointer-events: none; transition: transform 360ms var(--motion-ease),width 360ms var(--motion-ease),height 360ms var(--motion-ease); z-index: -1; }
 [data-motion-track='true']>button { position: relative; background: transparent!important; border-color: transparent!important; box-shadow: none!important; }
 [data-motion-track='true']>button.active,[data-motion-track='true']>button[aria-pressed='true'] { background: transparent!important; color: #365137!important; }
 [data-motion-track='true']>button:hover { transform: none; }
-.field-tabs[data-motion-track='true']:before { border-radius: 12px; }
+.field-tabs[data-motion-track='true']:before { border-radius:0; border:0; border-bottom:2px solid #54763e; }
 
 /* Restrained light follows the cursor on actionable surfaces, without tilting text. */
 html[data-motion='on'] [data-pointer-light='true'] { background-image: radial-gradient(340px circle at var(--pointer-x) var(--pointer-y),#dce9c64d,transparent 75%)!important; border-color: #b7c9a6!important; box-shadow: 0 5px 18px #35492d0b!important; }
@@ -101,7 +101,7 @@ input:focus,select:focus,textarea:focus { box-shadow: 0 0 0 4px #9bb6761c!import
 .feedback-error .feedback-symbol { background: #f5e5d8; }
 @keyframes feedback-seal { from { opacity: .7; scale: .9; } to { opacity: 0; scale: 1.6; } }
 
-@media (max-width:760px) { .page-stage { animation-duration: 300ms; } ::view-transition-new(agri-page) { animation-duration: 320ms; } }
+@media (max-width:760px) { :root { --route-travel:8px; } .page-stage { animation-duration: 300ms; } ::view-transition-new(agri-page) { animation-duration: 320ms; } }
 html[data-motion='off'] .interaction-wave,html[data-motion='off'] .motion-ghost { display: none!important; }
 html[data-motion='off'] *,html[data-motion='off'] *:before,html[data-motion='off'] *:after { animation: none!important; transition: none!important; }
 @media (prefers-reduced-motion:reduce) { *,*:before,*:after { animation: none!important; transition: none!important; } .interaction-wave,.motion-ghost { display: none!important; } }
