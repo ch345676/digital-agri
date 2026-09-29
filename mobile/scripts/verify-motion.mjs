@@ -10,8 +10,8 @@ try {
  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message))
  await page.setViewport({width:390,height:844,isMobile:true,hasTouch:true})
  const click=async text=>{await page.evaluate(t=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.includes(t));assertButton(b)?.click();function assertButton(el){if(!el)throw Error('Missing '+t);return el}},text);await pause(600)}
- const route=async name=>{await page.evaluate(n=>location.hash=n,name);await pause(800)}
- const center=async selector=>{await page.$eval(selector,e=>e.scrollIntoView({block:'center'}));await pause(500)}
+ const route=async name=>{await page.evaluate(n=>location.hash=n,name);await page.waitForSelector(`.page-${name}`);await pause(500)}
+ const center=async selector=>{await page.waitForSelector(selector);await page.$eval(selector,e=>e.scrollIntoView({block:'center'}));await pause(500)}
  await page.goto(base+'/#overview',{waitUntil:'networkidle2'})
  await click('注册');await page.waitForSelector('input[placeholder="再次输入密码"]');assert.equal(await page.$$eval('input[type=password]',e=>e.length),2)
  await click('管理员登录');await page.waitForSelector('input[placeholder="初始密码 admin123"]');await page.type('input[type=password]','admin123');await page.click('button[type=submit]');await page.waitForSelector('.app-tabs');await pause(650)
@@ -40,11 +40,11 @@ try {
  await page.evaluate(()=>document.querySelector('[class*="z-[1100]"] button')?.click());await pause(500)
  assert.equal(await page.$('img[alt="整机爆炸结构总览"]'),null)
  await route('identify');await click('使用示例图');assert(await page.$eval('.identify-frame',e=>e.dataset.phase==='scanning'))
- await pause(1850);assert(await page.$eval('.identify-frame',e=>e.dataset.phase==='done'))
+ await page.waitForFunction(()=>document.querySelector('.identify-frame')?.dataset.phase==='done');await pause(350)
  await page.screenshot({path:`${out}/identify.png`,fullPage:true})
  await route('team');await center('input[placeholder="发送消息…"]');await page.type('input[placeholder="发送消息…"]','检查动画与演示状态')
  await page.click('[aria-label="发送消息"]');await pause(250);assert(await page.$('[aria-label="模拟回复中"]'))
- await pause(2200);assert.equal(await page.$('[aria-label="模拟回复中"]'),null)
+ await page.waitForSelector('[aria-label="模拟回复中"]',{hidden:true,timeout:8000});await pause(350)
  const chat=await page.$eval('[role=log]',e=>({text:e.innerText,gap:e.scrollHeight-e.scrollTop-e.clientHeight}));assert(chat.text.includes('检查动画与演示状态'));assert(chat.gap<8)
  await page.screenshot({path:`${out}/team.png`})
  await page.evaluate(()=>{for(const key of ['irrigation','alerts','patrol','overview'])location.hash=key});await pause(950);assert(await page.$('.page-overview'))
