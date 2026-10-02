@@ -188,7 +188,7 @@ function readCachedWx(key: string): CachedWx | null {
   return null
 }
 
-async function fetchWeather(lat: number, lon: number, signal: AbortSignal): Promise<WeatherData> {
+async function fetchWeather(lat: number, lon: number, signal?: AbortSignal): Promise<WeatherData> {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m` +
@@ -244,10 +244,16 @@ export function useWeather(lat: number, lon: number): WeatherState {
       setState({ data: cached.data, source: 'live', loading:false, error:false, updatedAt:cached.ts })
       return
     }
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 12000)
+    const controller = typeof AbortController === 'undefined' ? null : new AbortController()
+    const timeout = setTimeout(() => {
+      controller?.abort()
+      if (!cancelled) {
+        cancelled = true
+        setState({ data: DEMO_WEATHER, source: 'demo', loading:false, error:true, updatedAt:null })
+      }
+    }, 12000)
     setState(s => ({...s, loading:true, error:false}))
-    fetchWeather(lat, lon, controller.signal)
+    fetchWeather(lat, lon, controller?.signal)
       .then((data) => {
         if (cancelled) return
         try {
@@ -264,7 +270,7 @@ export function useWeather(lat: number, lon: number): WeatherState {
     return () => {
       cancelled = true
       clearTimeout(timeout)
-      controller.abort()
+      controller?.abort()
     }
   }, [key, lat, lon, revision])
 

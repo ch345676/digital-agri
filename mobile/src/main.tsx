@@ -3,10 +3,12 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './editorial.css'
 import './workflow.css'
+import './compatibility.css'
 import App from './App.tsx'
+import StartupBoundary from './components/StartupBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <StartupBoundary><App /></StartupBoundary>
   </StrictMode>,
 )

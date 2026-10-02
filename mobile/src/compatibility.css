@@ -1,0 +1,15 @@
+/* Keep fixed controls and maps usable before independent transforms/dvh. */
+@supports not (height: 100dvh) {
+  .app-shell { min-height: 100vh; }
+}
+@supports not (translate: -50% 0) {
+  .app-tabbar, .work-sheet { left: 0; right: 0; width: 100%; margin-left: auto; margin-right: auto; }
+  .app-tabbar { max-width: 420px; padding-bottom: 16px; }
+  .work-sheet { max-width: 460px; }
+  .center-x.fixed { left: 0; right: 0; margin-left: auto; margin-right: auto; }
+  .center-x.fixed:not(.w-full) { width: max-content; max-width: calc(100% - 32px); }
+}
+@supports not (aspect-ratio: 1) {
+  .farm-canvas svg { height: auto; }
+  .photo-grid button, .photo-grid .upload-button { height: 90px; }
+}

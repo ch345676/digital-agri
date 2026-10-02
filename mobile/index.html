@@ -9,6 +9,20 @@
     <title>智慧农业移动端</title>
   </head>
   <body>
+    <div id="app-startup" role="status" style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:9999;background:#eef5fc;color:#243c31;display:flex;align-items:center;justify-content:center;padding:28px;font-family:sans-serif">
+      <div style="max-width:340px;width:100%">
+        <p style="font-size:12px;letter-spacing:3px;color:#74834f">惠农 · 智慧农场</p>
+        <h1 id="startup-title" style="font-size:25px;margin:22px 0 12px">正在打开农场</h1>
+        <p id="startup-message" style="font-size:14px;line-height:1.8">正在加载本地页面，请稍候…</p>
+        <div id="startup-actions" hidden>
+          <button id="startup-retry" type="button" style="border:0;border-radius:24px;background:#243c31;color:white;padding:12px 22px;margin:16px 8px 12px 0">重新打开</button>
+          <a href="https://ch345676.github.io/digital-agri/m/#overview" style="color:#526d35">打开网页版</a>
+          <details style="margin-top:16px;font-size:12px;line-height:1.6"><summary>查看诊断信息</summary><pre id="startup-detail" style="white-space:pre-wrap;word-break:break-word"></pre></details>
+        </div>
+        <noscript>请启用浏览器的 JavaScript 后重新打开。</noscript>
+      </div>
+    </div>
+    <script src="./startup.js"></script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

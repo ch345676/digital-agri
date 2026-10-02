@@ -17,6 +17,7 @@ export function Sheet({open,onClose,title,children}:{open:boolean;onClose:()=>vo
  return createPortal(<AnimatePresence>{open&&<SheetContent key="sheet" onClose={onClose} title={title}>{children}</SheetContent>}</AnimatePresence>,document.body)
 }
 const sheetStack:HTMLElement[]=[]
+const viewportUnit=typeof CSS!=='undefined'&&CSS.supports('height','100dvh')?'dvh':'vh'
 let savedBodyOverflow=''
 function SheetContent({onClose,title,children}:{onClose:()=>void;title:string;children:ReactNode}) {
  const controls=useDragControls(),reduced=useReducedMotion();const [full,setFull]=useState(false);const panel=useRef<HTMLDivElement>(null)
@@ -34,7 +35,7 @@ function SheetContent({onClose,title,children}:{onClose:()=>void;title:string;ch
   return()=>{const index=sheetStack.indexOf(node);if(index>=0)sheetStack.splice(index,1);document.removeEventListener('keydown',key);if(!sheetStack.length)document.body.style.overflow=savedBodyOverflow;if(previous?.isConnected)previous.focus();else sheetStack.at(-1)?.focus()}
  },[])
 
- return <><motion.div className="work-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}/><motion.div ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="work-sheet" initial={{y:reduced?0:'100%',opacity:0}} animate={{y:0,opacity:1,height:full?'90dvh':'64dvh'}} exit={{y:reduced?0:'100%',opacity:0}} transition={{duration:reduced?0:.28,ease:EASE}} drag="y" dragControls={controls} dragListener={false} dragConstraints={{top:0,bottom:0}} dragElastic={.16} onDragEnd={(_,info)=>{if(info.offset.y>110||info.velocity.y>650)onClose();else if(info.offset.y < -35)setFull(true);else if(info.offset.y>35)setFull(false)}}>
+ return <><motion.div className="work-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={onClose}/><motion.div ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="work-sheet" initial={{y:reduced?0:'100%',opacity:0}} animate={{y:0,opacity:1,height:`${full?90:64}${viewportUnit}`}} exit={{y:reduced?0:'100%',opacity:0}} transition={{duration:reduced?0:.28,ease:EASE}} drag="y" dragControls={controls} dragListener={false} dragConstraints={{top:0,bottom:0}} dragElastic={.16} onDragEnd={(_,info)=>{if(info.offset.y>110||info.velocity.y>650)onClose();else if(info.offset.y < -35)setFull(true);else if(info.offset.y>35)setFull(false)}}>
   <div className="sheet-handle" onPointerDown={e=>controls.start(e)}><button onClick={()=>setFull(v=>!v)} aria-label={full?'收起面板':'展开面板'} aria-expanded={full}><i/></button></div><div className="sheet-heading"><h2>{title}</h2><button aria-label="关闭面板" className="icon-button" onClick={onClose}><X size={18}/></button></div><div className="sheet-body">{children}</div>
  </motion.div></>
 }

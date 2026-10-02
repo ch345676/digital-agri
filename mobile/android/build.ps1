@@ -6,6 +6,10 @@ param(
 )
 $ErrorActionPreference='Stop'
 $mobileRoot = Split-Path $PSScriptRoot -Parent
+[xml]$manifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'AndroidManifest.xml') -Raw
+$version = $manifest.manifest.GetAttribute('versionName','http://schemas.android.com/apk/res/android')
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid APK versionName' }
+$apkName = "huinong-farm-$version.apk"
 $distPath = Join-Path $mobileRoot 'dist'
 if (!(Test-Path -LiteralPath (Join-Path $distPath 'index.html'))) { throw 'Build the mobile app before packaging.' }
 $asciiRoot = Join-Path ([System.IO.Path]::GetPathRoot($PSScriptRoot)) 'huinong-android-build'
@@ -58,7 +62,7 @@ if (!(Test-Path -LiteralPath $keystore)) {
  $secure=Get-Content -LiteralPath $secretFile | ConvertTo-SecureString
  $env:HUINONG_STORE_PASS=[System.Net.NetworkCredential]::new('',$secure).Password
 }
-$apk=Join-Path $buildRoot 'huinong-farm-1.0.0.apk'
+$apk=Join-Path $buildRoot $apkName
 try {
  & $java -jar (Join-Path $toolsRoot 'lib/apksigner.jar') sign --ks $keystore --ks-key-alias huinong --ks-pass env:HUINONG_STORE_PASS --key-pass env:HUINONG_STORE_PASS --out $apk $aligned
  if ($LASTEXITCODE -ne 0) { throw 'Signing failed' }
@@ -68,7 +72,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Signature validation failed' }
 & (Join-Path $toolsRoot 'zipalign.exe') -c -v 4 $apk | Select-Object -Last 1
 if ($LASTEXITCODE -ne 0) { throw 'Alignment validation failed' }
 & (Join-Path $toolsRoot 'aapt.exe') dump badging $apk | Select-Object -First 10
-Copy-Item -LiteralPath $apk -Destination (Join-Path $OutputDir 'huinong-farm-1.0.0.apk') -Force
+Copy-Item -LiteralPath $apk -Destination (Join-Path $OutputDir $apkName) -Force
 $hash=(Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLowerInvariant()
-"$hash  huinong-farm-1.0.0.apk" | Set-Content -LiteralPath (Join-Path $OutputDir 'SHA256SUMS.txt')
-Write-Output "APK: $(Join-Path $OutputDir 'huinong-farm-1.0.0.apk')"
+"$hash  $apkName" | Set-Content -LiteralPath (Join-Path $OutputDir 'SHA256SUMS.txt')
+Write-Output "APK: $(Join-Path $OutputDir $apkName)"
