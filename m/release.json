@@ -1,8 +1,8 @@
 {
-  "feature": "mobile-farm-workflows-android",
-  "source": "ce4e08e1ff38b069f651cb6d94ed04bb6d6d6ca9",
-  "publishedAt": "2026-09-29T18:20:35.7974701Z",
-  "androidVersion": "1.0.0",
-  "androidApk": "./downloads/huinong-farm-1.0.0.apk",
-  "androidSha256": "ba6f5b1b3890f41a67553261a80e9286ae5722798530e59276e772a42acc012e"
+  "feature": "android-startup-compatibility",
+  "source": "849e63f11ae8159062195a1229e14c38cb1c7f8a",
+  "publishedAt": "2026-10-02T13:36:41.4088134Z",
+  "androidVersion": "1.0.1",
+  "androidApk": "./downloads/huinong-farm-1.0.1.apk",
+  "androidSha256": "eb715cba4bd1808853738e951bd37c3105ac63a55a4fe86a83291487e7727102"
 }
