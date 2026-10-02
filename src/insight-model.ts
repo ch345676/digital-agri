@@ -21,5 +21,5 @@ export function resourceScenario(water:number,fertilizer:number,waterPrice:numbe
  const waterCost=water*waterPrice,fertilizerCost=fertilizer*fertilizerPrice
  const nextWater=water*(1-waterReduction/100),nextFertilizer=fertilizer*(1-fertilizerReduction/100)
  const baseline=waterCost+fertilizerCost,next=nextWater*waterPrice+nextFertilizer*fertilizerPrice
- return{waterCost,fertilizerCost,baseline,next,nextWater,nextFertilizer,saving:baseline-next,savingRate:baseline?(baseline-next)/baseline*100:0}
+ return{waterCost,fertilizerCost,baseline,next,nextWater,nextFertilizer,nextWaterCost:nextWater*waterPrice,nextFertilizerCost:nextFertilizer*fertilizerPrice,saving:baseline-next,savingRate:baseline?(baseline-next)/baseline*100:0}
 }

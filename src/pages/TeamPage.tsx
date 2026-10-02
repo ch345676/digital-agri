@@ -91,7 +91,7 @@ export default function TeamPage() {
         </div>
 
         {/* 公告区 */}
-        <div className="w-[340px] shrink-0">
+        <div className="w-[340px] max-w-full shrink-0">
           <PageCard>
             <div className="flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-[#178a45]" />

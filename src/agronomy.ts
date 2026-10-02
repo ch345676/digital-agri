@@ -1,5 +1,6 @@
 import {feedback} from './feedback'
 import { FIELDS, todayStr } from './store'
+import { offsetDate } from './workflow-model'
 
 // Demonstration fixtures, never presented as connected sensor measurements.
 export const SAMPLES = FIELDS.map((field, i) => ({
@@ -31,12 +32,12 @@ export const ALERTS = [
   { id: 'A05', field: 'C1', title: '土壤水分不足', level: '低风险', source: '土壤采样', detail: '采样水分 49%，低于示例下限 55%；建议现场复测后安排补水。', action: '灌溉复核', time: '08:10', confidence: null },
 ] as const
 export function alertTaskTitle(a: typeof ALERTS[number]) { return `[${a.id}] ${a.field} ${a.action}` }
-export function soilHistory(fieldId: string, days: number) {
+export function soilHistory(fieldId: string, days: number, endDate = todayStr()) {
   const s = SAMPLES.find(x => x.id === fieldId) ?? SAMPLES[0]
   const index = SAMPLES.indexOf(s)
   return Array.from({ length: days }, (_, i) => {
     const back = days - 1 - i
-    return { date: todayStr(-back), label: todayStr(-back).slice(5).replace('-', '/'),
+    return { date: offsetDate(endDate, -back), label: offsetDate(endDate, -back).slice(5).replace('-', '/'),
       ec: +(s.ec + Math.sin(back * 1.3 + index) * (back ? .18 : 0)).toFixed(2),
       moisture: +(s.soilMoisture + Math.sin(back * .8 + index) * (back ? 3 : 0)).toFixed(1),
       temperature: +(s.temperature + Math.sin(back * .6 + index) * (back ? 2.1 : 0)).toFixed(1),

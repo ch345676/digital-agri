@@ -25,17 +25,18 @@ const LAYER_ITEMS: { key: keyof MapLayers; label: string }[] = [
 ]
 
 export default function FarmMapPage() {
-  const { addTask, setPage, settings } = useStore()
+  const { addTask, openField, settings, context, selectField, setMapZoom, tasks, workflow, alertStatus } = useStore()
   const [layers, setLayers] = useState<MapLayers>({ fields: true, monitors: true, irrigation: true })
-  const [zoom, setZoom] = useState(1)
-  const [selected, setSelectedState] = useState<string | null>(null)
+  const zoom = context.fieldId ? Math.max(1.2, context.mapZoom) : context.mapZoom, setZoom = (value: number | ((v:number)=>number)) => setMapZoom(typeof value === 'function' ? value(zoom) : value)
+  const [hiddenField, setHiddenField] = useState('')
+  const selected = context.fieldId && context.fieldId !== hiddenField ? context.fieldId : null
   const [retained, setRetained] = useState<string | null>(null)
   const detailPresent = usePresence(selected !== null, 280)
   const detailOpen = selected !== null
   const { enabled } = useMotion()
   const detailRef = useRef<HTMLDivElement>(null)
   const detailMounted = useRef(false)
-  const setSelected = (id: string | null) => { if (id) setRetained(id); setSelectedState(id) }
+  const setSelected = (id: string | null) => { if (id) { setRetained(id); selectField(id); setHiddenField('') } else setHiddenField(context.fieldId) }
   const [irrigated, setIrrigated] = useState<string | null>(null)
 
   const field = FIELDS.find((f) => f.id === (selected ?? retained)) ?? null
@@ -61,14 +62,16 @@ export default function FarmMapPage() {
       { [dimension]: `${start}px`, opacity: detailOpen ? .1 : 1, [mobile.matches ? 'marginTop' : 'marginLeft']: detailOpen ? '-20px' : '0px' },
       { [dimension]: `${target}px`, opacity: detailOpen ? 1 : 0, [mobile.matches ? 'marginTop' : 'marginLeft']: detailOpen ? '0px' : '-20px' },
     ], { duration: 280, easing: 'cubic-bezier(.22,1,.36,1)' }) : undefined
+    const finish = setTimeout(() => animation?.finish(), 350)
     const resize = () => { animation?.cancel(); settle() }
     mobile.addEventListener('change', resize)
-    return () => { node.style[dimension] = `${node.getBoundingClientRect()[dimension]}px`; animation?.cancel(); mobile.removeEventListener('change', resize) }
+    return () => { clearTimeout(finish); node.style[dimension] = `${node.getBoundingClientRect()[dimension]}px`; animation?.cancel(); mobile.removeEventListener('change', resize) }
   }, [detailOpen, detailPresent, enabled])
 
   const zoomIn = () => setZoom((z) => Math.min(2, Math.round((z + 0.2) * 10) / 10))
   const zoomOut = () => setZoom((z) => Math.max(1, Math.round((z - 0.2) * 10) / 10))
   const reset = () => {
+    selectField('')
     setZoom(1)
     setSelected(null)
   }
@@ -81,6 +84,7 @@ export default function FarmMapPage() {
       assignee: '陈谷雨',
       date: todayStr(),
       time: nowTimeStr(),
+      fieldId: field.id,
     })
     setIrrigated(field.id)
   }
@@ -116,6 +120,7 @@ export default function FarmMapPage() {
           <FarmMapSVG
             layers={layers}
             zoom={zoom}
+            focus
             selectedField={selected}
             onFieldClick={(id) => {
               setSelected(id)
@@ -128,7 +133,7 @@ export default function FarmMapPage() {
             <button onClick={zoomIn} aria-label="放大地图" disabled={zoom>=2} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
               <Plus className="h-[18px] w-[18px]" strokeWidth={2.2} />
             </button>
-            <button onClick={zoomOut} aria-label="缩小地图" disabled={zoom<=1} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
+            <button onClick={zoomOut} aria-label="缩小地图" disabled={zoom<=(context.fieldId?1.2:1)} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
               <Minus className="h-[18px] w-[18px]" strokeWidth={2.2} />
             </button>
             <button onClick={reset} title="复位" aria-label="复位地图" className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4f6b5f] hover:bg-[#eef7f1]">
@@ -205,10 +210,11 @@ export default function FarmMapPage() {
               <button onClick={arrangeIrrigation} className={`${btnPrimary} flex-1`}>
                 安排灌溉
               </button>
-              <button onClick={() => setPage('crops')} className={`${btnGhost} flex-1`}>
+              <button onClick={() => openField('crops', field.id)} className={`${btnGhost} flex-1`}>
                 查看详情
               </button>
             </div>
+            <div className="map-linked-summary"><b>关联档案</b><span>{tasks.filter(t=>t.fieldId===field.id&&t.status!=='done').length} 项待办 · {workflow.samples.filter(s=>s.fieldId===field.id).length} 次采样</span><div className="context-links">{(['soil','history','tasks','devices'] as const).map((page,i)=><button className="text-btn" key={page} onClick={()=>openField(page,field.id)}>{['土壤','复盘','作业','设备'][i]}</button>)}</div><button className="text-btn" onClick={()=>openField('alerts',field.id)}>查看关联风险 · {alertStatus('A0'+(FIELDS.findIndex(f=>f.id===field.id)+1))}</button></div>
             <p className="mt-2 text-center text-[11px] text-[#a4bcb1]">
               操作人：{settings.displayName}
             </p>

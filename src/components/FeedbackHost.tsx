@@ -25,7 +25,7 @@ function Toast({ item, remove }: { item: Feedback; remove: (id: string) => void 
   const complete = item.progress === undefined || item.progress >= 100
   useEffect(() => {
     if (!complete || held || closing) return
-    const timer = setTimeout(() => setClosing(true), item.error ? 10000 : 4200)
+    const timer = setTimeout(() => setClosing(true), item.action ? 10000 : item.error ? 10000 : 4200)
     return () => clearTimeout(timer)
   }, [item, complete, held, closing])
   useEffect(() => {
@@ -37,6 +37,7 @@ function Toast({ item, remove }: { item: Feedback; remove: (id: string) => void 
     <div><div className={`feedback-toast ${item.error ? 'feedback-error' : ''}`} onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)} onFocusCapture={() => setHeld(true)} onBlurCapture={e => { if (!e.currentTarget.contains(e.relatedTarget)) setHeld(false) }}>
       <div className="feedback-symbol" data-complete={complete && !item.error} aria-hidden="true">{item.error ? <AlertCircle/> : complete ? <Check/> : <BrandMark/>}</div>
       <div><span>{item.message}</span>{item.progress !== undefined && <progress aria-label="导出进度" max="100" value={item.progress}/>}</div>
+      {item.action && <button className="feedback-undo" onClick={() => { item.action?.(); remove(item.id) }}>{item.actionLabel || '撤销'}</button>}
       <button aria-label="关闭提示" onClick={() => setClosing(true)}><X size={16}/></button>
     </div></div>
   </div>

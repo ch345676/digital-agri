@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Droplets, Leaf, Pause, Play, Sprout } from 'lucide-react'
 import { Count } from './Motion'
 import { useMotion } from './motion-context'
@@ -9,6 +9,7 @@ type Scenario = ReturnType<typeof resourceScenario>
 export default function ResourceFlowScene({ scenario }: { scenario: Scenario }) {
   const [paused, setPaused] = useState(false)
   const { enabled } = useMotion()
+  const interpolated = useRef({ water: scenario.nextWaterCost, fertilizer: scenario.nextFertilizerCost })
   const draw = useCallback<SceneDraw>((ctx, w, h, t) => {
     const hubX = w * .57, hubY = h * .5
     glow(ctx, hubX, hubY, w * .23, '#97c99c', .25)
@@ -18,14 +19,17 @@ export default function ResourceFlowScene({ scenario }: { scenario: Scenario }) 
       ctx.fillStyle = `rgba(178,210,178,${.08 + .08 * (1 + Math.sin(t * .5 + i))})`
       ctx.beginPath(); ctx.arc(x, y, .8, 0, Math.PI * 2); ctx.fill()
     }
-    const channels = [{ cost: scenario.waterCost, color: '#8cd7e4', y: .29, bend: .28 }, { cost: scenario.fertilizerCost, color: '#d4dc92', y: .74, bend: .79 }]
+    const blend=enabled && !paused ? .12 : 1
+    interpolated.current.water+=(scenario.nextWaterCost-interpolated.current.water)*blend
+    interpolated.current.fertilizer+=(scenario.nextFertilizerCost-interpolated.current.fertilizer)*blend
+    const channels = [{ cost: scenario.waterCost, adjusted:interpolated.current.water, color: '#8cd7e4', y: .29, bend: .28 }, { cost: scenario.fertilizerCost, adjusted:interpolated.current.fertilizer, color: '#d4dc92', y: .74, bend: .79 }]
     for (const lane of channels) {
-      const share = scenario.baseline ? lane.cost / scenario.baseline : 0
+      const share = scenario.baseline ? lane.adjusted / scenario.baseline : 0
       const p: Curve = [[w * .22, h * lane.y], [w * .41, h * lane.bend], [w * .39, hubY], [hubX, hubY]]
-      traceCurve(ctx, p); ctx.strokeStyle = lane.color + '15'; ctx.lineWidth = 20 + share * 13; ctx.stroke()
+      traceCurve(ctx, p); ctx.strokeStyle = lane.color + '15'; ctx.lineWidth = 20 + (scenario.baseline?lane.cost/scenario.baseline:0) * 13; ctx.stroke()
       traceCurve(ctx, p); ctx.strokeStyle = lane.color + '2c'; ctx.lineWidth = 7 + share * 6; ctx.stroke()
       traceCurve(ctx, p); ctx.strokeStyle = lane.color + '80'; ctx.lineWidth = 1; ctx.stroke()
-      if (!lane.cost) continue
+      if (lane.adjusted<.01) continue
       const count = 12 + Math.round(share * 19)
       for (let i = 0; i < count; i++) {
         const progress = (i / count + t * (.13 + (i % 3) * .012)) % 1
@@ -51,16 +55,16 @@ export default function ResourceFlowScene({ scenario }: { scenario: Scenario }) 
       const progress = (i / 13 + t * .21) % 1, [x, y] = curvePoint(outgoing, progress)
       glow(ctx, x, y, 8, '#d7edb3', .7); ctx.fillStyle = '#f3ffd8'; ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill()
     }
-  }, [scenario.waterCost, scenario.fertilizerCost, scenario.baseline, scenario.next])
+  }, [scenario.waterCost, scenario.fertilizerCost, scenario.baseline, scenario.next,scenario.nextWaterCost,scenario.nextFertilizerCost,enabled,paused])
   const canvas = useSceneCanvas(draw, paused)
   return <div className="resource-cinema" data-paused={paused || !enabled}>
     <div className="resource-cinema-toolbar"><span><i/>水肥投入 · 动态流向</span><button aria-label={paused ? '播放资源特效' : '暂停资源特效'} disabled={!enabled} onClick={() => setPaused(!paused)}>{paused || !enabled ? <Play size={12}/> : <Pause size={12}/>}</button></div>
     <div className="resource-transfer-scene"><canvas ref={canvas} aria-hidden="true"/>
-      <div className="resource-source source-water"><span><Droplets size={14}/>灌溉用水</span><b>¥ <Count value={scenario.waterCost}/></b><small>基准费用</small></div>
-      <div className="resource-source source-nutrient"><span><Leaf size={14}/>肥料投入</span><b>¥ <Count value={scenario.fertilizerCost}/></b><small>基准费用</small></div>
+      <div className="resource-source source-water"><span><Droplets size={14}/>灌溉用水</span><b>¥ <Count value={scenario.nextWaterCost}/></b><small>基准 ¥{scenario.waterCost.toFixed(0)}</small></div>
+      <div className="resource-source source-nutrient"><span><Leaf size={14}/>肥料投入</span><b>¥ <Count value={scenario.nextFertilizerCost}/></b><small>基准 ¥{scenario.fertilizerCost.toFixed(0)}</small></div>
       <div className="resource-collector"><Sprout size={25}/><span>投入汇聚</span></div>
       <div className="resource-destination"><span>调整后投入</span><b>¥ <Count value={scenario.next}/></b><small>仅计水肥两项</small></div>
     </div>
-    <div className="resource-stream-legend"><span><i/>水分通道</span><span><i/>养分通道</span><small>粒子为流向示意</small></div>
+    <div className="resource-stream-legend"><span><i/>用水费用</span><span><i/>肥料费用</span><small>浅轨为基准，亮流随调整金额变化 · 粒子示意</small></div>
   </div>
 }

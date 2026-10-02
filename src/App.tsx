@@ -3,7 +3,7 @@ import { LayoutDashboard, MapPin, ClipboardList, Radar, Wheat, BarChart3, Packag
 import { StoreProvider, useStore, type PageKey } from './store'
 import { MotionProvider } from './components/Motion'
 import { useMotion } from './components/motion-context'
-import { ALERTS, alertTaskTitle } from './agronomy'
+import { ALERTS } from './agronomy'
 import Dashboard from './pages/Dashboard'
 import FarmMapPage from './pages/FarmMapPage'
 import TasksPage from './pages/TasksPage'
@@ -29,6 +29,8 @@ import './insights.css'
 import './insight-scenes.css'
 import './workbench.css'
 import './motion-system.css'
+import './workflow.css'
+import FieldContext from './components/FieldContext'
 import PresentationMode from './components/PresentationMode'
 import BrandMark from './components/BrandMark'
 import FeedbackHost, {SaveIndicator} from './components/FeedbackHost'
@@ -56,7 +58,7 @@ const NAV: { key: PageKey; icon: LucideIcon; label: string; group: string }[] = 
 const PAGES: Record<PageKey, () => React.JSX.Element> = { dashboard: Dashboard, map: FarmMapPage, tasks: TasksPage, devices: DevicesPage, crops: CropsPage, analytics: AnalyticsPage, inventory: InventoryPage, team: TeamPage, settings: SettingsPage, soil: SoilPage, history: HistoryPage, alerts: AlertsPage, inspection: InspectionPage, harvest: HarvestPage }
 
 function Shell() {
-  const { page, setPage, settings, notifications, markAllRead, tasks } = useStore()
+  const { page, setPage, settings, notifications, markAllRead, alertStatus } = useStore()
   const { enabled, toggle } = useMotion()
   const [menu, setMenu] = useState(false)
   const menuPresent = usePresence(menu)
@@ -67,10 +69,18 @@ function Shell() {
   const [locating, setLocating] = useState(false)
   const main = useRef<HTMLElement>(null)
   const unread = notifications.filter(n => !n.read).length
-  const pending = ALERTS.filter(a => !tasks.some(t => t.title === alertTaskTitle(a) && t.status === 'done')).length
+  const pending = ALERTS.filter(a => alertStatus(a.id) !== '已解决').length
   const Page = PAGES[page]
   useEffect(() => { const id = setInterval(() => setClock(new Date()), 1000); return () => clearInterval(id) }, [])
-  useEffect(() => { main.current?.scrollTo({ top: 0 }); document.title = `${NAV.find(n => n.key === page)?.label} · 惠农智慧农业` }, [page])
+  useEffect(() => {
+    const node = main.current
+    let top = 0; try { top = Number(sessionStorage.getItem('huinong-scroll-' + page)) || 0 } catch { /* optional view memory */ }
+    const remember = () => { try { sessionStorage.setItem('huinong-scroll-' + page, String(node?.scrollTop || 0)) } catch { /* optional view memory */ } }
+    node?.addEventListener('scroll', remember, { passive:true })
+    const frame = requestAnimationFrame(() => node?.scrollTo({ top }))
+    document.title = `${NAV.find(n => n.key === page)?.label} · 惠农智慧农业`
+    return () => { cancelAnimationFrame(frame); node?.removeEventListener('scroll', remember) }
+  }, [page])
   useEffect(() => {
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { setMenu(false); setNotice(false) } }
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key)
@@ -102,6 +112,7 @@ function Shell() {
       <main ref={main} className={`main-content ${settings.density === 'compact' ? 'compact' : ''}`}>
         <div className="farm-context"><span><MapPin size={13} />{settings.farmName}<span className="context-divider">/</span>数字农业协作平台</span><button onClick={locate} disabled={locating}><LocateFixed size={13} />{locating ? '定位中…' : '获取位置'}</button></div>
         {location && <div className="location-message" role="status">{location}</div>}
+        <FieldContext/>
         <div key={page} className={`page-stage page-${page}`}><Page /></div>
         <footer className="site-footer"><span>HUINONG <i>让每一寸土地，都被悉心照料。</i></span><SaveIndicator/></footer>
       </main>

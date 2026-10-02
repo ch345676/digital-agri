@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Package, AlertTriangle, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react'
-import { useStore, type InventoryItem } from '../store'
+import { useStore, FIELDS, type InventoryItem } from '../store'
 import { PageCard, PageHeader, Modal, Field, inputCls, btnPrimary, btnGhost } from '../components/bits'
 
 const CATEGORY_COLORS: Record<InventoryItem['category'], string> = {
@@ -11,26 +11,26 @@ const CATEGORY_COLORS: Record<InventoryItem['category'], string> = {
 }
 
 export default function InventoryPage() {
-  const { inventory, adjustInventory } = useStore()
+  const { inventory, adjustInventory, context, tasks, openField } = useStore()
   const [dialog, setDialog] = useState<{ item: InventoryItem; mode: 'in' | 'out' } | null>(null)
   const [amount, setAmount] = useState('')
+  const [fieldId,setField]=useState(context.fieldId||'A1'),[unitPrice,setPrice]=useState(''),[taskId,setTask]=useState('')
 
   const lowItems = inventory.filter((i) => i.quantity < i.safety)
   const openDialog = (item: InventoryItem, mode: 'in' | 'out') => {
     setDialog({ item, mode })
-    setAmount('')
+    setAmount('');setField(context.fieldId||'A1');setPrice('');setTask('')
   }
   const submit = () => {
     if (!dialog) return
     const n = parseFloat(amount)
     if (!Number.isFinite(n) || n <= 0) return
-    adjustInventory(dialog.item.id, dialog.mode === 'in' ? n : -n)
-    setDialog(null)
+    if(adjustInventory(dialog.item.id, dialog.mode === 'in' ? n : -n, {fieldId,unitPrice:Number(unitPrice),taskId:taskId||undefined})) setDialog(null)
   }
 
   return (
     <div>
-      <PageHeader title="物资管理" desc="肥料、农药、种子与农膜库存管理" />
+      <PageHeader title="物资管理" desc="登记领用数量与单价，同时更新地块投入账本。" extra={<button className="secondary-btn" onClick={()=>openField('analytics',context.fieldId)}>查看生产账本</button>}/>
 
       {/* 统计 */}
       <PageCard className="mb-5 flex items-center gap-10">
@@ -128,7 +128,7 @@ export default function InventoryPage() {
         open={!!dialog}
         title={dialog ? `${dialog.mode === 'in' ? '入库' : '出库'}：${dialog.item.name}` : ''}
         onClose={() => setDialog(null)}
-        width="w-[360px]"
+        width="w-[520px]"
       >
         {dialog && (
           <div className="space-y-3.5">
@@ -146,11 +146,12 @@ export default function InventoryPage() {
                 autoFocus
               />
             </Field>
+            <div className="form-two"><Field label="归属地块"><select aria-label="领料地块" className={inputCls} value={fieldId} onChange={e=>{setField(e.target.value);setTask('')}}>{FIELDS.map(f=><option key={f.id} value={f.id}>{f.id} {f.crop}</option>)}</select></Field><Field label={'单价（元 / '+dialog.item.unit+'）'}><input aria-label="物资单价" type="number" min="0" step="any" className={inputCls} value={unitPrice} onChange={e=>setPrice(e.target.value)}/></Field></div><Field label="关联任务"><select aria-label="领料关联任务" className={inputCls} value={taskId} onChange={e=>setTask(e.target.value)}><option value="">暂不关联</option>{tasks.filter(t=>t.fieldId===fieldId).map(t=><option key={t.id} value={t.id}>{t.title}</option>)}</select></Field><p className="muted">出库计入地块投入；入库仅记录采购额，避免重复计费。</p>
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={() => setDialog(null)} className={btnGhost}>取消</button>
               <button
                 onClick={submit}
-                disabled={!amount || parseFloat(amount) <= 0}
+                disabled={!amount || !Number.isFinite(Number(amount)) || Number(amount)<=0 || unitPrice.trim()==='' || !Number.isFinite(Number(unitPrice)) || Number(unitPrice)<0 || (dialog.mode==='out'&&Number(amount)>dialog.item.quantity)}
                 className={`${btnPrimary} disabled:opacity-50`}
               >
                 确认{dialog.mode === 'in' ? '入库' : '出库'}

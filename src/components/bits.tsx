@@ -129,10 +129,11 @@ export const btnPrimary = 'primary-btn'
 export const btnGhost = 'secondary-btn'
 
 /* 开关 */
-export function Switch({ on, onChange }: { on: boolean; onChange: () => void }) {
+export function Switch({ on, onChange, disabled=false }: { on: boolean; onChange: () => void; disabled?:boolean }) {
   return (
     <button
       onClick={onChange}
+      disabled={disabled}
       role="switch"
       aria-checked={on}
       aria-label="切换状态"

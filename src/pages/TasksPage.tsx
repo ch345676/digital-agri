@@ -6,11 +6,13 @@ import {
   useStore,
   todayStr,
   nowTimeStr,
+  FIELDS,
   type TaskStatus,
   type TaskType,
 } from '../store'
 import { PageHeader, Modal, Field, inputCls, btnPrimary, btnGhost } from '../components/bits'
 import { Count } from '../components/Motion'
+import { usePageState } from '../use-page-state'
 
 type FilterKey = 'all' | TaskStatus
 
@@ -62,10 +64,11 @@ function CompletionRing({ pct }: { pct: number }) {
 }
 
 export default function TasksPage() {
-  const { tasks, members, addTask, setTaskStatus, deleteTask } = useStore()
-  const [view,setView]=useState<'list'|'board'>('list')
-  const [filter, setFilter] = useState<FilterKey>('all')
-  const [keyword, setKeyword] = useState('')
+  const { tasks: allTasks, context, members, addTask, setTaskStatus, deleteTask, openField } = useStore()
+  const tasks = useMemo(()=>allTasks.filter(t=>!context.fieldId||t.fieldId===context.fieldId),[allTasks,context.fieldId])
+  const [view,setView]=usePageState<'list'|'board'>('tasks-view','list')
+  const [filter, setFilter] = usePageState<FilterKey>('tasks-filter','all')
+  const [keyword, setKeyword] = usePageState<string>('tasks-keyword','')
   const [dialogOpen, setDialogOpen] = useState(false)
 
   // 新建任务表单
@@ -74,6 +77,7 @@ export default function TasksPage() {
   const [fAssignee, setFAssignee] = useState(members[0]?.name ?? '')
   const [fDate, setFDate] = useState(todayStr())
   const [fTime, setFTime] = useState(nowTimeStr())
+  const [fField, setFField] = useState(context.fieldId)
 
   const today = todayStr()
   const todayTasks = tasks.filter((t) => t.date === today)
@@ -103,6 +107,7 @@ export default function TasksPage() {
       assignee: fAssignee || '未分配',
       date: fDate,
       time: fTime,
+      fieldId: fField,
     })
     setDialogOpen(false)
     setFTitle('')
@@ -117,7 +122,7 @@ export default function TasksPage() {
         title="任务管理"
         desc="安排与跟踪农场日常作业任务"
         extra={
-          <button onClick={() => setDialogOpen(true)} className={`${btnPrimary} flex items-center gap-1.5`}>
+          <button onClick={() => { setFField(context.fieldId); setDialogOpen(true) }} className={`${btnPrimary} flex items-center gap-1.5`}>
             <Plus className="h-4 w-4" />
             新建任务
           </button>
@@ -145,7 +150,7 @@ export default function TasksPage() {
           {list.length===0 && <FarmEmpty title="没有符合条件的任务" description="清除筛选重新查看，或创建第一项农事。" action={()=>{setKeyword('');setFilter('all');if(!tasks.length)setDialogOpen(true)}} label={tasks.length?'清除筛选':'新建农事'}/>}
           <ul className="task-list">
             {list.map(t => <li key={t.id} data-motion-item={`task-${t.id}`} data-status={t.status} className="task-record">
-              <div className="task-record-title"><span className="task-type-label">{t.type}</span><b>{t.title}</b></div>
+              <div className="task-record-title"><span className="task-type-label">{t.fieldId || '全场'} · {t.type}</span><b>{t.title}</b>{t.sourceId && <button className="text-btn task-source" onClick={()=>openField('alerts',t.fieldId||'',t.sourceId)}>关联预警 {t.sourceId} · {t.status==='done'?'查看复核':'查看来源'}</button>}</div>
               <div className="task-owner"><span className="member-initial" aria-hidden="true">{t.assignee.slice(-2,-1)||t.assignee.slice(0,1)}</span><User size={14}/><span>{t.assignee}</span></div>
               <div className="task-date"><CalendarDays size={14}/><span>{dayLabel(t.date)}<small>{t.time}</small></span></div>
               <span className={`task-state state-${t.status}`}><i/>{STATUS_META[t.status].label}</span>
@@ -172,6 +177,7 @@ export default function TasksPage() {
             />
           </Field>
           <div className="grid grid-cols-2 gap-3">
+            <Field label="作业地块"><select aria-label="作业地块" value={fField} onChange={e=>setFField(e.target.value)} className={inputCls}><option value="">全场事务</option>{FIELDS.map(f=><option key={f.id} value={f.id}>{f.id} {f.crop}</option>)}</select></Field>
             <Field label="任务类型">
               <select value={fType} onChange={(e) => setFType(e.target.value as TaskType)} className={inputCls}>
                 {TASK_TYPES.map((t) => (

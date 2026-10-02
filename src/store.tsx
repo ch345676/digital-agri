@@ -1,9 +1,9 @@
+/* eslint-disable react-refresh/only-export-components -- Shared store and fixture exports retain the existing module API. */
 import {feedback,reportSave} from './feedback'
 import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useCallback,
   useRef,
   useState,
@@ -11,6 +11,7 @@ import {
 } from 'react'
 
 import { animatePageChange } from './components/page-transition'
+import { createWorkflow, FIELD_IDS, validLedger, validSample, validDate, reviewStatus, type WorkflowState, type FarmEvent, type AlertReview, type SampleRecord, type LedgerEntry, type SavedScenario, type DeviceCommand, type CommandPhase } from './workflow-model'
 
 /* ============================== 类型定义 ============================== */
 
@@ -41,6 +42,10 @@ export interface Task {
   date: string // YYYY-MM-DD
   time: string // HH:mm
   status: TaskStatus
+  fieldId?: string
+  sourceId?: string
+  completedAt?: string
+  revision?: number
 }
 
 export interface AppNotification {
@@ -112,6 +117,7 @@ export interface SettingsState {
 }
 
 interface PersistedState {
+  workflow: WorkflowState
   tasks: Task[]
   notifications: AppNotification[]
   valves: Record<string, boolean>
@@ -208,9 +214,10 @@ function seedState(): PersistedState {
     date: string,
     time: string,
     status: TaskStatus,
-  ): Task => ({ id, title, type, assignee, date, time, status })
+  ): Task => ({ id, title, type, assignee, date, time, status, fieldId: title.match(/\b(A1|A2|B1|B2|C1)\b/)?.[0] })
 
   return {
+    workflow: createWorkflow(today),
     tasks: [
       mk('t1', '田间巡查', '日常任务', '李田丰', today, '09:00', 'pending'),
       mk('t2', '水肥一体化施肥', '灌溉施肥', '陈谷雨', today, '14:30', 'pending'),
@@ -284,7 +291,10 @@ function loadState(): PersistedState {
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PersistedState>
       const seed = seedState()
-      return { ...seed, ...parsed, settings: { ...seed.settings, ...(parsed.settings ?? {}) } }
+      const tasks = (Array.isArray(parsed.tasks) ? parsed.tasks : seed.tasks).map(t => ({ ...t, fieldId: t.fieldId || t.title.match(/\b(A1|A2|B1|B2|C1)\b/)?.[0], sourceId: t.sourceId || t.title.match(/^\[(A0[1-5])\]/)?.[1] }))
+      const workflow = { ...seed.workflow, ...(parsed.workflow ?? {}) }
+      workflow.commands = workflow.commands.map(c => ['sending','confirmed','executing'].includes(c.phase) ? { ...c, phase: 'failed' as const, message: '页面已重载，模拟指令中断；请重新发送' } : c)
+      return { ...seed, ...parsed, tasks, workflow, settings: { ...seed.settings, ...(parsed.settings ?? {}) } }
     }
   } catch {
     /* 忽略损坏的缓存 */
@@ -298,6 +308,23 @@ interface Store extends PersistedState {
   page: PageKey
   setPage: (p: PageKey) => void
   readings: Record<string, { v1: number; v2: number }>
+  context: { fieldId: string; date: string; mapZoom: number; focusId: string }
+  selectField: (id: string) => void
+  selectDate: (date: string) => void
+  setMapZoom: (zoom: number) => void
+  openField: (page: PageKey, id: string, focusId?: string) => void
+  alertStatus: (id: string) => string
+  reviewAlert: (review: Omit<AlertReview, 'id' | 'at'>) => boolean
+  addSample: (sample: Omit<SampleRecord, 'id' | 'origin'>) => boolean
+  addLedger: (entry: Omit<LedgerEntry, 'id' | 'origin'>) => boolean
+  removeLedger: (id: string) => void
+  saveScenario: (plan: Omit<SavedScenario, 'id' | 'at'>) => void
+  deleteScenario: (id: string) => void
+  logEvent: (event: Omit<FarmEvent, 'id' | 'at' | 'origin'>) => void
+  deviceModes: Record<string, 'online' | 'offline' | 'stale'>
+  lastSeen: Record<string, number>
+  setDeviceMode: (id: string, mode: 'online' | 'offline' | 'stale') => void
+  sendValve: (id: string, target: boolean) => void
   // 任务
   addTask: (t: Omit<Task, 'id' | 'status'>) => void
   setTaskStatus: (id: string, s: TaskStatus) => void
@@ -308,7 +335,7 @@ interface Store extends PersistedState {
   // 灌溉阀
   toggleValve: (id: string) => void
   // 库存
-  adjustInventory: (id: string, delta: number) => void
+  adjustInventory: (id: string, delta: number, metadata?: { fieldId: string; unitPrice: number; taskId?: string }) => boolean
   // 团队
   addMember: (m: Omit<Member, 'id'>) => void
   addAnnouncement: (a: Omit<Announcement, 'id'>) => void
@@ -322,6 +349,18 @@ const StoreContext = createContext<Store | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [persisted, setPersisted] = useState<PersistedState>(loadState)
+  const stateRef = useRef(persisted)
+  const commit = useCallback((transform: (p: PersistedState) => PersistedState) => { const next = transform(stateRef.current); stateRef.current = next; setPersisted(next) }, [])
+  const [context, setContext] = useState(() => {
+    try { const c = JSON.parse(sessionStorage.getItem('huinong-context') || '{}'); return { fieldId: FIELD_IDS.includes(c.fieldId) ? c.fieldId : '', date: validDate(c.date || '') ? c.date : todayStr(), mapZoom: Number.isFinite(c.mapZoom) ? Math.max(1, Math.min(2, c.mapZoom)) : 1, focusId: typeof c.focusId === 'string' ? c.focusId : '' } } catch { return { fieldId: '', date: todayStr(), mapZoom: 1, focusId: '' } }
+  })
+  useEffect(() => { try { sessionStorage.setItem('huinong-context', JSON.stringify(context)) } catch { /* optional navigation memory */ } }, [context])
+  const [deviceModes, setDeviceModes] = useState<Record<string, 'online' | 'offline' | 'stale'>>(() => Object.fromEntries(DEVICES.map(d => [d.id, d.online ? 'online' : 'offline'])))
+  const modesRef = useRef(deviceModes)
+  const [lastSeen, setLastSeen] = useState<Record<string, number>>(() => Object.fromEntries(DEVICES.map(d => [d.id, d.online ? Date.now() : 0])))
+  const commandTimers = useRef<ReturnType<typeof setTimeout>[]>([])
+  useEffect(() => () => commandTimers.current.forEach(clearTimeout), [])
+  const event = (e: Omit<FarmEvent, 'id' | 'at' | 'origin'>): FarmEvent => ({ ...e, id: uid('event'), at: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19), origin: 'local' })
   const [page, setPageState] = useState<PageKey>(() => {
     const h = window.location.hash.replace('#', '') as PageKey
     const valid: PageKey[] = ['dashboard', 'map', 'tasks', 'devices', 'crops', 'analytics', 'inventory', 'team', 'settings', 'soil', 'history', 'alerts', 'inspection', 'harvest']
@@ -373,7 +412,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setReadings((prev) => {
         const next = { ...prev }
         for (const d of DEVICES) {
-          if (!d.online) continue
+          if (modesRef.current[d.id] !== 'online' || document.hidden) continue
           const cur = prev[d.id] ?? { v1: d.base, v2: d.base2 ?? 0 }
           if (d.kind === 'valve') {
             const on = persisted.valves[d.id]
@@ -395,50 +434,107 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return next
       })
+      if (!document.hidden) setLastSeen(old => ({ ...old, ...Object.fromEntries(DEVICES.filter(d => modesRef.current[d.id] === 'online').map(d => [d.id, Date.now()])) }))
     }, 3000)
     return () => clearInterval(timer)
   }, [persisted.valves])
 
-  const store = useMemo<Store>(
-    () => ({
+  const store: Store =
+    {
       ...persisted,
       page,
       setPage,
       readings,
-      addTask: (t) => { setPersisted((p) => ({
+      context, deviceModes, lastSeen,
+      selectField: id => setContext(c => ({ ...c, fieldId: FIELD_IDS.includes(id) ? id : '', focusId: '' })),
+      selectDate: date => { if (validDate(date)) setContext(c => ({ ...c, date })) },
+      setMapZoom: mapZoom => setContext(c => ({ ...c, mapZoom: Math.max(1, Math.min(2, mapZoom)) })),
+      openField: (page, fieldId, focusId = '') => { setContext(c => ({ ...c, fieldId: FIELD_IDS.includes(fieldId) ? fieldId : '', focusId })); setPage(page) },
+      alertStatus: id => reviewStatus(id, persisted.tasks, persisted.workflow.reviews),
+      reviewAlert: review => {
+        const p = stateRef.current, task = p.tasks.find(t => t.id === review.taskId && t.sourceId === review.alertId)
+        if (!task || task.status !== 'done' || !review.reviewer.trim() || !review.treatment.trim() || !review.result.trim()) { feedback('请先完成关联作业，并填写处置记录、复测结果和复核人', { error: true }); return false }
+        const record = { ...review, taskRevision: task.revision || 0, id: uid('review'), at: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19) }
+        const e = event({ fieldId: review.fieldId, kind: 'review', title: review.passed ? '风险复核通过' : '复核未通过，需再次处理', detail: review.result, sourceId: review.alertId })
+        commit(p => ({ ...p, workflow: { ...p.workflow, reviews: [record, ...p.workflow.reviews], events: [e, ...p.workflow.events] } }))
+        feedback(review.passed ? '复核记录已保存，关联预警已解决' : '复核记录已保存，风险保留待处理'); return true
+      },
+      addSample: sample => {
+        if (!FIELD_IDS.includes(sample.fieldId) || !validSample(sample.values) || !validDate(sample.at.slice(0,10)) || sample.at.slice(0,10) > todayStr() || !sample.note.trim()) { feedback('请填写有效采样日期、八项读数和采样说明', { error: true }); return false }
+        const record: SampleRecord = { ...sample, id: uid('sample'), origin: 'local' }
+        const e = event({ fieldId: sample.fieldId, kind: 'sample', title: '新增土壤复测记录', detail: sample.note, sourceId: record.id }); e.at = sample.at
+        commit(p => ({ ...p, workflow: { ...p.workflow, samples: [record, ...p.workflow.samples], events: [e, ...p.workflow.events] } })); feedback('复测已保存，土壤报告与事件复盘已同步'); return true
+      },
+      addLedger: entry => {
+        const p = stateRef.current
+        if (!validLedger(entry) || (entry.taskId && !p.tasks.some(t => t.id === entry.taskId && t.fieldId === entry.fieldId))) { feedback('请检查地块、关联任务、数量与单价', { error: true }); return false }
+        const record: LedgerEntry = { ...entry, id: uid('ledger'), origin: 'local' }
+        const e = event({ fieldId: entry.fieldId, kind: entry.kind === 'stock-in' ? 'material' : entry.kind === 'water' ? 'irrigation' : entry.kind, title: entry.title, detail: `${entry.quantity} ${entry.unit} · 单价 ¥${entry.unitPrice}`, sourceId: record.id }); e.at = `${entry.date}T12:00`
+        commit(p => ({ ...p, workflow: { ...p.workflow, ledger: [record, ...p.workflow.ledger], events: [e, ...p.workflow.events] } })); feedback('生产记录已保存，账本与复盘已同步', { actionLabel: '撤销', action: () => store.removeLedger(record.id) }); return true
+      },
+      removeLedger: id => {
+        const p = stateRef.current, entry = p.workflow.ledger.find(e => e.id === id)
+        if (!entry) return
+        const item = p.inventory.find(i => i.id === entry.inventoryId)
+        if (item && item.quantity - (entry.stockDelta || 0) < 0) { feedback('该入库物资已有后续领用，不能撤销；请先核对库存', { error: true }); return }
+        commit(p => ({ ...p, inventory: p.inventory.map(i => i.id === entry.inventoryId ? { ...i, quantity: +(i.quantity - (entry.stockDelta || 0)).toFixed(3) } : i), workflow: { ...p.workflow, ledger: p.workflow.ledger.filter(e => e.id !== id), events: p.workflow.events.filter(e => e.sourceId !== id) } })); feedback('记录已撤销，关联统计和库存已同步')
+      },
+      saveScenario: plan => { if (!plan.name.trim()) return; const record = { ...plan, id: uid('plan'), at: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19) }; commit(p => ({ ...p, workflow: { ...p.workflow, scenarios: [record, ...p.workflow.scenarios] } })); feedback('测算方案已保存，可与其他方案并排比较') },
+      deleteScenario: id => commit(p => ({ ...p, workflow: { ...p.workflow, scenarios: p.workflow.scenarios.filter(s => s.id !== id) } })),
+      logEvent: input => { const e = event(input); commit(p => ({ ...p, workflow: { ...p.workflow, events: [e, ...p.workflow.events] } })) },
+      setDeviceMode: (id, mode) => { const next = { ...modesRef.current, [id]: mode }; modesRef.current = next; setDeviceModes(next); if (mode === 'online') setLastSeen(p => ({ ...p, [id]: Date.now() })); feedback(mode === 'online' ? '模拟连接已恢复' : mode === 'offline' ? '已模拟断线，控制指令将失败' : '已暂停模拟数据，最后接收时间将保留') },
+      sendValve: (id, target) => {
+        if (!DEVICES.some(d => d.id === id && d.kind === 'valve')) return
+        if (stateRef.current.workflow.commands.some(c => c.deviceId === id && !['done', 'failed'].includes(c.phase))) return
+        const command: DeviceCommand = { id: uid('command'), deviceId: id, target, phase: 'sending', at: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19), steps: [{ phase: 'sending', at: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19) }], message: '本地模拟通信，未连接实物设备' }
+        commit(p => ({ ...p, workflow: { ...p.workflow, commands: [command, ...p.workflow.commands].slice(0, 60) } }))
+        const advance = (phase: CommandPhase) => {
+          const current = stateRef.current.workflow.commands.find(c => c.id === command.id)
+          if (!current || ['done', 'failed'].includes(current.phase)) return
+          const nextPhase = modesRef.current[id] !== 'online' ? 'failed' : phase
+          const at = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19)
+          const e = nextPhase === 'done' ? event({ fieldId: DEVICES.find(d => d.id === id)!.field.match(/A1|A2|B1|B2|C1/)?.[0] || '', kind: 'device', title: `${id} 模拟阀门${target ? '开启' : '关闭'}`, detail: '模拟命令完成，非实际设备回执', sourceId: command.id }) : null
+          commit(p => ({ ...p, valves: nextPhase === 'done' ? { ...p.valves, [id]: target } : p.valves, workflow: { ...p.workflow, commands: p.workflow.commands.map(c => c.id === command.id ? { ...c, phase: nextPhase, message: nextPhase === 'failed' ? '模拟通信不可用，阀门状态未改变；恢复连接后重试' : '模拟流程 · 未连接实物设备', steps: [...c.steps, { phase: nextPhase, at }] } : c), events: e ? [e, ...p.workflow.events] : p.workflow.events } }))
+          if (nextPhase === 'done' || nextPhase === 'failed') feedback(nextPhase === 'done' ? '模拟指令执行完成，阀门状态已同步' : '模拟指令失败，阀门状态未改变', { error: nextPhase === 'failed' })
+        }
+        for (const [delay, phase] of [[450,'confirmed'],[1000,'executing'],[1800,'done']] as const) commandTimers.current.push(setTimeout(() => advance(phase), delay))
+      },
+      addTask: (t) => { const task = { ...t, fieldId: t.fieldId !== undefined ? t.fieldId || undefined : t.title.match(/\b(A1|A2|B1|B2|C1)\b/)?.[0] || context.fieldId || undefined, id: uid('t'), status: 'pending' as TaskStatus }; if (task.sourceId && stateRef.current.tasks.some(x => x.sourceId === task.sourceId)) return; commit((p) => ({
           ...p,
-          tasks: [...p.tasks, { ...t, id: uid('t'), status: 'pending' as TaskStatus }],
+          tasks: [...p.tasks, task],
         })); feedback("任务已创建"); },
-      setTaskStatus: (id, s) => { setPersisted((p) => ({
-          ...p,
-          tasks: p.tasks.map((t) => (t.id === id ? { ...t, status: s } : t)),
-        })); feedback(s === 'done' ? '农事已完成，辛苦了' : '任务状态已更新'); },
-      deleteTask: (id) => { setPersisted((p) => ({ ...p, tasks: p.tasks.filter((t) => t.id !== id) })); feedback("任务已删除"); },
-      markAllRead: () => { setPersisted((p) => ({
+      setTaskStatus: (id, status) => {
+        const old = stateRef.current.tasks.find(t => t.id === id); if (!old || old.status === status) return
+        const changed = { ...old, status, revision: (old.revision || 0) + 1, completedAt: status === 'done' ? new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19) : undefined }
+        const e = event({ fieldId: old.fieldId || '', kind: old.type === '灌溉施肥' ? 'irrigation' : old.type === '采收' ? 'harvest' : 'task', title: `${old.title} · ${status === 'done' ? '作业完成' : status === 'in-progress' ? '开始执行' : '重新打开'}`, detail: `负责人：${old.assignee}${old.sourceId ? '；关联预警仍需独立复核' : ''}`, sourceId: id })
+        commit(p => ({ ...p, tasks: p.tasks.map(t => t.id === id ? changed : t), workflow: { ...p.workflow, events: [e, ...p.workflow.events] } }))
+        feedback(status === 'done' && old.sourceId ? '作业已完成，关联预警转为待复核' : '任务状态已更新，事件复盘已同步', { actionLabel: '撤销', action: () => {
+          if (stateRef.current.tasks.find(t => t.id === id) !== changed || stateRef.current.workflow.reviews.some(r => r.taskId === id && r.taskRevision === changed.revision)) { feedback('该任务已有后续操作，请在任务页重新调整'); return }
+          commit(p => ({ ...p, tasks: p.tasks.map(t => t.id === id ? old : t), workflow: { ...p.workflow, events: p.workflow.events.filter(x => x.id !== e.id) } })); feedback('任务状态已还原')
+        } })
+      },
+      deleteTask: id => { const p = stateRef.current, task = p.tasks.find(t => t.id === id); if (!task) return; if (p.workflow.ledger.some(e => e.taskId === id) || p.workflow.reviews.some(r => r.taskId === id)) { feedback('任务已有账本或复核记录，请保留以便追溯', { error: true }); return } const index = p.tasks.indexOf(task); commit(p => ({ ...p, tasks: p.tasks.filter(t => t.id !== id) })); feedback('任务已删除', { actionLabel: '撤销', action: () => { if (stateRef.current.tasks.some(t => t.id === id || (task.sourceId && t.sourceId === task.sourceId))) return; commit(p => { const tasks = [...p.tasks]; tasks.splice(index, 0, task); return { ...p, tasks } }); feedback('任务已恢复') } }) },
+      markAllRead: () => { commit((p) => ({
           ...p,
           notifications: p.notifications.map((n) => ({ ...n, read: true })),
         })); feedback("通知已全部标为已读"); },
-      markRead: (id) => { setPersisted((p) => ({
+      markRead: (id) => { commit((p) => ({
           ...p,
           notifications: p.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
         })); feedback("通知已读"); },
-      toggleValve: (id) => { setPersisted((p) => ({
-          ...p,
-          valves: { ...p.valves, [id]: !p.valves[id] },
-        })); feedback("演示阀门状态已更新"); },
-      adjustInventory: (id, delta) => { setPersisted((p) => ({
-          ...p,
-          inventory: p.inventory.map((it) =>
-            it.id === id ? { ...it, quantity: Math.max(0, it.quantity + delta) } : it,
-          ),
-        })); feedback("库存已更新"); },
-      addMember: (m) => { setPersisted((p) => ({ ...p, members: [...p.members, { ...m, id: uid('m') }] })); feedback("成员已添加"); },
-      addAnnouncement: (a) => { setPersisted((p) => ({ ...p, announcements: [{ ...a, id: uid('a') }, ...p.announcements] })); feedback("公告已添加"); },
-      addGrowthRecord: (r) => { setPersisted((p) => ({ ...p, growthRecords: [{ ...r, id: uid('g') }, ...p.growthRecords] })); feedback("生长记录已添加"); },
-      saveSettings: (s) => { setPersisted((p) => ({ ...p, settings: s })); feedback("设置已应用"); },
-    }),
-    [persisted, page, readings, setPage],
-  )
+      toggleValve: id => store.sendValve(id, !stateRef.current.valves[id]),
+      adjustInventory: (id, delta, metadata) => {
+        const item = stateRef.current.inventory.find(i => i.id === id)
+        if (!item || !Number.isFinite(delta) || !delta || item.quantity + delta < 0 || !metadata || !FIELD_IDS.includes(metadata.fieldId) || !Number.isFinite(metadata.unitPrice) || metadata.unitPrice < 0 || (metadata.taskId && !stateRef.current.tasks.some(t => t.id === metadata.taskId && t.fieldId === metadata.fieldId))) { feedback('请检查数量、地块与单价；出库不能超过现有库存', { error: true }); return false }
+        const record: LedgerEntry = { ...metadata, id: uid('ledger'), kind: delta > 0 ? 'stock-in' : 'material', title: item.name, date: todayStr(), quantity: Math.abs(delta), unit: item.unit, loss: 0, inventoryId: id, stockDelta: delta, origin: 'local' }
+        const e = event({ fieldId: metadata.fieldId, kind: 'material', title: `${item.name}${delta > 0 ? '入库' : '领料'}`, detail: `${Math.abs(delta)} ${item.unit} · 单价 ¥${metadata.unitPrice}`, sourceId: record.id })
+        commit(p => ({ ...p, inventory: p.inventory.map(i => i.id === id ? { ...i, quantity: +(i.quantity + delta).toFixed(3) } : i), workflow: { ...p.workflow, ledger: [record, ...p.workflow.ledger], events: [e, ...p.workflow.events] } })); feedback('库存与生产账本已同步', { actionLabel: '撤销', action: () => store.removeLedger(record.id) }); return true
+      },
+      addMember: (m) => { commit((p) => ({ ...p, members: [...p.members, { ...m, id: uid('m') }] })); feedback("成员已添加"); },
+      addAnnouncement: (a) => { commit((p) => ({ ...p, announcements: [{ ...a, id: uid('a') }, ...p.announcements] })); feedback("公告已添加"); },
+      addGrowthRecord: (r) => { commit((p) => ({ ...p, growthRecords: [{ ...r, id: uid('g') }, ...p.growthRecords] })); feedback("生长记录已添加"); },
+      saveSettings: (s) => { commit((p) => ({ ...p, settings: s })); feedback("设置已应用"); },
+    }
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
 }

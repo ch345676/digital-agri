@@ -130,9 +130,10 @@ function CropCard({ field }: { field: FieldInfo }) {
 }
 
 export default function CropsPage() {
-  const { growthRecords } = useStore()
-  const totalArea = FIELDS.reduce((s, f) => s + f.area, 0)
-  const avgHealth = Math.round(FIELDS.reduce((s, f) => s + f.health, 0) / FIELDS.length)
+  const { growthRecords: allRecords, context } = useStore()
+  const fields=FIELDS.filter(f=>!context.fieldId||f.id===context.fieldId),growthRecords=allRecords.filter(r=>!context.fieldId||r.fieldId===context.fieldId)
+  const totalArea = fields.reduce((s, f) => s + f.area, 0)
+  const avgHealth = Math.round(fields.reduce((s, f) => s + f.health, 0) / fields.length)
 
   return (
     <div>
@@ -144,7 +145,7 @@ export default function CropsPage() {
             <Wheat className="h-5 w-5 text-[#178a45]" />
           </div>
           <div>
-            <div className="text-[20px] font-extrabold text-[#17352a]">{FIELDS.length} 块</div>
+            <div className="text-[20px] font-extrabold text-[#17352a]">{fields.length} 块</div>
             <div className="text-[12px] text-[#8aa398]">在管地块</div>
           </div>
         </div>
@@ -163,7 +164,7 @@ export default function CropsPage() {
       </PageCard>
 
       <div className="grid grid-cols-2 gap-5 max-[1400px]:grid-cols-1">
-        {FIELDS.map((f) => (
+        {fields.map((f) => (
           <CropCard key={f.id} field={f} />
         ))}
       </div>

@@ -1,4 +1,4 @@
-export type Feedback = {id:string; message:string; progress?:number; error?:boolean}
+export type Feedback = {id:string; message:string; progress?:number; error?:boolean; actionLabel?:string; action?:()=>void}
 export function feedback(message:string, options:Partial<Feedback>={}) {const item={id:crypto.randomUUID(),message,...options}; window.dispatchEvent(new CustomEvent('huinong-feedback',{detail:item}));return item.id}
 export type SaveState = {ok:boolean; time:string}
 let saved:SaveState|null=null

@@ -6,18 +6,15 @@ export default function ScrollProgress({ target, page }: { target: RefObject<HTM
   useEffect(() => {
     const main = target.current, node = bar.current
     if (!main || !node) return
-    let frame = 0
     const update = () => {
-      frame = 0
       const total = main.scrollHeight - main.clientHeight
       node.style.transform = `scaleX(${total > 1 ? Math.min(1, Math.max(0, main.scrollTop / total)) : 0})`
     }
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(update) }
-    const observer = new ResizeObserver(schedule)
+    const observer = new ResizeObserver(update)
     observer.observe(main)
     if (main.querySelector('.page-stage')) observer.observe(main.querySelector('.page-stage')!)
-    main.addEventListener('scroll', schedule, { passive: true }); update()
-    return () => { observer.disconnect(); main.removeEventListener('scroll', schedule); cancelAnimationFrame(frame) }
+    main.addEventListener('scroll', update, { passive: true }); update()
+    return () => { observer.disconnect(); main.removeEventListener('scroll', update) }
   }, [target, page])
   return <div className="reading-progress" aria-hidden="true"><div ref={bar}/></div>
 }

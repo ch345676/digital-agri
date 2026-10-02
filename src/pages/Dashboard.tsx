@@ -1,7 +1,7 @@
 import { ArrowUpRight, ArrowRight, Leaf, Bot, ShieldAlert, Cherry, Check, ChevronRight, ClipboardList } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
 import { useStore, FIELDS, todayStr } from '../store'
-import { ALERTS, alertTaskTitle, HARVEST, soilHistory } from '../agronomy'
+import { ALERTS, HARVEST, soilHistory } from '../agronomy'
 import {FarmEmpty} from '../components/AgriArtwork'
 import DigitalTwinOverview from '../components/DigitalTwinOverview'
 import DailyOverview from '../components/DailyOverview'
@@ -13,10 +13,10 @@ const maturity = [{ name: '未成熟', value: HARVEST.filter(h => h.maturity < 5
 import { chartTooltip } from '../components/chart-theme'
 
 export default function Dashboard() {
-  const { settings, setPage, tasks, setTaskStatus } = useStore()
+  const { settings, setPage, tasks, setTaskStatus, alertStatus, openField } = useStore()
   const { enabled } = useMotion()
   const riskOrder = { '高风险': 0, '中风险': 1, '低风险': 2 }
-  const pending = ALERTS.filter(a => !tasks.some(t => t.title === alertTaskTitle(a) && t.status === 'done')).sort((a,b) => riskOrder[a.level] - riskOrder[b.level])
+  const pending = ALERTS.filter(a => alertStatus(a.id) !== '已解决').sort((a,b) => riskOrder[a.level] - riskOrder[b.level])
   const total = FIELDS.reduce((s, f) => s + f.area, 0)
   const harvestArea = HARVEST.filter(h => h.maturity >= 85).reduce((s, h) => s + h.area, 0)
   const today = tasks.filter(t => t.date === todayStr()).sort((a,b) => a.time.localeCompare(b.time))
@@ -27,7 +27,7 @@ export default function Dashboard() {
     <DailyOverview totalTasks={today.length} completedTasks={done} area={total} fieldCount={FIELDS.length} alerts={pending.length} highRisk={pending.filter(a=>a.level==='高风险').length} harvestArea={harvestArea}/>
     <DigitalTwinOverview/>
     <div className="dashboard-priorities">
-      <section className="panel"><div className="panel-heading"><h3><ShieldAlert size={17}/>优先处理</h3><button className="text-btn" onClick={() => setPage('alerts')}>全部 <ArrowUpRight size={14}/></button></div><div className="alert-preview">{pending.slice(0,3).map(a=><button key={a.id} onClick={()=>setPage('alerts')}><span className={`signal ${a.level==='高风险'?'red':'orange'}`}/><div><b>{a.title}</b><small>{a.field} · {a.source}</small></div><span className={`risk-pill ${a.level==='高风险'?'high':'medium'}`}>{a.level}</span></button>)}{pending.length===0 && <FarmEmpty title="全部预警已完成处置" description="田间风险已复核，继续关注作物变化。" action={()=>setPage('inspection')} label="查看巡检"/>}</div></section>
+      <section className="panel"><div className="panel-heading"><h3><ShieldAlert size={17}/>优先处理</h3><button className="text-btn" onClick={() => setPage('alerts')}>全部 <ArrowUpRight size={14}/></button></div><div className="alert-preview">{pending.slice(0,3).map(a=><button key={a.id} onClick={()=>openField('alerts',a.field,a.id)}><span className={`signal ${a.level==='高风险'?'red':'orange'}`}/><div><b>{a.title}</b><small>{a.field} · {a.source}</small></div><span className={`risk-pill ${a.level==='高风险'?'high':'medium'}`}>{a.level}</span></button>)}{pending.length===0 && <FarmEmpty title="全部预警已完成处置" description="田间风险已复核，继续关注作物变化。" action={()=>setPage('inspection')} label="查看巡检"/>}</div></section>
       <section className="panel"><div className="panel-heading"><h3><ClipboardList size={17}/>今日任务</h3><button className="text-btn" onClick={()=>setPage('tasks')}>全部 <ArrowUpRight size={14}/></button></div><div className="schedule-preview">{today.filter(t=>t.status!=='done').slice(0,3).map(t=><div key={t.id}><button className="task-check" title="标记完成" onClick={()=>setTaskStatus(t.id,'done')}><Check size={12}/></button><div><b>{t.title}</b><small>{t.assignee} · {t.time}</small></div><span className="tiny-status">{t.status==='in-progress'?'进行中':'待完成'}</span></div>)}{today.every(t=>t.status==='done')&&<FarmEmpty title="今日任务已全部完成" description="把下一次农事安排好，让生长从容有序。" action={()=>setPage('tasks')} label="安排农事"/>}</div></section>
     </div>
     <div className="dashboard-chart-grid">
