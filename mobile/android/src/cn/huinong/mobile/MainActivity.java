@@ -70,6 +70,14 @@ public final class MainActivity extends Activity {
         loading.setTextSize(20);
         loading.setGravity(Gravity.CENTER);
         root.addView(loading,new FrameLayout.LayoutParams(-1,-1));
+        // Check through Android's AssetManager before opening a virtual URL.
+        // A Windows ZIP extractor treats '\\' as a separator; Android does not.
+        try (InputStream entry=getAssets().open("web/index.html")) {
+            if(entry.read()<0)throw new IOException("index.html is empty");
+        } catch (IOException error) {
+            showFailure("安装包缺少本地页面 web/index.html，请下载最新版覆盖安装。");
+            return;
+        }
         try {
         PackageInfo engine = WebView.getCurrentWebViewPackage();
         engineVersion = engine == null ? "未安装可用内核" : engine.packageName + " " + engine.versionName;
@@ -87,7 +95,7 @@ public final class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setGeolocationEnabled(false);
         settings.setSupportMultipleWindows(false);
-        settings.setUserAgentString(settings.getUserAgentString()+" HuinongAndroid/1.0.1");
+        settings.setUserAgentString(settings.getUserAgentString()+" HuinongAndroid/1.0.2");
         CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
         web.setWebViewClient(new WebViewClient(){
             @Override public WebResourceResponse shouldInterceptRequest(WebView view,WebResourceRequest request){
@@ -112,6 +120,9 @@ public final class MainActivity extends Activity {
             }
             @Override public void onReceivedError(WebView view,WebResourceRequest request,WebResourceError error){
                 if(request.isForMainFrame()&&view==web) showFailure("页面加载失败（"+error.getErrorCode()+"）");
+            }
+            @Override public void onReceivedHttpError(WebView view,WebResourceRequest request,WebResourceResponse response){
+                if(request.isForMainFrame()&&view==web)showFailure("本地页面返回 HTTP "+response.getStatusCode()+"，请下载最新版覆盖安装。");
             }
             @Override public boolean onRenderProcessGone(WebView view,RenderProcessGoneDetail detail){
                 if(view!=web)return true;
@@ -181,7 +192,7 @@ public final class MainActivity extends Activity {
         addButton(panel,"重新打开",()->startWeb());
         addButton(panel,"兼容模式重试",()->{getPreferences(MODE_PRIVATE).edit().putBoolean("softwareRendering",true).apply();startWeb();});
         addButton(panel,"打开网页版",()->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(ONLINE)));}catch(RuntimeException error){Toast.makeText(this,"未找到可用浏览器",Toast.LENGTH_LONG).show();}});
-        final String diagnosis="惠农 1.0.1\n"+Build.MANUFACTURER+" "+Build.MODEL+" / Android "+Build.VERSION.RELEASE+"\nWebView: "+engineVersion+"\n"+reason;
+        final String diagnosis="惠农 1.0.2\n"+Build.MANUFACTURER+" "+Build.MODEL+" / Android "+Build.VERSION.RELEASE+"\nWebView: "+engineVersion+"\n"+reason;
         addButton(panel,"复制诊断信息",()->{
             ClipboardManager clipboard=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
             if(clipboard!=null)clipboard.setPrimaryClip(ClipData.newPlainText("惠农启动诊断",diagnosis));

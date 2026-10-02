@@ -40,11 +40,21 @@ $resources=Join-Path $buildRoot 'resources.zip'
 & (Join-Path $toolsRoot 'aapt2.exe') compile --dir (Join-Path $buildRoot 'res') -o $resources
 if ($LASTEXITCODE -ne 0) { throw 'aapt2 compile failed' }
 $unsigned=Join-Path $buildRoot 'unsigned.apk'
-& (Join-Path $toolsRoot 'aapt2.exe') link -I $androidJar --manifest (Join-Path $buildRoot 'AndroidManifest.xml') -A (Split-Path $assetRoot -Parent) --auto-add-overlay -o $unsigned $resources
+# AAPT2 on Windows can write nested asset names with backslashes. Android's
+# AssetManager uses literal ZIP names, so add web assets ourselves with '/' only.
+& (Join-Path $toolsRoot 'aapt2.exe') link -I $androidJar --manifest (Join-Path $buildRoot 'AndroidManifest.xml') --auto-add-overlay -o $unsigned $resources
 if ($LASTEXITCODE -ne 0) { throw 'aapt2 link failed' }
 Add-Type -AssemblyName System.IO.Compression
 $zip=[System.IO.Compression.ZipFile]::Open($unsigned,[System.IO.Compression.ZipArchiveMode]::Update)
-try { [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,(Join-Path $dex 'classes.dex'),'classes.dex',[System.IO.Compression.CompressionLevel]::Optimal) | Out-Null } finally { $zip.Dispose() }
+try {
+ foreach ($file in Get-ChildItem -LiteralPath $assetRoot -File -Recurse) {
+  $relative = [System.IO.Path]::GetRelativePath($assetRoot,$file.FullName).Replace('\','/')
+  $entryName = 'assets/web/' + $relative
+  [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,$file.FullName,$entryName,[System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+ }
+ [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,(Join-Path $dex 'classes.dex'),'classes.dex',[System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+} finally { $zip.Dispose() }
+& (Join-Path $PSScriptRoot 'verify-apk-assets.ps1') -ApkPath $unsigned -DistPath $distPath
 $aligned=Join-Path $buildRoot 'aligned.apk'
 & (Join-Path $toolsRoot 'zipalign.exe') -f -p 4 $unsigned $aligned
 if ($LASTEXITCODE -ne 0) { throw 'zipalign failed' }
@@ -69,6 +79,7 @@ try {
 } finally { Remove-Item Env:HUINONG_STORE_PASS }
 & $java -jar (Join-Path $toolsRoot 'lib/apksigner.jar') verify --verbose --print-certs $apk
 if ($LASTEXITCODE -ne 0) { throw 'Signature validation failed' }
+& (Join-Path $PSScriptRoot 'verify-apk-assets.ps1') -ApkPath $apk -DistPath $distPath
 & (Join-Path $toolsRoot 'zipalign.exe') -c -v 4 $apk | Select-Object -Last 1
 if ($LASTEXITCODE -ne 0) { throw 'Alignment validation failed' }
 & (Join-Path $toolsRoot 'aapt.exe') dump badging $apk | Select-Object -First 10
