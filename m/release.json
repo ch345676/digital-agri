@@ -1,8 +1,8 @@
 {
-  "feature": "android-asset-path-fix",
-  "source": "43e58ea5f61d6f842effead74f4ae1c461d2cbc6",
-  "publishedAt": "2026-10-02T14:09:15.0631609Z",
-  "androidVersion": "1.0.2",
-  "androidApk": "./downloads/huinong-farm-1.0.2.apk",
-  "androidSha256": "48904ffaaf7196be6e86af444d643b13beb2cd806e15bb3a02bd43a42f477267"
+  "feature": "daily-work-and-offline-reports",
+  "source": "3807b5d5ccf8bd6adb0bf801a00ec6b7e04d8a64",
+  "publishedAt": "2026-10-07T20:22:46.1913326Z",
+  "androidVersion": "1.1.0",
+  "androidApk": "./downloads/huinong-farm-1.1.0.apk",
+  "androidSha256": "0c6493b1094cb56e7493ffaa8658058a94cc0d0b05aea89d943dd32779579eec"
 }
