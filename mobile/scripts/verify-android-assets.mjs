@@ -39,15 +39,21 @@ try{
  await page.waitForFunction(()=>window.__HUINONG_READY__&&!window.__HUINONG_BOOT_FAILED__).catch(async error=>{console.error(errors,missing,await page.$eval('#startup-detail',n=>n.textContent));throw error})
  await page.type('input[type=password]','admin123');await page.$eval('form',e=>e.requestSubmit());await page.waitForSelector('.app-tabs')
  assert(await page.evaluate(()=>window.isSecureContext&&!!crypto.subtle))
- for(const name of ['overview','irrigation','patrol','fields','tasks','history','demo','notifications','identify','team','prediction','spray']){
+ for(const name of ['overview','irrigation','patrol','fields','tasks','history','demo','notifications','identify','team','prediction','spray','reports']){
   await page.evaluate(n=>location.hash=n,name);await page.waitForSelector('.page-'+name);await pause(300)
   await page.evaluate(()=>window.scrollTo(0,document.body.scrollHeight));await pause(150)
  }
+ await page.waitForSelector('.report-preview img')
+ assert((await page.$eval('.report-accessible-summary',el=>el.textContent)).includes('农场') || await page.$('.report-export-actions'))
+ await page.$eval('.report-pdf',el=>el.click())
+ await page.waitForFunction(()=>window.__huinongExport?.mime==='application/pdf')
+ assert((await page.evaluate(()=>window.__huinongExport.data)).startsWith('JVBER'))
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('huinong:export-result',{detail:{status:'cancelled',message:''}})))
  await page.screenshot({path:`qa/completion/android-assets${legacy?'-legacy':''}.png`})
  await page.evaluate(()=>{localStorage.setItem('agri:session',JSON.stringify({role:'guest',nickname:'游客'}));location.hash='tasks'});await page.reload({waitUntil:'networkidle2'});await page.waitForSelector('[aria-label="新建任务"]');await page.click('[aria-label="新建任务"]');await pause(400);assert.equal(await page.$('form.work-form'),null)
  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('agri:guest:huinong-workflow-v2')).tasks.length),2)
  await page.evaluate(()=>{localStorage.setItem('agri:session',JSON.stringify({role:'user',username:'apk-test',nickname:'测试用户'}));location.hash='tasks'});await page.reload({waitUntil:'networkidle2'});await page.waitForSelector('[aria-label="新建任务"]');await page.click('[aria-label="新建任务"]');await page.waitForSelector('form.work-form');await page.type('.work-form input[maxlength="60"]','安卓离线任务');await page.$eval('form.work-form',e=>e.requestSubmit());await pause(500);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('agri:user:apk-test:huinong-workflow-v2')).tasks[0].status),'待分派')
  assert.deepEqual(errors,[]);assert.deepEqual(missing,[])
- fs.writeFileSync(`qa/completion/android-assets${legacy?'-legacy':''}-results.json`,JSON.stringify({legacy,checks:['APK bundled asset startup at secure appassets origin','offline login','12 routes with network unavailable','guest read-only','user tasks await administrator assignment','independent account data'],missing,errors},null,2))
- console.log(`PASS ${legacy?'legacy bundle with missing built-ins':'modern bundle'}, offline login, 12 routes, account separation and role guards`)
+ fs.writeFileSync(`qa/completion/android-assets${legacy?'-legacy':''}-results.json`,JSON.stringify({legacy,checks:['APK bundled asset startup at secure appassets origin','offline login','13 routes with network unavailable','offline Chinese report and PDF payload','guest read-only','user tasks await administrator assignment','independent account data'],missing,errors},null,2))
+ console.log(`PASS ${legacy?'legacy bundle with missing built-ins':'modern bundle'}, offline login, 13 routes, account separation and role guards`)
 }finally{await browser.close()}

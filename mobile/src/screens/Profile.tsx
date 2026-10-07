@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, LogOut, KeyRound, PenLine, Users, ShieldCheck, Trash2, RotateCcw, Compass } from 'lucide-react'
 import { toast } from 'sonner'
@@ -18,6 +18,16 @@ export default function Profile({ onClose }: { onClose: () => void }) {
   const [newPwd, setNewPwd] = useState('')
   const role = session?.role ?? 'guest'
   const meta = ROLE_META[role]
+  const panel = useRef<HTMLDivElement>(null)
+  const close = useRef(onClose); close.current = onClose
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement
+    panel.current?.focus()
+    const key = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); close.current() } }
+    document.addEventListener('keydown', key)
+    return () => { document.removeEventListener('keydown', key); if (previous?.isConnected) previous.focus() }
+  }, [])
+  const metrics = window.__HUINONG_METRICS__
 
   const saveNick = () => {
     if (!nick.trim()) return toast.error('昵称不能为空')
@@ -44,6 +54,7 @@ export default function Profile({ onClose }: { onClose: () => void }) {
       />
       <motion.div
         initial={{ y: 420 }}
+        ref={panel} role="dialog" aria-modal="true" aria-label="个人中心" tabIndex={-1}
         animate={{ y: 0 }}
         exit={{ y: 420 }}
         transition={{ duration: 0.32, ease: EASE }}
@@ -56,7 +67,8 @@ export default function Profile({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <a className="bottom-task-link" href={navigator.userAgent.includes('HuinongAndroid')?'https://ch345676.github.io/digital-agri/m/':'https://ch345676.github.io/digital-agri/m/downloads/huinong-farm-1.0.2.apk'}>{navigator.userAgent.includes('HuinongAndroid')?'打开网站在线版':'下载安卓安装包'} <span>↗</span></a>
+        <a className="bottom-task-link" href={navigator.userAgent.includes('HuinongAndroid')?'https://ch345676.github.io/digital-agri/m/':'https://ch345676.github.io/digital-agri/m/downloads/huinong-farm-1.1.0.apk'}>{navigator.userAgent.includes('HuinongAndroid')?'打开网站在线版':'下载安卓安装包'} <span>↗</span></a>
+        <div className="app-diagnostics"><h4>惠农 1.1.0 · 应用状态</h4><p>{navigator.onLine ? '网络可用' : '当前离线'} · 本机记录保留{metrics?.interactiveMs != null ? ` · 本次页面就绪 ${(metrics.interactiveMs / 1000).toFixed(2)} 秒` : ''}</p>{navigator.userAgent.includes('HuinongAndroid/') ? <a href="huinong://diagnostics">查看应用诊断</a> : <button onClick={async () => { const text = `惠农 1.1.0\n页面就绪: ${metrics?.interactiveMs ?? '未记录'} ms\n${navigator.userAgent}`; try { await navigator.clipboard.writeText(text); toast('应用信息已复制') } catch { toast('无法访问剪贴板，请在浏览器设置中允许') } }}>复制应用信息</button>}<a href="https://ch345676.github.io/digital-agri/m/downloads/huinong-farm-1.1.0.apk">下载 1.1.0 安装包</a></div>
         {/* 身份卡 */}
         <div className="mt-4 flex items-center gap-3 rounded-[14px] border border-black/[0.07] bg-black/[0.03] p-4">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#16a34a] text-[17px] font-bold text-white">

@@ -22,10 +22,10 @@ export function FarmProvider({children}:{children:ReactNode}) {
   const [activeField,selectField]=useState('A1');const [dossier,setDossier]=useState<string|null>(null)
   const [taskFocus,setTaskFocus]=useState<string|null>(null)
   const [saveError,setSaveError]=useState(false);const [retry,setRetry]=useState(0)
-  const [run,setRun]=useState<Run|null>(null);const [visible,setVisible]=useState(!document.hidden)
+  const [run,setRun]=useState<Run|null>(null);const [visible,setVisible]=useState((!document.hidden && window.__HUINONG_FOREGROUND__ !== false))
   const stateRef=useRef(state);stateRef.current=state
   useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(state));setSaveError(false)}catch{setSaveError(true)}},[key,state,retry])
-  useEffect(()=>{const update=()=>setVisible(!document.hidden);document.addEventListener('visibilitychange',update);return()=>document.removeEventListener('visibilitychange',update)},[])
+  useEffect(()=>{const update=()=>setVisible((!document.hidden && window.__HUINONG_FOREGROUND__ !== false));document.addEventListener('visibilitychange',update);return()=>document.removeEventListener('visibilitychange',update)},[])
   useEffect(()=>setState(s=>{let next=s;for(const a of ALERT_DEFS){if(next.incidents.some(i=>i.id===a.id))continue;next={...next,incidents:[...next.incidents,{id:a.id,fieldId:validFieldId(a.field),title:a.name,status:'待核查',at:new Date(a.time.replace(' ','T')).getTime()}]}}return next}),[])
   // Bridge existing screens into one event history. Stable source IDs prevent duplicate imports on reload.
   useEffect(()=>{

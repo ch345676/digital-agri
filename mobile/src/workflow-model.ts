@@ -1,11 +1,12 @@
 import { FIELDS } from './farm-data'
+import { localDate } from './lib/local-date'
 
 export type TaskStatus = '待分派' | '待执行' | '执行中' | '待验收' | '已完成'
 export type IncidentStatus = '待核查' | '已派工' | '处理中' | '已解决'
 export interface TaskPhoto { id: string; src: string; note: string; at: number }
 export interface FarmTask { id: string; title: string; fieldId: string; kind: string; assignee: string; device: string; due: string; note: string; status: TaskStatus; photos: TaskPhoto[]; createdAt: number; updatedAt: number; incidentId?: string; scenarioId?: string }
 export interface Incident { id: string; fieldId: string; title: string; status: IncidentStatus; at: number; taskId?: string }
-export interface FarmEvent { id: string; fieldId: string; title: string; detail: string; kind: 'task' | 'irrigation' | 'patrol' | 'identify' | 'spray' | 'photo' | 'alert'; at: number; taskId?: string; photo?: string; position?: [number,number,number]; moisture?: number; read?: boolean; scenarioId?: string }
+export interface FarmEvent { id: string; fieldId: string; title: string; detail: string; kind: 'task' | 'irrigation' | 'patrol' | 'identify' | 'spray' | 'photo' | 'alert'; at: number; taskId?: string; photo?: string; position?: [number,number,number]; moisture?: number; read?: boolean; scenarioId?: string; irrigation?: { runId: string; before: number; after: number; waterTonnes: number; durationSeconds: number } }
 export interface FarmState { version: 2; tasks: FarmTask[]; incidents: Incident[]; events: FarmEvent[]; moisture: Record<string,number>; seen: string[]; updatedAt: number }
 export const TASK_STATES: TaskStatus[] = ['待分派','待执行','执行中','待验收','已完成']
 export const PEOPLE = ['张师傅','李师傅','王师傅','管理员']
@@ -13,7 +14,7 @@ export const DEVICES = ['人工巡田','巡检小车 01','巡检小车 02','灌�
 export const fieldById = (id: string) => FIELDS.find(f=>f.id===id) ?? FIELDS[0]
 export const fieldLabel = (id: string) => `${id} ${fieldById(id).crop}`
 export const freshId = (kind: string) => `${kind}-${crypto.randomUUID?.() ?? Date.now().toString(36)+Math.random().toString(36).slice(2)}`
-export const today = () => new Date().toLocaleDateString('en-CA')
+export const today = () => localDate()
 export const EVENT_KINDS = {task:'农事任务',irrigation:'灌溉',patrol:'巡检采样',identify:'作物识别',spray:'喷淋施药',photo:'作业照片',alert:'预警处理'}
 
 export function seedFarm(): FarmState {

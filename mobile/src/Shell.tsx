@@ -17,6 +17,7 @@ import Tasks from './screens/Tasks'
 import History from './screens/History'
 import Demo from './screens/Demo'
 import Notifications from './screens/Notifications'
+import Reports from './screens/Reports'
 import { ConnectionStatus } from './components/workflow'
 import { useFarm, SCENARIOS } from './FarmContext'
 
@@ -34,8 +35,9 @@ const SCREENS = {
   history: History,
   demo: Demo,
   notifications: Notifications,
+  reports: Reports,
 } as const
-const ORDER = ['overview', 'irrigation', 'alerts', 'patrol', 'team', 'prediction', 'identify', 'spray','fields','tasks','history','demo','notifications']
+const ORDER = ['overview', 'irrigation', 'alerts', 'patrol', 'team', 'prediction', 'identify', 'spray','fields','tasks','history','demo','notifications','reports']
 
 export default function Shell() {
   const { screen, setScreen } = useStore()
@@ -43,7 +45,7 @@ export default function Shell() {
   const reduced = useReducedMotion()
   const [nav, setNav] = useState({ screen, direction: 1 })
   if (nav.screen !== screen) setNav({ screen, direction: ORDER.indexOf(screen) >= ORDER.indexOf(nav.screen) ? 1 : -1 })
-  useEffect(() => { document.title = `${({overview:'农场概览',irrigation:'智能灌溉',alerts:'病虫害预警',identify:'拍照识别',patrol:'智能巡检',team:'农事协作',prediction:'产量预测',spray:'喷淋施药',fields:'地块档案',tasks:'农事任务',history:'农场时间轴',demo:'场景演示',notifications:'消息与处置'})[screen]} · 惠农智慧农业` }, [screen])
+  useEffect(() => { document.title = `${({overview:'农场概览',irrigation:'智能灌溉',alerts:'病虫害预警',identify:'拍照识别',patrol:'智能巡检',team:'农事协作',prediction:'产量预测',spray:'喷淋施药',fields:'地块档案',tasks:'农事任务',history:'农场时间轴',demo:'场景演示',notifications:'消息与处置',reports:'农场报告'})[screen]} · 惠农智慧农业` }, [screen])
   const Screen = SCREENS[screen]
   const isSubPage = screen === 'prediction' || screen === 'spray' || screen === 'identify'
 

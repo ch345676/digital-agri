@@ -1,11 +1,12 @@
 import { useFarm } from '../FarmContext'
-import { Reveal, Disclosure, MotionLabel, SuccessMark } from '../components/motion'
+import { Reveal, Disclosure, MotionLabel } from '../components/motion'
 import FarmMap from '../components/FarmMap'
 import { FIELDS } from '../farm-data'
-import { useEffect, useRef, useState } from 'react'
+import IrrigationReceipt from '../components/IrrigationReceipt'
+import { useIrrigationRun } from '../lib/use-irrigation-run'
 import { ChevronLeft, MoreHorizontal, Droplets, CalendarClock, Sparkles, ArrowRight, Sun, CloudSun, CloudFog, CloudRain, CloudLightning, Snowflake } from 'lucide-react'
-import { AnimatePresence, animate, motion } from 'framer-motion'
-import { Glass, SectionTitle, Toggle, DrawnLine, CountUp, stagger, EASE } from '../components/anim'
+import { motion } from 'framer-motion'
+import { Glass, SectionTitle, Toggle, DrawnLine, CountUp, stagger } from '../components/anim'
 import { useStore, nowHM } from '../store'
 import { useAuth, usePerm } from '../auth'
 import { Lock, Send, SprayCan } from 'lucide-react'
@@ -42,60 +43,12 @@ export default function Irrigation() {
   const live = source === 'live'
   const NowIcon = WX_ICONS[weatherCodeGroup(wx.weatherCode)]
   const willRain = rainSoon(wx)
-  const [moisture, setMoisture] = useState(ZONES.map((z) => farm.state.moisture[z.fieldId]??z.base))
-  const [water, setWater] = useState(28.6)
-  const [running, setRunning] = useState(false)
-  const [toast, setToast] = useState<string | null>(null)
-  const animations = useRef<ReturnType<typeof animate>[]>([])
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([])
-
-  useEffect(() => () => { timers.current.forEach(clearTimeout); animations.current.forEach(animation => animation.stop()) }, [])
-
-  useEffect(()=>{if(!running)setMoisture(ZONES.map(z=>farm.state.moisture[z.fieldId]??z.base))},[farm.state.moisture,running])
-  const changeValve=(index:number,on:boolean)=>{setValve(index,on);farm.record({fieldId:ZONES[index].fieldId,kind:'irrigation',title:`${ZONES[index].fieldId} 阀门${on?'开启':'关闭'}`,detail:'手动操作 · 演示设备状态'})}
+  const { moisture, water, running, start, receipt } = useIrrigationRun()
   const startIrrigation = () => {
-    if (running) return
-    timers.current.forEach(clearTimeout)
-    timers.current = []
-    animations.current.forEach(animation => animation.stop())
-    animations.current = []
-    setToast(null)
-    setRunning(true)
-    // 阀门依次开启
-    ZONES.forEach((_, i) => {
-      timers.current.push(setTimeout(() => setValve(i, true), 350 * (i + 1)))
-    })
-    // 墒情逐渐上升到适宜
-    moisture.forEach((m, i) => {
-      const target = Math.max(m, Math.min(90, ZONES[i].base + 4))
-      animations.current.push(animate(m, target, {
-        duration: 3.2,
-        delay: 0.4 + i * 0.25,
-        ease: 'easeInOut',
-        onUpdate: (v) =>
-          setMoisture((prev) => {
-            const next = [...prev]
-            next[i] = Math.round(v * 10) / 10
-            return next
-          }),
-      }))
-    })
-    // 用水量上升
-    animations.current.push(animate(water, water + 1.2, {
-      duration: 3.4,
-      ease: 'easeInOut',
-      onUpdate: (v) => setWater(Math.round(v * 10) / 10),
-    }))
-    // 完成
-    timers.current.push(
-      setTimeout(() => {
-        ZONES.forEach((z,i)=>{const value=Math.max(moisture[i],Math.min(90,z.base+4));farm.setMoisture(z.fieldId,value);farm.record({fieldId:z.fieldId,kind:'irrigation',title:'分区灌溉演示完成',detail:'按推荐方案开启阀门并更新墒情',moisture:value})})
-        setRunning(false)
-        setToast('五地块灌溉演示完成')
-        timers.current.push(setTimeout(() => setToast(null), 2400))
-      }, 4800),
-    )
+    if (farm.run?.running) { sonnerToast('请先暂停场景演示，再执行灌溉'); return }
+    start()
   }
+  const changeValve=(index:number,on:boolean)=>{setValve(index,on);farm.record({fieldId:ZONES[index].fieldId,kind:'irrigation',title:`${ZONES[index].fieldId} 阀门${on?'开启':'关闭'}`,detail:'手动操作 · 演示设备状态'})}
 
   return (
     <div className="px-4 pb-40 pt-5">
@@ -111,6 +64,7 @@ export default function Irrigation() {
       </header>
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
+        {!running && receipt.length > 0 && <IrrigationReceipt key={receipt[0].irrigation!.runId} events={receipt}/>}
         {/* 天气条 */}
         <Reveal>
           <Glass className="flex items-center justify-between p-3.5">
@@ -177,7 +131,7 @@ export default function Irrigation() {
                   <span className="ml-1 text-[12px] font-normal text-black/40">吨</span>
                 </div>
                 <div className="mt-1.5 text-[11px] text-black/40">
-                  较昨日 <span className="font-medium text-[#16a34a]">-12%</span>
+                  已完成演示的记录累计
                 </div>
               </div>
               <svg viewBox="0 0 150 52" className="h-[52px] w-[46%]">
@@ -286,29 +240,15 @@ export default function Irrigation() {
               {running ? '灌溉执行中…' : isAdmin ? '一键灌溉' : isGuest ? '一键灌溉' : '提交灌溉申请'}
             </span>
             <span className="flex items-center gap-1 text-[11px] font-medium text-[rgba(255,255,255,0.8)]">
-              {running ? '分区阀门依次开启' : isAdmin ? '按推荐方案立即执行灌溉' : isGuest ? '游客只读 · 登录后可申请' : '发送给管理员审批'}
+              {running ? '分区执行，完成后自动关闭' : isAdmin ? '按推荐方案立即执行灌溉' : isGuest ? '游客只读 · 登录后可申请' : '发送给管理员审批'}
               <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
             </span>
           </motion.button>
         </div>
-        <p className="mt-1.5 text-center text-[9.5px] text-black/40">*灌溉执行将按当前阀门状态与安全策略运行</p>
+        <p className="mt-1.5 text-center text-[9.5px] text-black/40">*演示过程；切换页面会中止，完成后自动关闭阀门</p>
       </div>
 
-      {/* 完成 toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.3, ease: EASE }}
-            className="fixed left-1/2 top-6 z-50 flex center-x items-center gap-2 rounded-full border border-black/[0.1] bg-white px-4 py-2.5 shadow-lg"
-          >
-            <SuccessMark size={20}/>
-            <span className="whitespace-nowrap text-[12.5px] font-medium text-[#1a2b23]">{toast}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
     </div>
   )
 }

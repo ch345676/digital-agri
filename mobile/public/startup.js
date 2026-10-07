@@ -13,7 +13,7 @@
     document.getElementById('startup-title').textContent = '页面暂时无法打开';
     document.getElementById('startup-message').textContent = '请重新打开，或先使用网页版。已有的本地记录会保留。';
     document.getElementById('startup-actions').hidden = false;
-    document.getElementById('startup-detail').textContent = '惠农 1.0.2\n' + (reason || lastError || '启动超时') + '\n' + navigator.userAgent;
+    document.getElementById('startup-detail').textContent = '惠农 1.1.0\n' + (reason || lastError || '启动超时') + '\n' + navigator.userAgent;
   }
   window.__huinongBoot = {
     ready: function () {
@@ -21,6 +21,10 @@
       window.__HUINONG_READY__ = true;
       window.__HUINONG_BOOT_FAILED__ = false;
       document.getElementById('app-startup').style.display = 'none';
+      var paints = window.performance && performance.getEntriesByType ? performance.getEntriesByType('paint') : [];
+      var first = null;
+      for (var i = 0; i < paints.length; i++) if (paints[i].name === 'first-contentful-paint') first = Math.round(paints[i].startTime);
+      window.__HUINONG_METRICS__ = { firstPaintMs: first, interactiveMs: window.performance ? Math.round(performance.now()) : null };
     },
     fail: fail
   };

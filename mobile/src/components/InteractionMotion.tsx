@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 /** Small, non-blocking pointer feedback shared by all native and motion buttons. */
 export default function InteractionMotion() {
   useEffect(() => {
-    const visibility = () => { document.documentElement.dataset.pageHidden = String(document.hidden) }
+    const visibility = () => { document.documentElement.dataset.pageHidden = String(document.hidden || window.__HUINONG_FOREGROUND__ === false) }
     visibility()
     document.addEventListener('visibilitychange', visibility)
     const feedback = (event: PointerEvent) => {

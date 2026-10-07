@@ -39,9 +39,9 @@ export function useSceneMotion<T extends Element>() {
   const ref = useRef<T>(null)
   const inView = useInView(ref, { amount: .05 })
   const reduced = useReducedMotion()
-  const [visible, setVisible] = useState(!document.hidden)
+  const [visible, setVisible] = useState((!document.hidden && window.__HUINONG_FOREGROUND__ !== false))
   useEffect(() => {
-    const update = () => setVisible(!document.hidden)
+    const update = () => setVisible((!document.hidden && window.__HUINONG_FOREGROUND__ !== false))
     document.addEventListener('visibilitychange', update)
     return () => document.removeEventListener('visibilitychange', update)
   }, [])

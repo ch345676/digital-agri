@@ -87,9 +87,9 @@ export default function Patrol() {
 
   /* 地图相关 ref */
   const [position, setPosition] = useState<[number,number,number]>(()=>routePosition(fleet[0].progress) as [number,number,number])
-  const [visible, setVisible] = useState(!document.hidden)
+  const [visible, setVisible] = useState((!document.hidden && window.__HUINONG_FOREGROUND__ !== false))
   const progressRef = useRef(fleet[0].progress)
-  useEffect(()=>{const update=()=>setVisible(!document.hidden);document.addEventListener('visibilitychange',update);return()=>document.removeEventListener('visibilitychange',update)},[])
+  useEffect(()=>{const update=()=>setVisible((!document.hidden && window.__HUINONG_FOREGROUND__ !== false));document.addEventListener('visibilitychange',update);return()=>document.removeEventListener('visibilitychange',update)},[])
   const posRef = useRef<[number, number]>([position[0]*360/1000,position[1]*210/560])
   const speedRef = useRef(1.2)
   const joyRef = useRef({ dx: 0, dy: 0, mag: 0 })
@@ -116,7 +116,7 @@ export default function Patrol() {
   useEffect(()=>{
     const save=()=>{try{localStorage.setItem(fleetKey,JSON.stringify(fleetRef.current))}catch{/* storage may be unavailable */}}
     const tick=setInterval(()=>{
-      fleetRef.current=fleetRef.current.map((r,i)=>i!==selectedRobot&&i<3&&r.running&&!document.hidden?{progress:Math.min(100,r.progress+.25),running:r.progress+.25<100}:r)
+      fleetRef.current=fleetRef.current.map((r,i)=>i!==selectedRobot&&i<3&&r.running&&(!document.hidden && window.__HUINONG_FOREGROUND__ !== false)?{progress:Math.min(100,r.progress+.25),running:r.progress+.25<100}:r)
       setFleet(fleetRef.current.map(r=>({...r})));save()
     },1000)
     window.addEventListener('pagehide',save)
@@ -143,7 +143,7 @@ export default function Patrol() {
   /* 遥测微跳 + 进度缓增（2s 节拍） */
   useEffect(() => {
     const t = setInterval(() => {
-      if(document.hidden) return
+      if(document.hidden || window.__HUINONG_FOREGROUND__ === false) return
       const spd = statusRef.current === 'docked' ? 0 : speedRef.current
       setTele((p) => ({
         battery: Math.max(1, Math.round((p.battery - 0.05) * 10) / 10),

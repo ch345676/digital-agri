@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-export type ScreenKey = 'overview' | 'irrigation' | 'alerts' | 'identify' | 'patrol' | 'team' | 'prediction' | 'spray' | 'fields' | 'tasks' | 'history' | 'demo' | 'notifications'
+export type ScreenKey = 'overview' | 'irrigation' | 'alerts' | 'identify' | 'patrol' | 'team' | 'prediction' | 'spray' | 'fields' | 'tasks' | 'history' | 'demo' | 'notifications' | 'reports'
 
 export interface IdentifyRecord {
   fieldId?: string
@@ -177,7 +177,7 @@ export function StoreProvider({ children, storageKey = BASE_STORAGE_KEY }: { chi
   const [persisted, setPersisted] = useState<Persisted>(() => load(storageKey))
   const [screen, setScreenState] = useState<ScreenKey>(() => {
     const h = window.location.hash.replace('#', '') as ScreenKey
-    const valid: ScreenKey[] = ['overview', 'irrigation', 'alerts', 'identify', 'patrol', 'team', 'prediction', 'spray', 'fields', 'tasks', 'history', 'demo', 'notifications']
+    const valid: ScreenKey[] = ['overview', 'irrigation', 'alerts', 'identify', 'patrol', 'team', 'prediction', 'spray', 'fields', 'tasks', 'history', 'demo', 'notifications', 'reports']
     return valid.includes(h) ? h : 'overview'
   })
 
@@ -189,7 +189,7 @@ export function StoreProvider({ children, storageKey = BASE_STORAGE_KEY }: { chi
   useEffect(() => {
     const onHash = () => {
       const h = window.location.hash.replace('#', '') as ScreenKey
-      const valid: ScreenKey[] = ['overview', 'irrigation', 'alerts', 'identify', 'patrol', 'team', 'prediction', 'spray', 'fields', 'tasks', 'history', 'demo', 'notifications']
+      const valid: ScreenKey[] = ['overview', 'irrigation', 'alerts', 'identify', 'patrol', 'team', 'prediction', 'spray', 'fields', 'tasks', 'history', 'demo', 'notifications', 'reports']
       if (valid.includes(h)) setScreenState(h)
     }
     window.addEventListener('hashchange', onHash)

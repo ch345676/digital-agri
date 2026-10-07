@@ -6,7 +6,7 @@ import { FIELDS, FARM_IMAGERY } from '../farm-data'
 
 
 // Delineated against actual image field edges; IDs and crop data are demo overlays.
-const PLOTS = [
+export const PLOTS = [
   { id: 'A1', points: '158,80 243,70 242,378 157,380', x: 200, y: 157 },
   { id: 'A2', points: '249,70 329,66 330,377 247,378', x: 289, y: 286 },
   { id: 'B1', points: '335,66 421,66 421,376 335,377', x: 378, y: 157 },

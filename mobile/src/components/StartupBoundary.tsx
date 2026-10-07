@@ -4,6 +4,7 @@ declare global {
   interface Window {
     __HUINONG_READY__?: boolean
     __HUINONG_BOOT_FAILED__?: boolean
+    __HUINONG_METRICS__?: { firstPaintMs: number | null; interactiveMs: number | null }
     __huinongBoot?: { ready: () => void; fail: (reason: string) => void }
   }
 }

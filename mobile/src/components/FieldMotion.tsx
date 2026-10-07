@@ -6,7 +6,7 @@ export default function FieldMotion({ src, alt, index }: { src: string; alt: str
   const [playing, setPlaying] = useState(false)
   useEffect(() => {
     let visible = false
-    const update = () => setPlaying(visible && !document.hidden)
+    const update = () => setPlaying(visible && (!document.hidden && window.__HUINONG_FOREGROUND__ !== false))
     const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; update() }, { threshold: .1 })
     if (ref.current) observer.observe(ref.current)
     document.addEventListener('visibilitychange', update)

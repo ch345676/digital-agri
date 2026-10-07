@@ -10,7 +10,7 @@ export default function AmbientVideo({ autoPlay = true, ...props }: VideoHTMLAtt
     if (!video) return
     let visible = false
     const update = () => {
-      if (autoPlay && visible && !document.hidden && !reduced) void video.play().catch(() => {})
+      if (autoPlay && visible && (!document.hidden && window.__HUINONG_FOREGROUND__ !== false) && !reduced) void video.play().catch(() => {})
       else video.pause()
     }
     const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; update() }, { threshold: .1 })

@@ -10,6 +10,7 @@ import { Glass, Ring, CountUp, SectionTitle, DrawnLine, stagger, LIME } from '..
 import { useStore } from '../store'
 import { useAuth, greeting } from '../auth'
 import { ProfileSheet } from './Profile'
+import TodayWork from '../components/TodayWork'
 import { useGeoLocation, useWeather, weatherCodeText, weatherCodeGroup, windDirectionCN, beaufort } from '../lib/weather'
 
 const WX_ICONS = { sunny: Sun, cloudy: CloudSun, fog: CloudFog, rain: CloudRain, snow: Snowflake, storm: CloudLightning }
@@ -109,6 +110,7 @@ export default function Overview() {
 
       <div className="work-quick-links">{([{key:'fields',label:'地块档案',icon:Map},{key:'tasks',label:'农事任务',icon:ClipboardList},{key:'history',label:'时间轴',icon:History},{key:'demo',label:'场景演示',icon:Play}] as const).map(item=><button key={item.key} onClick={()=>setScreen(item.key)}><item.icon size={19}/>{item.label}</button>)}</div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-4 px-4">
+        <Reveal><TodayWork/></Reveal>
         {/* 四格统计 */}
         <Reveal>
           <Glass className="grid grid-cols-4 divide-x divide-black/[0.08] p-3.5 text-center">
