@@ -1,5 +1,7 @@
 {
-  "source": "d723aa3814e08e156bbad349f327cdff31200da5",
-  "version": "huinong-clarity-20261008-r1",
-  "verified": true
+  "source": "57cd0269aad0ef1f4a73347c7725c833de276892",
+  "version": "huinong-real-photos-20261008",
+  "feature": "verified-photo-references-with-clarity",
+  "publishedAt": "2026-10-07T21:37:34.0557372Z",
+  "photoSources": "./photo-sources.html"
 }

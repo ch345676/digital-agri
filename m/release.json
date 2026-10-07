@@ -1,8 +1,9 @@
 {
-  "feature": "daily-work-and-offline-reports",
-  "source": "3807b5d5ccf8bd6adb0bf801a00ec6b7e04d8a64",
-  "publishedAt": "2026-10-07T20:22:46.1913326Z",
-  "androidVersion": "1.1.0",
-  "androidApk": "./downloads/huinong-farm-1.1.0.apk",
-  "androidSha256": "0c6493b1094cb56e7493ffaa8658058a94cc0d0b05aea89d943dd32779579eec"
+  "source": "57cd0269aad0ef1f4a73347c7725c833de276892",
+  "feature": "verified-photo-references",
+  "publishedAt": "2026-10-07T21:37:34.0557372Z",
+  "androidVersion": "1.1.1",
+  "androidApk": "./downloads/huinong-farm-1.1.1.apk",
+  "androidSha256": "b47129100c62c157fffd5a629e609e5f3ef61ba3e19631e20f515deb3379f786",
+  "photoSources": "./photo-sources.html"
 }
