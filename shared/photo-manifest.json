@@ -1,0 +1,584 @@
+{
+  "reviewedAt": "2026-10-08",
+  "note": "Published raster assets only. External reference photos do not establish farm conditions. Project exploded illustration is labeled 3D. User uploads and generated reports are excluded.",
+  "retiredHashes": [
+    "6c30557c6a74a167b7fd250ed7175be95a63046113042857b77ccdc2836e1692",
+    "bb827e785122b7d41060e67a42f84ccd935be5b80a80c008d76c5b2616648255",
+    "95a783f544b48289758fe6618e7e79e776de056f662d147e1571e362354f3927",
+    "09b4ebfd73a8bd969f6182232de8d32fd18e5f65aa5b86757c25c9abff9c1011",
+    "80b544de7a661dc3d028c906491bb2bc1f460d61a4d39136fb2c816303d717e2",
+    "0c3ca7abf855635c910a2f237bc45cbd8331ad3a54bf070e41ba24b0fc3a8758",
+    "ffa8d40ec7e9f69e9ea531d801274adb902c0a7ca54ef1439e97977bd941a1d7",
+    "c5902e00364f07a3758b16accab02059c5128eb4affbc05d04756a75cc623ad9",
+    "0ad51bf5080d59e975cd97337165fc163f4327d2348ebe6cf9154c99f4f76d98",
+    "a3109566fc842a9c8b9d792862fa1dbb4a1f6460019c47a9edba6a6e0a1045d1",
+    "2a5ef64a17c0f1895537a621af582992c3ae61c9e944ff2e78e2e3ca7754d518",
+    "dcacfa84ef18b11a6c101f81229fb3196adfc31b7364183247e5200feda30735",
+    "644f9cdca4637f12d5bc879274cb43b7f90ffeb3bc23ebd1de9b1baee21f151b",
+    "2255d9491b87d568f0583946ee2681ca13b1654bdcd2b1871534615acbdcd004",
+    "232309ae4dfda3997ea4c6fd369d0494312b93f8f5242718ab00b4cf5dffb77c",
+    "f32915609c0f498e28b05c7c3a858a12de8b71bfdccac760a6b15587330d5ba2",
+    "3ba985bdf6ee85dc051c2a72474c1c30ad1e9ef01b9fe9308ad399033cb5afcb",
+    "d5c708ed104be8d49808bb823397e00eea044c1a75ffa0edc680de7e24ce394d",
+    "f914b1be2e95788aac46a4313b24a5a482d65d708425729c58d8cb6cf729fda5"
+  ],
+  "entries": [
+    {
+      "sha256": "58c4e0f5f7723303dd6ba451a4fb04aa0b97bc15a0353d8b6328bf3ce126e266",
+      "kind": "photograph",
+      "title": "bok-choy.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Bok_Choy.JPG",
+      "author": "JS and new VpuipV",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "paths": [
+        "public/media/crops/bok-choy.jpg"
+      ]
+    },
+    {
+      "sha256": "671d96671c8de297137dad94fdc1ea2ae9d8a9b44361c3fe0444b9dbd127963a",
+      "kind": "photograph",
+      "title": "maize.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Mature_Maize_plant_2.jpg",
+      "author": "Royalesignature",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/crops/maize.jpg"
+      ]
+    },
+    {
+      "sha256": "c01e3f996dfbeccbd2992446f9faeb1f9b5b27a7baf4bbb977567c494e7dbd30",
+      "kind": "photograph",
+      "title": "rice.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:CSIRO_ScienceImage_383_Head_of_rice_in_a_field.jpg",
+      "author": "Plant Industry, CSIRO",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "paths": [
+        "public/media/crops/rice.jpg"
+      ]
+    },
+    {
+      "sha256": "c295e8afc98882fe832bb68b81678cac949e964372ea4bdfe3ade7069489ddb4",
+      "kind": "photograph",
+      "title": "soybean.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Soybean_Pods_(10059842724).jpg",
+      "author": "United Soybean Board",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "paths": [
+        "public/media/crops/soybean.jpg"
+      ]
+    },
+    {
+      "sha256": "e33f05e3799e4ea8e749a0168c0bfa2372817fbc64b8ce67ecac4fc465bd86b3",
+      "kind": "photograph",
+      "title": "wheat-close.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Wheat_close-up.JPG",
+      "author": "User:Bluemoose",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "paths": [
+        "public/media/crops/wheat-close.jpg"
+      ]
+    },
+    {
+      "sha256": "5f841aa565399efa0c5cbc6c3c7463fd1bd501e60017298a4615d91140608383",
+      "kind": "photograph",
+      "title": "insect-trap.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Pheromone_trap,_Mookerheide,_the_Netherlands.JPG",
+      "author": "Bj.schoenmakers",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "paths": [
+        "public/media/devices/insect-trap.jpg"
+      ]
+    },
+    {
+      "sha256": "b16abb31a7599635e03e0b4cf86b73403aa42f1989eb6cde73b7a31b5ad3243a",
+      "kind": "photograph",
+      "title": "irrigation-manifold.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Uninstalled_drip_irrigation_set_up.jpg",
+      "author": "michael",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "paths": [
+        "public/media/devices/irrigation-manifold.jpg"
+      ]
+    },
+    {
+      "sha256": "7a6be36771f7a04a596e155ce22267ef27dba30c1dcd8b5e9154ea4f05e61a31",
+      "kind": "photograph",
+      "title": "irrigation-valve.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation_valve_assembly.JPG",
+      "author": "Nick Birse",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/devices/irrigation-valve.jpg"
+      ]
+    },
+    {
+      "sha256": "513f480d121a33499e0a6debe7bc73b9b3d1ef28b0aeaadb2d2bd6d5cea7addb",
+      "kind": "photograph",
+      "title": "soil-cornfield.jpg",
+      "source": "https://www.usgs.gov/media/images/hanna-crns-soil-moisture-monitoring-station",
+      "author": "USGS / Nevada Water Science Center",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/soil-cornfield.jpg"
+      ]
+    },
+    {
+      "sha256": "7e7fd12b5c76a4b211fb077e42117fb9d6534a39cdb459db1696445743619ba7",
+      "kind": "photograph",
+      "title": "soil-cosmic.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Cosmic_Ray_Sensor_for_soil_moisture_measurements-DSC_6642w.jpg",
+      "author": "P e z i",
+      "license": "CC BY-SA 3.0 at",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/at/deed.en",
+      "paths": [
+        "public/media/devices/soil-cosmic.jpg"
+      ]
+    },
+    {
+      "sha256": "f6d97d6337e64f0e1cde5bd2129a2a0e43a51d2aa06e6a61c7911d0bb0ec4dd8",
+      "kind": "photograph",
+      "title": "soil-logger.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation65_(37973074585).jpg",
+      "author": "USDA NRCS Montana",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/soil-logger.jpg"
+      ]
+    },
+    {
+      "sha256": "c3ec2bb0eb0149863b83f192f60717a08bc3c979cd5c13c02ad13e95fc5900f9",
+      "kind": "photograph",
+      "title": "soil-meter.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation89_(23995172897).jpg",
+      "author": "USDA NRCS Montana",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/soil-meter.jpg"
+      ]
+    },
+    {
+      "sha256": "390b5f05b4f927ba4d1999bd74a730f5843018d915cecf41c097aa6293217f5f",
+      "kind": "photograph",
+      "title": "soil-probe.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Soil_moisture_sensor.JPG",
+      "author": "Sealman",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/devices/soil-probe.jpg"
+      ]
+    },
+    {
+      "sha256": "0164758d51732accc0ff79e945cbf04d2bd984f34a5d382b188909de80121823",
+      "kind": "photograph",
+      "title": "trap-paddy.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Pheromone_insect_traps_-_Amol_-_Iran_01.jpg",
+      "author": "Mehdi",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "paths": [
+        "public/media/devices/trap-paddy.jpg"
+      ]
+    },
+    {
+      "sha256": "46a45f304b3016d13ee7513e195abef1dd5fac179d4714ad802674ceaa0cfcb7",
+      "kind": "photograph",
+      "title": "valve-field.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation_valve_set_for_drip_irrigation_system_being_installed_on_Blake_Davis_Farms_in_Lamb_County_near_Littlefield,_Texas._(24746797549).jpg",
+      "author": "USDA NRCS Texas",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/valve-field.jpg"
+      ]
+    },
+    {
+      "sha256": "ebd4bb19f257ad183940bea34f81b56aea2a8a66ed02a61d83a1e978ce429824",
+      "kind": "photograph",
+      "title": "weather-station.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Weather_Station_USDA.jpg",
+      "author": "USDA photo by Scott Bauer. Image Number K7688-7",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/weather-station.jpg"
+      ]
+    },
+    {
+      "sha256": "48e836cc53d8ee8600efd3edb50fcd8c337b4d0df6a9cb5f44447e600f3bcb27",
+      "kind": "photograph",
+      "title": "weather-vineyard.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Davis_Instruments_weather_station_-_detail.jpg",
+      "author": "Cjp24",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/devices/weather-vineyard.jpg"
+      ]
+    },
+    {
+      "sha256": "feae3fcd8086365da890258e7e19b7772ad80f81eb493fa83a30ce69380f8662",
+      "kind": "photograph",
+      "title": "field.jpg",
+      "source": "https://www.pexels.com/video/neat-rows-of-green-corn-plants-in-a-field-27253894/",
+      "author": "Çağrı KANMAZ",
+      "license": "Pexels License",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/field.jpg",
+        "public/media/reference/corn-field.jpg",
+        "mobile/public/media/reference/corn-field.jpg"
+      ]
+    },
+    {
+      "sha256": "a603d622a1bb953664c8ca2337a376583ded395a9a6df1cb766aa0b3f67b8b64",
+      "kind": "photograph",
+      "title": "aphids.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Aphids_on_Kale_leaf.jpg",
+      "author": "Sanjay Acharya",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/real/aphids.jpg",
+        "rover-control/assets/aphids.jpg"
+      ]
+    },
+    {
+      "sha256": "03802b55064c96b6f67f9a734ab43012fffb379a0a4a08169c987c2addb5f463",
+      "kind": "photograph",
+      "title": "downy-mildew.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Peronospora_manshurica_on_soybean_leaf.jpg",
+      "author": "Clemson University - USDA Cooperative Extension Slide Series, , United States",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "paths": [
+        "public/media/real/downy-mildew.jpg",
+        "rover-control/assets/downy-mildew.jpg",
+        "public/media/reference/soybean-downy.jpg",
+        "mobile/public/media/reference/soybean-downy.jpg"
+      ]
+    },
+    {
+      "sha256": "786916b8764b62c78d28e796e4ea47a499a196063fe46812114e220abf644355",
+      "kind": "photograph",
+      "title": "dry-soil.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Drought.jpg",
+      "author": "Tomas Castelazo",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "paths": [
+        "public/media/real/dry-soil.jpg"
+      ]
+    },
+    {
+      "sha256": "a46f093fc7b6815a1bb83ab82f3f572ff10f6e6c738e7892b519191cdcc8c6ef",
+      "kind": "photograph",
+      "title": "farm-satellite.jpg",
+      "source": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
+      "author": "项目结构图鉴",
+      "license": "项目示意素材",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/real/farm-satellite.jpg",
+        "mobile/public/media/real/farm-satellite.jpg",
+        "rover-control/assets/farm-satellite.jpg"
+      ]
+    },
+    {
+      "sha256": "b01a47aa1d30c03c71b5441e7181500caf38a53cffa5a80bfc028d27eff53383",
+      "kind": "photograph",
+      "title": "powdery-mildew.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Powdery_Mildew_on_Soyabean_leaves.jpg",
+      "author": "Madan_subedi01 (talk) (Uploads)",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "paths": [
+        "public/media/real/powdery-mildew.jpg",
+        "rover-control/assets/powdery-mildew.jpg"
+      ]
+    },
+    {
+      "sha256": "e3c541f2c9ceb89ff282f156f66e183f843ca4cc318caa6e03291f417042942d",
+      "kind": "photograph",
+      "title": "saline-soil.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Salinity.jpg",
+      "author": "USDA Employee",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/real/saline-soil.jpg"
+      ]
+    },
+    {
+      "sha256": "cb25a0acfb65809322bde03ae5b2963afa75f97ec8eae96c27f33198bc14e04e",
+      "kind": "illustration",
+      "title": "rover-exploded.png",
+      "source": "",
+      "author": "项目结构图鉴",
+      "license": "项目示意素材",
+      "licenseUrl": "",
+      "paths": [
+        "mobile/public/images/rover-exploded.png"
+      ]
+    },
+    {
+      "sha256": "5840e599ccd6a45518ad5d80a64aedf50f3a87e53cfab18fc2d151a72cfebecb",
+      "kind": "photograph",
+      "title": "File:Downy mildew on leaves of Cucumis sativus.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Downy_mildew_on_leaves_of_Cucumis_sativus.jpg",
+      "author": "Wee Hong",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/reference/cucumber-downy.jpg",
+        "mobile/public/media/reference/cucumber-downy.jpg"
+      ]
+    },
+    {
+      "sha256": "44f0cfee810950f9c59bd7a6dd63139ddee239e87e4b49241d73831c57aa6483",
+      "kind": "photograph",
+      "title": "Blumeria graminis on winter wheat",
+      "source": "https://commons.wikimedia.org/wiki/File:Blumeria_graminis_on_winter_wheat.JPG",
+      "author": "Agronom",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/reference/wheat-powdery.jpg",
+        "mobile/public/media/reference/wheat-powdery.jpg"
+      ]
+    },
+    {
+      "sha256": "eaf837916924a6f031cf0841c67c5e62721fad7fa82f26b56101ee789a56572e",
+      "kind": "photograph",
+      "title": "File:Spinnmilben2.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Spinnmilben2.jpg",
+      "author": "Olllli",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "paths": [
+        "public/media/reference/spider-mites.jpg",
+        "mobile/public/media/reference/spider-mites.jpg"
+      ]
+    },
+    {
+      "sha256": "34807cdd60df725f98feffc3c789dceb585a3195b1d08e73f711a630452743b9",
+      "kind": "photograph",
+      "title": "File:Winged Soybean Aphid (15536218135).jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Winged_Soybean_Aphid_(15536218135).jpg",
+      "author": "NY State IPM Program  at Cornell University from New York, USA",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "paths": [
+        "public/media/reference/soybean-aphid.jpg",
+        "mobile/public/media/reference/soybean-aphid.jpg"
+      ]
+    },
+    {
+      "sha256": "7e49b25392fac5c3158f9578248158168df90dd15e4b9f34ebe7a17f4a6aa56b",
+      "kind": "photograph",
+      "title": "soil-logger.jpg / 640px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation65_(37973074585).jpg",
+      "author": "USDA NRCS Montana",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/soil-logger-640.webp"
+      ],
+      "derivedFrom": "public/media/devices/soil-logger.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "cfb272d0cc24a3edd039c2d054dfe1bf5570384ab9c3e2d047de875efb05a40a",
+      "kind": "photograph",
+      "title": "soil-logger.jpg / 1280px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation65_(37973074585).jpg",
+      "author": "USDA NRCS Montana",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/soil-logger-1280.webp"
+      ],
+      "derivedFrom": "public/media/devices/soil-logger.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "78f538f43927b34bf4e7fcc945d8cb67f07cf76c64c1ce69e321300a179c2d84",
+      "kind": "photograph",
+      "title": "soil-cosmic.jpg / 640px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Cosmic_Ray_Sensor_for_soil_moisture_measurements-DSC_6642w.jpg",
+      "author": "P e z i",
+      "license": "CC BY-SA 3.0 at",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/at/deed.en",
+      "paths": [
+        "public/media/devices/soil-cosmic-640.webp"
+      ],
+      "derivedFrom": "public/media/devices/soil-cosmic.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "149abe0e8a4b4495a01253dd1ee1904f25803a79458e5235d5ad605ef3825b0f",
+      "kind": "photograph",
+      "title": "soil-cosmic.jpg / 1280px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Cosmic_Ray_Sensor_for_soil_moisture_measurements-DSC_6642w.jpg",
+      "author": "P e z i",
+      "license": "CC BY-SA 3.0 at",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/at/deed.en",
+      "paths": [
+        "public/media/devices/soil-cosmic-1280.webp"
+      ],
+      "derivedFrom": "public/media/devices/soil-cosmic.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "75f5647c35de579337b9a1bca3e74c6ee559669a3861ca93ee9de660ae2dbb4b",
+      "kind": "photograph",
+      "title": "soil-cornfield.jpg / 640px WebP",
+      "source": "https://www.usgs.gov/media/images/hanna-crns-soil-moisture-monitoring-station",
+      "author": "USGS / Nevada Water Science Center",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/soil-cornfield-640.webp"
+      ],
+      "derivedFrom": "public/media/devices/soil-cornfield.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "3e55b21986ee09b17c5d6a2ab3e29f2e679ba24ad5469fcb1d3ac2940609ac98",
+      "kind": "photograph",
+      "title": "soil-cornfield.jpg / 1280px WebP",
+      "source": "https://www.usgs.gov/media/images/hanna-crns-soil-moisture-monitoring-station",
+      "author": "USGS / Nevada Water Science Center",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/soil-cornfield-1280.webp"
+      ],
+      "derivedFrom": "public/media/devices/soil-cornfield.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "fa5691e4bdb83ded27b03cac4c4b3cd217d1721cd8f2991841f73d5ae4612db1",
+      "kind": "photograph",
+      "title": "weather-vineyard.jpg / 640px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Davis_Instruments_weather_station_-_detail.jpg",
+      "author": "Cjp24",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/devices/weather-vineyard-640.webp"
+      ],
+      "derivedFrom": "public/media/devices/weather-vineyard.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "7a2acde4be56ad5a7fe09b063b06dc7edfab8f9984d38131d8c0d0b2315187dc",
+      "kind": "photograph",
+      "title": "weather-vineyard.jpg / 1280px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Davis_Instruments_weather_station_-_detail.jpg",
+      "author": "Cjp24",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/devices/weather-vineyard-1280.webp"
+      ],
+      "derivedFrom": "public/media/devices/weather-vineyard.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "99f8c81550a9def3378d1a639280dc1117c335252ad766257b9235369123b4df",
+      "kind": "photograph",
+      "title": "valve-field.jpg / 640px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation_valve_set_for_drip_irrigation_system_being_installed_on_Blake_Davis_Farms_in_Lamb_County_near_Littlefield,_Texas._(24746797549).jpg",
+      "author": "USDA NRCS Texas",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/valve-field-640.webp"
+      ],
+      "derivedFrom": "public/media/devices/valve-field.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "7a641e6bd208f2a75e90c00490a1d4c4c02f894bb8fb25fb8dfc06a0eac657e7",
+      "kind": "photograph",
+      "title": "valve-field.jpg / 1280px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation_valve_set_for_drip_irrigation_system_being_installed_on_Blake_Davis_Farms_in_Lamb_County_near_Littlefield,_Texas._(24746797549).jpg",
+      "author": "USDA NRCS Texas",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "paths": [
+        "public/media/devices/valve-field-1280.webp"
+      ],
+      "derivedFrom": "public/media/devices/valve-field.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "7d23f0ea07a795d7cfdec6865b8419f842c7814b356329fc443bd45b25beff7f",
+      "kind": "photograph",
+      "title": "irrigation-valve.jpg / 640px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation_valve_assembly.JPG",
+      "author": "Nick Birse",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/devices/irrigation-valve-640.webp"
+      ],
+      "derivedFrom": "public/media/devices/irrigation-valve.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "17bae49264465edffada813873805625f6032914183f8ba34a4a5afc19e42bc9",
+      "kind": "photograph",
+      "title": "irrigation-valve.jpg / 1280px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Irrigation_valve_assembly.JPG",
+      "author": "Nick Birse",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "paths": [
+        "public/media/devices/irrigation-valve-1280.webp"
+      ],
+      "derivedFrom": "public/media/devices/irrigation-valve.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "06710afdcc5fa5433a401c7fad08a18b2ebcfe3064ad7c192747b689badca833",
+      "kind": "photograph",
+      "title": "trap-paddy.jpg / 640px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Pheromone_insect_traps_-_Amol_-_Iran_01.jpg",
+      "author": "Mehdi",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "paths": [
+        "public/media/devices/trap-paddy-640.webp"
+      ],
+      "derivedFrom": "public/media/devices/trap-paddy.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    },
+    {
+      "sha256": "b08ef5991c3e5297a2bfba0b688652cf29df13816ec9eec63d9adaf722b27562",
+      "kind": "photograph",
+      "title": "trap-paddy.jpg / 1280px WebP",
+      "source": "https://commons.wikimedia.org/wiki/File:Pheromone_insect_traps_-_Amol_-_Iran_01.jpg",
+      "author": "Mehdi",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "paths": [
+        "public/media/devices/trap-paddy-1280.webp"
+      ],
+      "derivedFrom": "public/media/devices/trap-paddy.jpg",
+      "transformation": "Auto-orient and resize using Sharp; WebP quality 86; no generated pixels"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { PhotoCredit, StoredPhoto } from '../../../shared/reference-media'
+import { isRetiredPhoto } from '../../../shared/reference-photos'
 import { useEffect,useRef,useState,type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence,motion,useDragControls,useReducedMotion } from 'framer-motion'
@@ -29,7 +31,7 @@ function SheetContent({onClose,title,children}:{onClose:()=>void;title:string;ch
   const key=(e:KeyboardEvent)=>{
    if(sheetStack.at(-1)!==node)return
    if(e.key==='Escape'){e.preventDefault();close.current()}
-   if(e.key==='Tab'){const items=Array.from(node.querySelectorAll<HTMLElement>('button,input,select,textarea,[tabindex="0"]')).filter(el=>!el.hasAttribute('disabled')&&el.getClientRects().length>0);const first=items[0],last=items.at(-1);if(!first){e.preventDefault();return}if(e.shiftKey&&(document.activeElement===first||document.activeElement===node)){e.preventDefault();last?.focus()}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===node)){e.preventDefault();first.focus()}}
+   if(e.key==='Tab'){const items=Array.from(node.querySelectorAll<HTMLElement>('button,a[href],summary,input,select,textarea,[tabindex="0"]')).filter(el=>!el.hasAttribute('disabled')&&el.getClientRects().length>0);const first=items[0],last=items.at(-1);if(!first){e.preventDefault();return}if(e.shiftKey&&(document.activeElement===first||document.activeElement===node)){e.preventDefault();last?.focus()}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===node)){e.preventDefault();first.focus()}}
   }
   document.addEventListener('keydown',key)
   return()=>{const index=sheetStack.indexOf(node);if(index>=0)sheetStack.splice(index,1);document.removeEventListener('keydown',key);if(!sheetStack.length)document.body.style.overflow=savedBodyOverflow;if(previous?.isConnected)previous.focus();else sheetStack.at(-1)?.focus()}
@@ -44,7 +46,7 @@ export function PhotoGallery({photos,index,onClose}:{photos:GalleryPhoto[];index
  const [current,setCurrent]=useState(index??0);const [zoom,setZoom]=useState(false)
  useEffect(()=>{if(index!==null){setCurrent(index);setZoom(false)}},[index])
  const photo=photos[current]
- return <Sheet open={index!==null&&!!photo} onClose={onClose} title={`作业照片 ${current+1} / ${photos.length}`}><div className="gallery-stage"><AnimatePresence mode="wait">{photo&&<motion.img key={photo.id} src={photo.src} alt={photo.note||'作业照片'} initial={{opacity:0,scale:.94}} animate={{opacity:1,scale:zoom?1.7:1}} exit={{opacity:0}} onDoubleClick={()=>setZoom(z=>!z)} drag={zoom?true:'x'} dragConstraints={{left:zoom?-100:0,right:zoom?100:0,top:zoom?-100:0,bottom:zoom?100:0}} onDragEnd={(_,i)=>{if(zoom)return;if(i.offset.x<-45)setCurrent(c=>Math.min(photos.length-1,c+1));else if(i.offset.x>45)setCurrent(c=>Math.max(0,c-1))}}/>}</AnimatePresence></div><p className="muted">{photo?.note||'田间照片'} · 双击放大，左右滑动切换</p><div className="work-actions"><button disabled={current===0} onClick={()=>{setCurrent(c=>c-1);setZoom(false)}}><ChevronLeft size={17}/>上一张</button><button disabled={current>=photos.length-1} onClick={()=>{setCurrent(c=>c+1);setZoom(false)}}>下一张<ChevronRight size={17}/></button></div></Sheet>
+ return <Sheet open={index!==null&&!!photo} onClose={onClose} title={`图片记录 ${current+1} / ${photos.length}`}><div className="gallery-stage"><AnimatePresence mode="wait">{photo&&(isRetiredPhoto(photo.src)?<StoredPhoto src={photo.src}/>:<motion.img key={photo.id} src={photo.src} alt={photo.note||'作业照片'} initial={{opacity:0,scale:.94}} animate={{opacity:1,scale:zoom?1.7:1}} exit={{opacity:0}} onDoubleClick={()=>setZoom(z=>!z)} drag={zoom?true:'x'} dragConstraints={{left:zoom?-100:0,right:zoom?100:0,top:zoom?-100:0,bottom:zoom?100:0}} onDragEnd={(_,i)=>{if(zoom)return;if(i.offset.x<-45)setCurrent(c=>Math.min(photos.length-1,c+1));else if(i.offset.x>45)setCurrent(c=>Math.max(0,c-1))}}/>)}</AnimatePresence></div><PhotoCredit src={photo?.src}/><p className="muted">{photo?.note||'图片记录'} · 双击放大，左右滑动切换</p><div className="work-actions"><button disabled={current===0} onClick={()=>{setCurrent(c=>c-1);setZoom(false)}}><ChevronLeft size={17}/>上一张</button><button disabled={current>=photos.length-1} onClick={()=>{setCurrent(c=>c+1);setZoom(false)}}>下一张<ChevronRight size={17}/></button></div></Sheet>
 }
 export async function readPhoto(file:File):Promise<string> {
  if(!file.type.startsWith('image/'))throw Error('请选择图片文件')

@@ -1,3 +1,4 @@
+import { StoredPhoto } from '../../../shared/reference-media'
 import { Reveal, Disclosure } from '../components/motion'
 import { useEffect, useRef, useState } from 'react'
 import { Search, Bell, ChevronRight, Camera, Send, AlertTriangle, Droplets, Bug, Car, Lock } from 'lucide-react'
@@ -187,7 +188,7 @@ export default function Team() {
             <div className="grid grid-cols-2 gap-2">
               {checkins.slice(0, 3).map((c,i) => (
                 <motion.div layout initial={{opacity:0,scale:.85}} animate={{opacity:1,scale:1}} key={c.id} className="relative h-[62px] overflow-hidden rounded-lg">
-                  <button aria-label="查看打卡照片" className="h-full w-full" onClick={()=>setGallery(i)}><img src={c.img} alt="打卡" className="h-full w-full object-cover" /></button>
+                  <button aria-label="查看打卡照片" className="h-full w-full" onClick={()=>setGallery(i)}><StoredPhoto src={c.img} alt="打卡" className="h-full w-full object-cover" /></button>
                   <span className="absolute bottom-1 right-1 rounded bg-[rgba(10,15,11,0.75)] px-1 text-[8.5px] text-[rgba(217,249,157,0.9)]">{c.time}</span>
                 </motion.div>
               ))}

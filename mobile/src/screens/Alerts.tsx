@@ -1,3 +1,6 @@
+import { PhotoCredit, StoredPhoto } from '../../../shared/reference-media'
+import { photoForIssue } from '../../../shared/reference-photos'
+import { fieldById } from '../workflow-model'
 import { useFarm } from '../FarmContext'
 import { usePerm } from '../auth'
 import { InteractiveChart } from '../components/workflow'
@@ -29,6 +32,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
   const incidentId=alert.fromPatrol?alert.id.replace(/^patrol-/, ''):alert.id
   const incident=farm.state.incidents.find(i=>i.id===incidentId)
   const risk = RISK[alert.level]
+  const photo=alert.fromPatrol?undefined:photoForIssue(alert.name)
   const trend = useMemo(
     () => (trendTab === 'pest' ? pestTrend(alert.id, days, alert.trendBase) : envTrend(alert.id, days)),
     [alert.id, days, trendTab, alert.trendBase],
@@ -39,7 +43,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
     <div className="pb-32">
       {/* hero（按 2.png：棚切换条 + 图 + 圆形照片 + 徽章） */}
       <div className="relative h-[190px] overflow-hidden">
-        <img src="images/hero-field.jpg" alt="田块" className="absolute inset-0 h-full w-full object-cover" />
+        <StoredPhoto src={photo?.image} alt={photo?.title ?? '待复核，尚无现场照片'} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(6,9,6,0.5) 0%, rgba(6,9,6,0.2) 45%, rgba(6,9,6,0.85) 100%)' }} />
         <div className="relative flex items-center justify-between px-4 pt-2">
           <button onClick={onBack} className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-white/20 bg-black/25 text-white/85">
@@ -64,7 +68,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
             </div>
           </div>
           <div className="relative ml-3 shrink-0">
-            <img src="images/leaf-disease.jpg" alt={alert.name} className="h-[72px] w-[72px] rounded-full border-[3px] border-white/85 object-cover shadow-lg" />
+            <StoredPhoto src={photo?.image} alt={photo?.title} className="h-[72px] w-[72px] rounded-full border-[3px] border-white/85 object-cover shadow-lg" />
             <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full" style={{ background: risk.color }}>
               <AlertTriangle className="h-3 w-3 text-white" strokeWidth={2} />
             </span>
@@ -73,6 +77,8 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
       </div>
 
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-3 space-y-3 px-4">
+        <PhotoCredit photo={photo}/>
+        <p className="muted">预警数值为演示数据，参考照片不代表本地块实际发生病虫害。</p>
         <div className="workflow-panel"><div className="row-between"><b>处置进度</b><span className="status-pill">{incident?.status??'待核查'}</span></div><div className="incident-steps">{['待核查','已派工','处理中','已解决'].map((label,i)=><span key={label} data-done={i<=['待核查','已派工','处理中','已解决'].indexOf(incident?.status??'待核查')}>{label}</span>)}</div><p>知晓仅标记已读；完成现场任务验收后，预警自动归档。</p><div className="work-actions"><button onClick={()=>farm.openField(validFieldId(alert.field))}>地块档案</button><button onClick={()=>{if(incident?.taskId)farm.openTask(incident.taskId);else if(needAdmin())farm.dispatchIncident(incidentId)}}>{incident?.taskId?'查看处置任务':'分派复核任务'}</button></div></div>
         {/* 风险大卡（按 1.png：4 指标） */}
         <Reveal>
@@ -107,7 +113,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
           <ProCard>
             <StatBar
               items={[
-                { icon: Wheat, label: '作物', value: '南瓜' },
+                { icon: Wheat, label: '作物', value: fieldById(validFieldId(alert.field)).crop },
                 { icon: MapPin, label: '田内位置', value: alert.position },
                 { icon: Thermometer, label: '田内温度', value: alert.tempNow },
                 { icon: Droplets, label: '田内湿度', value: alert.humidityNow },
@@ -162,7 +168,7 @@ function AlertDetail({ alert, acked, onAck, onBack }: { alert: AlertDef; acked: 
           <ProCard className="p-4">
             <BlockTitle icon={alert.kind === 'pest' ? Bug : ShieldAlert} title={alert.kind === 'pest' ? '虫害详情' : '病害详情'} />
             <div className="mt-3 flex gap-3">
-              <img src="images/leaf-disease.jpg" alt="" className="h-[76px] w-[86px] shrink-0 rounded-[10px] object-cover" />
+              <StoredPhoto src={photo?.image} alt={photo?.title} className="h-[76px] w-[86px] shrink-0 rounded-[10px] object-cover" />
               <div className="min-w-0 flex-1">
                 <div className="text-[12px] font-semibold text-[#1a2b23]">{alert.detailName}</div>
                 <div className="mt-1 text-[11px] text-black/45">危害作物：{alert.hosts}</div>

@@ -115,7 +115,7 @@ function Shell() {
         {location && <div className="location-message" role="status">{location}</div>}
         <FieldContext/>
         <div key={page} className={`page-stage page-${page}`}><Page /></div>
-        <footer className="site-footer"><span>HUINONG <i>让每一寸土地，都被悉心照料。</i></span><SaveIndicator/></footer>
+        <footer className="site-footer"><span>HUINONG <i>让每一寸土地，都被悉心照料。</i></span><a href="./photo-sources.html">照片来源与图示说明</a><SaveIndicator/></footer>
       </main>
       <nav className="mobile-bottom" aria-label="快捷导航">{NAV.filter(n => ['dashboard','tasks','map','history'].includes(n.key)).map(n => <button key={n.key} className={page === n.key ? 'active' : ''} onClick={() => go(n.key)}><n.icon size={19} /><span>{n.key === 'dashboard' ? '首页' : n.key === 'tasks' ? '作业' : n.key === 'map' ? '地图' : '复盘'}</span></button>)}<button onClick={() => setMenu(true)}><Menu size={19} /><span>更多</span></button></nav>
     </div>

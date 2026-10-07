@@ -1,3 +1,5 @@
+import { PhotoCredit } from '../../../shared/reference-media'
+import { REFERENCE_PHOTOS } from '../../../shared/reference-photos'
 import { Reveal } from '../components/motion'
 import { FIELDS } from '../farm-data'
 import { useFarm } from '../FarmContext'
@@ -58,14 +60,14 @@ export default function Overview() {
     <div className="pb-32">
       {/* ===== HERO：真实田野摄影 + 问候 + 超大健康度 ===== */}
       <div className="overview-hero relative h-[228px] overflow-hidden">
-        <img src="images/hero-field.jpg" alt="田野航拍" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={REFERENCE_PHOTOS.cornField.image} alt="外部玉米田实拍素材" className="absolute inset-0 h-full w-full object-cover" />
         <div className="hero-tint absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(6,9,6,0.42) 0%, rgba(6,9,6,0.08) 42%, rgba(6,9,6,0.88) 100%)' }} />
 
         {/* 顶部：问候 + 操作 */}
         <div className="relative flex items-start justify-between px-4 pt-2">
           <div className="flex items-center gap-2.5">
             <button onClick={() => setProfileOpen(true)} className="flex items-center gap-2.5 text-left">
-              <img src="images/avatar-user.jpg" alt={displayName} className="h-9 w-9 rounded-full border border-white/20 object-cover" />
+              <span className="reference-avatar" aria-label={displayName}>{displayName.slice(0,1)}</span>
               <div>
                 <div className="flex items-center gap-1 text-[15px] font-semibold tracking-[-0.02em] text-white">
                   {greeting()}，{displayName}
@@ -108,6 +110,7 @@ export default function Overview() {
         </div>
       </div>
 
+      <div className="px-4"><PhotoCredit photo={REFERENCE_PHOTOS.cornField}/></div>
       <div className="work-quick-links">{([{key:'fields',label:'地块档案',icon:Map},{key:'tasks',label:'农事任务',icon:ClipboardList},{key:'history',label:'时间轴',icon:History},{key:'demo',label:'场景演示',icon:Play}] as const).map(item=><button key={item.key} onClick={()=>setScreen(item.key)}><item.icon size={19}/>{item.label}</button>)}</div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-4 px-4">
         <Reveal><TodayWork/></Reveal>

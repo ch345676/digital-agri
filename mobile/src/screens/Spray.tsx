@@ -1,4 +1,5 @@
 import { FIELDS as FARM_FIELDS } from '../farm-data'
+import { SprayDiagram } from '../../../shared/reference-media'
 import { Reveal, SuccessMark } from '../components/motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -32,7 +33,6 @@ const PESTICIDES: Pesticide[] = [
 ]
 
 const DEVICES = ['水泵', '搅拌器', '喷淋阀门', '喷头']
-const SPRAY_PHOTOS = ['images/spray-1.png', 'images/spray-2.png', 'images/spray-3.png']
 const TL_STEPS = ['任务接收', '开始运行', '喷淋执行', '任务完成']
 
 function taskCode(seq: number): string {
@@ -43,17 +43,6 @@ function taskCode(seq: number): string {
 
 const fmtDur = (sec: number) => `${Math.floor(sec / 60)} 分 ${sec % 60} 秒`
 
-function SprayImg({ src, className }: { src: string; className: string }) {
-  const [err, setErr] = useState(false)
-  return (
-    <img
-      src={err ? 'images/rover-real.jpg' : src}
-      onError={() => setErr(true)}
-      alt="施药过程"
-      className={className}
-    />
-  )
-}
 
 /* ================= 回传页（按 4.png 右，记录详情复用） ================= */
 function Receipt({ rec, onHistory, onHome }: { rec: SprayRecord; onHistory: () => void; onHome: () => void }) {
@@ -70,8 +59,8 @@ function Receipt({ rec, onHistory, onHome }: { rec: SprayRecord; onHistory: () =
           <SuccessMark size={40}/>
         </motion.span>
         <div>
-          <div className="text-[16px] font-bold text-[#17352a]">施药任务已接收并执行</div>
-          <div className="mt-0.5 text-[11px] text-black/45">喷淋系统已完成本次施药任务</div>
+          <div className="text-[16px] font-bold text-[#17352a]">施药流程演示已完成</div>
+          <div className="mt-0.5 text-[11px] text-black/45">本地模拟回执 · 未执行真实设备作业</div>
         </div>
       </div>
 
@@ -84,13 +73,13 @@ function Receipt({ rec, onHistory, onHome }: { rec: SprayRecord; onHistory: () =
               <InfoRow label="任务编号">{rec.code}</InfoRow>
               <InfoRow label="地块名称">{rec.field}</InfoRow>
               <InfoRow label="开始时间">{rec.date} {rec.startedAt}</InfoRow>
-              <InfoRow label="实际用时">{fmtDur(rec.durationSec)}</InfoRow>
+              <InfoRow label="模拟用时">{fmtDur(rec.durationSec)}</InfoRow>
               <InfoRow label="任务状态" divider={false}>
-                <span className="font-semibold text-[#15803d]">执行完成</span>
+                <span className="font-semibold text-[#15803d]">模拟完成</span>
               </InfoRow>
             </div>
           </div>
-          <SprayImg src={SPRAY_PHOTOS[0]} className="h-[92px] w-[104px] shrink-0 rounded-[10px] object-cover" />
+          <SprayDiagram compact/>
         </div>
       </ProCard>
 
@@ -99,8 +88,8 @@ function Receipt({ rec, onHistory, onHome }: { rec: SprayRecord; onHistory: () =
         <BlockTitle icon={Gauge} title="施药执行详情" />
         <div className="mt-3 grid grid-cols-4 divide-x divide-black/[0.06] text-center">
           {[
-            { icon: Droplets, label: '实际用水量', v: `${rec.totalWater}`, u: 'L', c: '#3b82f6' },
-            { icon: FlaskConical, label: '实际用药量', v: `${rec.totalDosage}`, u: 'g', c: '#15803d' },
+            { icon: Droplets, label: '模拟用水量', v: `${rec.totalWater}`, u: 'L', c: '#3b82f6' },
+            { icon: FlaskConical, label: '模拟用药量', v: `${rec.totalDosage}`, u: 'g', c: '#15803d' },
             { icon: Clock, label: '运行时长', v: fmtDur(rec.durationSec), u: '', c: '#ea7a24' },
             { icon: SprayCan, label: '喷淋次数', v: '3', u: '次', c: '#8b5cf6' },
           ].map((m) => (
@@ -131,18 +120,16 @@ function Receipt({ rec, onHistory, onHome }: { rec: SprayRecord; onHistory: () =
       <ProCard className="p-4">
         <BlockTitle icon={ClipboardList} title="备注信息" />
         <p className="mt-2 text-[11.5px] leading-relaxed text-black/55">
-          本次施药过程正常，设备运行稳定，药剂喷淋均匀。{rec.field}（演示作业）{rec.target}防治，{rec.pesticide} {rec.dosagePerMu} 克/亩，共 {rec.totalDosage} 克。
+          此记录仅用于演示施药流程，没有现场执行照片或硬件回执。{rec.field}（演示作业）{rec.target}防治，{rec.pesticide} {rec.dosagePerMu} 克/亩，共 {rec.totalDosage} 克。
         </p>
       </ProCard>
 
-      {/* 施药过程照片 */}
+      {/* 代码绘制的流程动画，避免模拟回执伪装为现场照片 */}
       <ProCard className="p-4">
-        <BlockTitle icon={FileText} title="施药过程照片" />
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {SPRAY_PHOTOS.map((p) => (
-            <SprayImg key={p} src={p} className="h-[72px] w-full rounded-[10px] object-cover" />
-          ))}
-        </div>
+        <BlockTitle icon={FileText} title="执行流程示意" />
+        <SprayDiagram/>
+        <div className="spray-stages"><span>01 配液准备</span><span>02 喷淋运行</span><span>03 流程结束</span></div>
+        <p className="photo-credit">动画展示操作顺序，非现场照片。</p>
       </ProCard>
 
       <div className="flex gap-3 pb-2 pt-1">
@@ -392,7 +379,7 @@ export default function Spray() {
                         <InfoRow label="预计用时" divider={false}>30 分钟</InfoRow>
                       </div>
                     </div>
-                    <SprayImg src={SPRAY_PHOTOS[1]} className="h-[88px] w-[96px] shrink-0 rounded-[10px] object-cover" />
+                    <SprayDiagram compact/>
                   </div>
                 </ProCard>
 

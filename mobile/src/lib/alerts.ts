@@ -69,7 +69,7 @@ export const ALERT_DEFS: AlertDef[] = [
     dayChange: '+28%',
     detailName: '疑似白粉状叶面异常（示例）',
     hosts: '当前档案：C1 小麦（试验）',
-    symptom: '叶片正面出现白色粉状霉斑，逐渐扩展连片，严重时叶片枯黄早落，影响坐果与膨大。',
+    symptom: '叶片和叶鞘可出现白色粉状病征，严重时影响叶片生长。图片仅供病征对照，需到现场复核。',
     control: [
       { title: '农业防治', items: ['加强通风降湿，控制田间湿度在 70% 以下', '及时摘除病叶、病株并带出田外销毁，减少病源'] },
       { title: '物理防治', items: ['合理密植，改善行间通风透光条件', '雨后及时排湿，避免叶面长时间积水'] },
@@ -188,13 +188,17 @@ export function patrolToAlert(p: { id: string; zone: string; time: string; field
   return {
     ...ALERT_DEFS[0],
     id: `patrol-${p.id}`,
-    name: '白粉病（疑似）',
+    name: '叶片异常（待复核）',
     level: 'mid',
     field: fieldLabel(validFieldId(p.fieldId??p.zone)),
     time: p.time,
     prob: 55,
     fromPatrol: true,
-    basis: '巡检车光谱扫描发现疑似病斑 + 人工确认',
+    basis: '巡检扫描流程演示，尚未进行真实采集或人工确诊',
+    detailName: '叶片异常 · 演示预警',
+    hosts: fieldLabel(validFieldId(p.fieldId??p.zone)),
+    symptom: '此条记录来自巡检流程演示，需上传现场照片并由人员复核病因。',
+    control: [{title:'现场复核',items:['到达关联地块，记录作物与症状。','上传现场照片后再安排处置，不将参考图作为诊断证据。']}],
   }
 }
 

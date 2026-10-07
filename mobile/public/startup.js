@@ -13,7 +13,7 @@
     document.getElementById('startup-title').textContent = '页面暂时无法打开';
     document.getElementById('startup-message').textContent = '请重新打开，或先使用网页版。已有的本地记录会保留。';
     document.getElementById('startup-actions').hidden = false;
-    document.getElementById('startup-detail').textContent = '惠农 1.1.0\n' + (reason || lastError || '启动超时') + '\n' + navigator.userAgent;
+    document.getElementById('startup-detail').textContent = '惠农 1.1.1\n' + (reason || lastError || '启动超时') + '\n' + navigator.userAgent;
   }
   window.__huinongBoot = {
     ready: function () {

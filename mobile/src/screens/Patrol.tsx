@@ -1,6 +1,7 @@
+import { PhotoCredit, StoredPhoto, RoverSchematic } from '../../../shared/reference-media'
+import { REFERENCE_PHOTOS } from '../../../shared/reference-photos'
 import { PhotoGallery } from '../components/workflow'
 import { Reveal, Disclosure, MotionLabel } from '../components/motion'
-import AmbientVideo from '../components/AmbientVideo'
 import { useEffect, useRef, useState } from 'react'
 import {
   ChevronLeft, X,
@@ -299,7 +300,7 @@ export default function Patrol() {
             y: clamp(Math.round(posRef.current[1]) - 12, 20, 190),
           }
           const id = addPatrolAlert(base)
-          addRoverShot({ img: 'images/live-rover.jpg', time: nowHM(),fieldId:robot.field })
+          addRoverShot({ img: REFERENCE_PHOTOS.soybeanDowny.image, time: nowHM(),fieldId:robot.field })
           setAlertCard({ ...base, id })
         }, 1100)
     }, 2400)
@@ -351,13 +352,13 @@ export default function Patrol() {
     { icon: Lightbulb, label: '照明', active: headlight, locked: false, fn: () => needLogin() && setHeadlight(!headlight) },
     {
       icon: Camera,
-      label: '拍照',
+      label: '模拟采集',
       active: false,
       locked: false,
       fn: () => {
         if (!needLogin()) return
-        addRoverShot({ img: 'images/live-rover.jpg', time: nowHM(),fieldId:robot.field })
-        showToast('巡检图像已保存')
+        addRoverShot({ img: REFERENCE_PHOTOS.soybeanDowny.image, time: nowHM(),fieldId:robot.field })
+        showToast('实拍参考样例已保存 · 非现场采集')
       },
     },
   ]
@@ -391,19 +392,18 @@ export default function Patrol() {
 
         <Disclosure open={soilBusy || scanPhase!=='idle'}><Glass className="task-scan p-4"><div role="status" className="text-[13px] font-medium">{soilBusy ? (soilPhase==='descend'?'准备土壤采样…':`土壤采集中 ${Math.round(soilProgress*100)}%`) : scanPhase==='lock'?'已锁定疑似病斑，生成复核预警…':'正在扫描作物…'}</div>{soilBusy&&<progress className="mt-3 w-full" value={soilProgress} max="1"/>}</Glass></Disclosure>
 
-        {/* 车型卡（真实渲染车 + 结构图鉴入口） */}
+        {/* 车型功能示意 + 3D 结构图鉴入口 */}
         <Reveal>
           <Glass className="overflow-hidden p-0">
-            <div className="relative h-[150px]">
-              <img src="images/rover-real.jpg" alt="巡检小车实拍渲染" className="h-full w-full object-cover" />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent 40%, rgba(6,9,7,0.85))' }} />
-              <div className="absolute bottom-3 left-3.5">
-                <div className="text-[14px] font-semibold text-white">农业智能巡检车</div>
-                <div className="mt-0.5 text-[10px] text-white/55">四轮转向 · 光谱检测 · 云台摄像 · 喷淋施药</div>
+            <RoverSchematic/>
+            <div className="flex items-center justify-between gap-3 p-4">
+              <div>
+                <div className="text-[14px] font-semibold text-[#294738]">农业智能巡检车</div>
+                <div className="mt-0.5 text-[10px] text-black/50">四轮转向 · 光谱检测 · 云台摄像</div>
               </div>
               <button
                 onClick={() => setShowExploded(true)}
-                className="absolute bottom-3 right-3 rounded-full border border-[rgba(22,163,74,0.4)] bg-[rgba(11,15,12,0.75)] px-3 py-1.5 text-[11px] font-medium text-[#16a34a]"
+                className="shrink-0 rounded-full bg-[#e4edbe] px-3 py-2 text-[11px] font-medium text-[#456033]"
               >
                 结构图鉴
               </button>
@@ -544,7 +544,7 @@ export default function Patrol() {
           </Glass>
         </Reveal>
 
-        <Glass className="p-4"><div className="mb-2 text-[14px] font-semibold">叶面采集预览</div><AmbientVideo src={cruising||scanPhase!=='idle'?'./media/glass/leaf.mp4':undefined} poster="./media/glass/leaf.jpg" muted loop playsInline className="farm-leaf-video w-full rounded-2xl"/><p className="mt-2 text-[11px] text-black/50">{robot.job} · RGB / 多光谱 / 热红外辅助</p><button className="farm-action" onClick={()=>setScreen('alerts')}>查看识别预警</button><p className="farm-credit">视觉示意素材，未连接真实摄像头。</p></Glass>
+        <Glass className="p-4"><div className="mb-2 text-[14px] font-semibold">叶面参考 · 采集演示</div><div className="reference-scan" data-running={(cruising||scanPhase!=='idle')&&visible}><img src={REFERENCE_PHOTOS.soybeanDowny.image} alt={REFERENCE_PHOTOS.soybeanDowny.title}/></div><PhotoCredit photo={REFERENCE_PHOTOS.soybeanDowny}/><p className="mt-2 text-[11px] text-black/50">{robot.job} · RGB / 多光谱 / 热红外辅助</p><button className="farm-action" onClick={()=>setScreen('alerts')}>查看识别预警</button><p className="farm-credit">实拍参考照片 + 扫描动画，未连接真实摄像头。</p></Glass>
         {/* 硬件功能键（对齐真实硬件） */}
         <Reveal>
           <div className="grid grid-cols-3 gap-2">
@@ -698,13 +698,13 @@ export default function Patrol() {
             </div>
             {roverShots.length === 0 ? (
               <div className="mt-3 rounded-[10px] border border-dashed border-black/[0.09] py-4 text-center text-[11px] text-black/35">
-                暂无照片，点「拍照」后在此展示
+                暂无记录，点「模拟采集」保存实拍参考样例
               </div>
             ) : (
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
                 {roverShots.map((s,i) => (
                   <motion.div layout key={s.id} initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} className="shrink-0">
-                    <button aria-label="查看巡检照片" onClick={()=>setGalleryIndex(i)}><img src={s.img} alt="巡检照片" className="h-16 w-24 rounded-[8px] border border-black/[0.09] object-cover" /></button>
+                    <button aria-label="查看巡检照片" onClick={()=>setGalleryIndex(i)}><StoredPhoto src={s.img} alt="巡检照片" className="h-16 w-24 rounded-[8px] border border-black/[0.09] object-cover" /></button>
                     <div className="mt-1 text-center font-num text-[9px] text-black/40">{s.time}</div>
                   </motion.div>
                 ))}
@@ -841,7 +841,7 @@ export default function Patrol() {
               </div>
               <div className="flex items-center gap-2 text-black/60">
                 <ImageIcon className="h-3 w-3 text-black/35" strokeWidth={1.5} />
-                巡检图像已保存
+                实拍参考样例已保存 · 非现场采集
               </div>
               <div className="flex items-center gap-2 text-black/60">
                 <ClipboardCheck className="h-3 w-3 text-black/35" strokeWidth={1.5} />
@@ -870,12 +870,12 @@ export default function Patrol() {
         </motion.div>
       )}</AnimatePresence>
 
-      {/* ========== 结构图鉴层（整机爆炸结构总览） ========== */}
+      {/* ========== 结构图鉴层（整机爆炸结构 · 3D 示意总览） ========== */}
       <AnimatePresence>{showExploded && (
         <motion.div key="structure" initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} exit={{opacity:0,y:24}} transition={{duration:.28,ease:EASE}} className="fixed inset-0 z-[1100] flex flex-col bg-[rgba(245,247,248,0.98)] backdrop-blur-md">
           <div className="flex items-center justify-between px-4 pt-5">
             <div>
-              <div className="text-[15px] font-semibold text-[#1a2b23]">结构图鉴 · 整机爆炸结构</div>
+              <div className="text-[15px] font-semibold text-[#1a2b23]">结构图鉴 · 3D 示意</div>
               <div className="mt-0.5 text-[10px] text-black/35">左右滑动查看细节 · 8 大模块</div>
             </div>
             <button
@@ -888,7 +888,7 @@ export default function Patrol() {
           <div className="mt-3 flex-1 overflow-auto px-4">
             <img
               src="images/rover-exploded.png"
-              alt="整机爆炸结构总览"
+              alt="整机爆炸结构 3D 示意，非设备实拍"
               className="h-full w-auto max-w-none rounded-[12px] border border-black/[0.09]"
             />
           </div>

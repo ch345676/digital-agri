@@ -1,3 +1,5 @@
+import { PhotoCredit, StoredPhoto } from '../../../shared/reference-media'
+import { ISSUE_SAMPLES } from '../../../shared/reference-photos'
 import { Reveal, SuccessMark, useSceneMotion } from '../components/motion'
 import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ClipboardList, Camera, Image as ImageIcon, Leaf, SprayCan, Wind, ShieldCheck, ChevronRight, X, Send, BadgeCheck, Lock } from 'lucide-react'
@@ -32,6 +34,9 @@ export default function Identify() {
   const [resultField,setResultField]=useState(farm.activeField)
   const [phase, setPhase] = useState<Phase>('idle')
   const [img, setImg] = useState<string | null>(null)
+  const [sampleIndex,setSampleIndex]=useState(1)
+  const sample=ISSUE_SAMPLES[sampleIndex]
+  const displayedImage=img ?? sample.photo.image
   const [consultOpen, setConsultOpen] = useState(false)
   const [consultMsgs, setConsultMsgs] = useState<{ who: 'me' | 'expert'; text: string }[]>([])
   const [consultInput, setConsultInput] = useState('')
@@ -45,17 +50,17 @@ export default function Identify() {
     if (phase === 'scanning') return
     const field=fieldById(farm.activeField)
     setResultField(field.id)
-    setImg(dataUrl)
+    setImg(dataUrl ?? sample.photo.image)
     setPhase('scanning')
     timers.current.push(setTimeout(() => {
       setPhase('done')
       addIdentifyRecord({
         fieldId:field.id,
         crop:field.crop,
-        disease:'疑似叶片病斑（示例）',
+        disease:dataUrl ? '上传照片 · 待现场复核' : `${sample.name}参考图 · 流程演示`,
         confidence: 92,
         date: new Date().toISOString().slice(5, 10),
-        img: dataUrl ?? undefined,
+        img: dataUrl ?? sample.photo.image,
         tone: '#8fae4c',
       })
     }, 2000))
@@ -96,15 +101,11 @@ export default function Identify() {
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-4 space-y-3.5">
         <FieldSelect value={farm.activeField} onChange={farm.selectField}/>
         <p className="muted">本页演示识别流程，结果为示例。现场诊断需由农艺人员复核。</p>
+        <div className="reference-samples" aria-label="选择实拍参考样例">{ISSUE_SAMPLES.map((item,i)=><button key={item.name} disabled={phase==='scanning'} aria-pressed={sampleIndex===i&&!img?.startsWith('data:')} onClick={()=>{setSampleIndex(i);setImg(null);setPhase('idle')}}>{item.name}</button>)}</div>
         {/* 取景框 */}
         <Reveal>
           <div ref={sceneRef} data-phase={phase} data-scene-playing={playing} className="identify-frame relative h-[300px] overflow-hidden rounded-[14px] border border-black/[0.09]">
-            {img ? (
-              <img src={img} alt="识别照片" className="h-full w-full object-cover" />
-            ) : (
-              /* 默认示例：真实病叶照片 */
-              <img src="images/leaf-disease.jpg" alt="示例叶片" className="h-full w-full object-cover" />
-            )}
+            <img src={displayedImage} alt={img?.startsWith('data:')?'用户上传的待复核照片':sample.photo.title} className="h-full w-full object-cover" />
             {/* 四角扫描框 */}
             {(['left-4 top-4 border-l-2 border-t-2', 'right-4 top-4 border-r-2 border-t-2', 'left-4 bottom-4 border-l-2 border-b-2', 'right-4 bottom-4 border-r-2 border-b-2'] as const).map((cls) => (
               <span key={cls} className={`absolute h-7 w-7 rounded-sm border-[rgba(22,163,74,0.55)] ${cls}`} />
@@ -116,7 +117,7 @@ export default function Identify() {
             <AnimatePresence>{phase === 'scanning' && (
               <motion.div key="scan-status" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} className="absolute inset-x-0 bottom-5 flex justify-center">
                 <span className="rounded-full bg-[rgba(255,255,255,0.9)] px-4 py-1.5 text-[12px] font-medium text-[#16a34a]">
-                  AI 识别中，正在分析叶片特征…
+                  正在演示识别流程…
                 </span>
               </motion.div>
             )}</AnimatePresence>
@@ -124,6 +125,8 @@ export default function Identify() {
           </div>
         </Reveal>
 
+        <PhotoCredit src={displayedImage}/>
+        {img?.startsWith('data:')&&<p className="muted">用户上传照片 · 当前仅演示流程，未运行真实识别模型。</p>}
         {/* 拍照按钮 */}
         <Reveal className="flex gap-3">
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
@@ -159,14 +162,15 @@ export default function Identify() {
               <Glass className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[10px]">
-                    <img src={img ?? 'images/leaf-disease.jpg'} alt="" className="h-full w-full object-cover" />
+                    <img src={displayedImage} alt="" className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[16px] font-semibold text-[#1a2b23]">
-                      {fieldById(resultField).crop} <span className="text-[#e8a04c]">疑似叶片病斑</span>
+                      <span className="text-[#e8a04c]">{img?.startsWith('data:')?'上传照片 · 待复核':'参考图片 · 流程演示'}</span>
                     </div>
+                    <div className="mt-1 text-[10px] text-black/50">关联地块 {resultField} · {fieldById(resultField).crop}</div>
                     <div className="mt-1.5 flex items-center gap-2">
-                      <span className="text-[11px] text-black/40">置信度</span>
+                      <span className="text-[11px] text-black/40">示例置信度</span>
                       <div className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-black/[0.09]">
                         <motion.div
                           initial={{ width: 0 }}
@@ -230,16 +234,16 @@ export default function Identify() {
           <Glass className="p-4">
             <SectionTitle title="专家复核" />
             <div className="flex items-center gap-3">
-              <img src="images/avatar-expert.jpg" alt="张农业" className="h-12 w-12 shrink-0 rounded-full border border-black/[0.12] object-cover" />
+              <span className="reference-avatar" aria-label="咨询功能图标">农</span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[14px] font-medium text-[#1a2b23]">张农业</span>
+                  <span className="text-[14px] font-medium text-[#1a2b23]">农艺咨询</span>
                   <span className="flex items-center gap-0.5 rounded-md bg-[rgba(22,163,74,0.08)] px-1.5 py-0.5 text-[9.5px] font-medium text-[#16a34a]">
                     <BadgeCheck className="h-3 w-3" strokeWidth={1.5} />
-                    农技专家
+                    演示助手
                   </span>
                 </div>
-                <div className="text-[10.5px] text-black/40">高级农艺师 · 10年经验</div>
+                <div className="text-[10.5px] text-black/40">咨询流程示例 · 未接入真人专家</div>
               </div>
               <button
                 onClick={() => needLogin() && setConsultOpen(true)}
@@ -269,11 +273,11 @@ export default function Identify() {
             {identifyRecords.map((r) => (
               <div key={r.id} className="w-[104px] shrink-0 overflow-hidden rounded-[14px] border border-black/[0.08]">
                 <div className="flex h-[76px] items-center justify-center">
-                  <img src={r.img ?? 'images/leaf-disease.jpg'} alt="" className="h-full w-full object-cover" />
+                  <StoredPhoto src={r.img} alt="" className="h-full w-full object-cover" />
                 </div>
                 <div className="bg-black/[0.05] p-2">
                   <div className="truncate text-[11px] font-medium text-[#1a2b23]">
-                    {r.crop} {r.disease}
+                    {r.disease}
                   </div>
                   <div className="text-[9.5px] text-black/40">{r.date}</div>
                 </div>
@@ -303,9 +307,9 @@ export default function Identify() {
             >
               <div className="flex items-center justify-between border-b border-black/[0.08] p-4">
                 <div className="flex items-center gap-2.5">
-                  <img src="images/avatar-expert.jpg" alt="张农业" className="h-9 w-9 rounded-full border border-black/[0.12] object-cover" />
+                  <span className="reference-avatar" aria-label="咨询功能图标">农</span>
                   <div>
-                    <div className="text-[13.5px] font-medium text-[#1a2b23]">张农业 · 高级农艺师</div>
+                    <div className="text-[13.5px] font-medium text-[#1a2b23]">农艺咨询 · 演示助手</div>
                     <div className="text-[10px] text-[#16a34a]">演示会话 · 自动示例回复</div>
                   </div>
                 </div>

@@ -21,7 +21,7 @@ try{
  await page.keyboard.press('Escape');await page.waitForSelector('[role=dialog]',{hidden:true})
  await route('alerts');await page.click('.alert-card');await pause(500);await click('分派复核任务');await page.waitForSelector('[role=dialog]')
  await click('开始执行','[role=dialog]');await click('提交验收','[role=dialog]');assert((await state()).tasks[0].status==='执行中')
- const upload=await page.$('[role=dialog] input[type=file]');await upload.uploadFile('public/images/leaf-disease.jpg');await page.waitForFunction(()=>document.querySelector('.photo-grid img'))
+ const upload=await page.$('[role=dialog] input[type=file]');await upload.uploadFile('public/media/reference/wheat-powdery.jpg');await page.waitForFunction(()=>document.querySelector('.photo-grid img'))
  await page.click('.photo-grid button');await pause(400);assert.equal(await page.$$eval('[role=dialog]',x=>x.length),2)
  await page.keyboard.press('Escape');await pause(450);assert.equal(await page.$$eval('[role=dialog]',x=>x.length),1);assert.equal(await page.$eval('body',e=>e.style.overflow),'hidden')
  await click('提交验收','[role=dialog]');await click('验收完成','[role=dialog]');let s=await state();assert.equal(s.tasks[0].status,'已完成');assert.equal(s.incidents.find(i=>i.id===s.tasks[0].incidentId).status,'已解决')

@@ -1,3 +1,4 @@
+import { photoBySrc } from '../../shared/reference-photos'
 import { ALERT_DEFS } from './lib/alerts'
 import { createContext,useContext,useEffect,useMemo,useRef,useState,type ReactNode } from 'react'
 import { toast } from 'sonner'
@@ -35,7 +36,7 @@ export function FarmProvider({children}:{children:ReactNode}) {
     for(const a of base.patrolAlerts)records.push({id:`alert-${a.id}`,sourceId:a.id,at:a.at??at,fieldId:validFieldId(a.fieldId??a.zone),kind:'alert',title:a.kind,detail:'巡检发现疑似异常，等待现场复核',position:[a.x*1000/360,a.y*560/210,0]})
     for(const r of base.identifyRecords)records.push({id:`identify-${r.id}`,sourceId:r.id,at:r.at??at,fieldId:validFieldId(r.fieldId??'B2'),kind:'identify',title:`${r.crop} · ${r.disease}`,detail:`示例识别结果 · 置信度 ${r.confidence}%`,photo:r.img})
     for(const r of base.sprayRecords)records.push({id:`spray-${r.id}`,sourceId:r.id,at:r.at??at,fieldId:validFieldId(r.fieldId??r.field),kind:'spray',title:`${r.field} · 施药完成`,detail:`${r.pesticide} · 作业编号 ${r.code} · 演示记录`})
-    for(const r of [...base.roverShots,...base.checkins])records.push({id:`photo-${r.id}`,sourceId:r.id,at:r.at??at,fieldId:validFieldId(r.fieldId??'A1'),kind:'photo',title:'田间作业照片',detail:r.time,photo:r.img})
+    for(const r of [...base.roverShots,...base.checkins])records.push({id:`photo-${r.id}`,sourceId:r.id,at:r.at??at,fieldId:validFieldId(r.fieldId??'A1'),kind:'photo',title:photoBySrc(r.img)?'巡检参考图 · 演示采集':'用户上传照片',detail:photoBySrc(r.img)?`${r.time} · 外部实拍参考，非现场采集`:r.time,photo:r.img})
     setState(previous=>{
       const fresh=records.filter(r=>!previous.seen.includes(r.sourceId));if(!fresh.length)return previous
       let next={...previous,seen:[...previous.seen,...fresh.map(r=>r.sourceId)]}

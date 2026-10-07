@@ -3,6 +3,7 @@ import { Pause, Play, ScanLine } from 'lucide-react'
 import { useMotion } from './motion-context'
 import { useSceneCanvas, type SceneDraw } from './use-scene-canvas'
 import { curvePoint, traceCurve, glow, type Curve } from './scene-drawing'
+import SoilProfileDiagram from './SoilProfileDiagram'
 const ELEMENTS = [{symbol:'N',name:'氮',index:4,x:17,y:59,color:'#d3eaa1'},{symbol:'P',name:'磷',index:5,x:80,y:59,color:'#eacb89'},{symbol:'K',name:'钾',index:6,x:28,y:78,color:'#addbbb'},{symbol:'OM',name:'有机质',index:7,x:68,y:77,color:'#d6b58a'}]
 const MODES = ['温度分布', '水分迁移', '离子分布', '酸碱观察', '氮素通道', '磷素通道', '钾素通道', '有机质分布']
 export default function SoilScene({ selected, value, unit, onSelect }: { selected: number; value: number; unit: string; onSelect: (index: number) => void }) {
@@ -13,7 +14,7 @@ export default function SoilScene({ selected, value, unit, onSelect }: { selecte
     const colors = ['#ffc582', '#9ce7f3', '#b5e0d2', '#c1b5ee', '#d3eaa1', '#eacb89', '#addbbb', '#d6b58a']
     const color = colors[selected]
     ctx.save(); ctx.beginPath(); ctx.rect(0, h * .41, w, h * .59); ctx.clip()
-    // Under-surface bloom is subdued to retain the actual soil texture.
+    // Under-surface tracers stay subdued so the schematic layers remain legible.
     glow(ctx, w * .5, h * .65, w * .35, color, .16)
     if (selected === 0 || selected === 3) {
       for (let n = 0; n < 4; n++) {
@@ -72,7 +73,7 @@ export default function SoilScene({ selected, value, unit, onSelect }: { selecte
   }, [selected])
   const canvas = useSceneCanvas(draw, paused)
   return <div className="soil-illustration soil-photo-scene" data-focus={focus} data-mode={selected}>
-    <img className="soil-profile-photo" src={`${import.meta.env.BASE_URL}media/insights/soil-root-profile-v2.webp`} alt="写实生成的田间幼苗与土壤根系剖面示意，非现场照片或实测剖面" width="1536" height="1024"/>
+    <SoilProfileDiagram/>
     <canvas ref={canvas} aria-hidden="true"/>
     <div className="soil-scene-toolbar"><span><ScanLine size={13}/>{MODES[selected]}</span><button aria-label={paused ? '播放土壤特效' : '暂停土壤特效'} disabled={!enabled} onClick={() => setPaused(!paused)}>{paused || !enabled ? <Play size={13}/> : <Pause size={13}/>}</button></div>
     {selected >= 4 && <div className="soil-element-layer" aria-label="土壤元素示意选择">

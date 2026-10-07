@@ -37,7 +37,7 @@ public final class MainActivity extends Activity {
     private static final String HOME = "https://" + HOST + "/assets/index.html#overview";
     private static final int PICK_IMAGE = 101;
     private static final int SAVE_REPORT = 102;
-    private static final String VERSION = "1.1.0";
+    private static final String VERSION = "1.1.1";
     private static final String ONLINE = "https://ch345676.github.io/digital-agri/m/#overview";
     private static final String TAG = "HuinongStartup";
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -205,6 +205,9 @@ public final class MainActivity extends Activity {
 
     private void checkStartup(int thisLaunch) {
         if(thisLaunch!=launchId||web==null||isFinishing()||!inForeground)return;
+        // Bundled reference/credit documents are static HTML, not the React app.
+        // They intentionally do not expose the application's readiness flag.
+        if(web.getUrl()!=null&&!trustedPage(web.getUrl()))return;
         final int thisForeground = foregroundEpoch;
         final WebView current=web;
         final Runnable unresponsive=()->{if(current==web&&thisLaunch==launchId&&thisForeground==foregroundEpoch&&inForeground)showFailure("页面内核没有响应，请使用兼容模式重试。");};

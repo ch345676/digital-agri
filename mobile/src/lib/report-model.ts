@@ -1,3 +1,4 @@
+import { isUserPhoto } from '../../../shared/reference-photos'
 import { FIELDS } from '../farm-data'
 import { fieldLabel, type FarmState } from '../workflow-model'
 import { localDate } from './daily-work'
@@ -12,7 +13,7 @@ export function farmReport(state: FarmState, field: string, period: ReportPeriod
   const events = state.events.filter(e => inField(e.fieldId) && e.at >= start && e.at <= end).sort((a, b) => b.at - a.at)
   const tasks = state.tasks.filter(t => inField(t.fieldId))
   const completed = tasks.filter(t => t.status === '已完成' && t.updatedAt >= start && t.updatedAt <= end)
-  const photos = events.filter(e => e.photo).filter((e, i, all) => all.findIndex(p => p.photo === e.photo) === i)
+  const photos = events.filter(e => isUserPhoto(e.photo)).filter((e, i, all) => all.findIndex(p => p.photo === e.photo) === i)
   const waterRecords = events.filter(e => e.kind === 'irrigation' && e.irrigation)
   return {
     field, fields: FIELDS.filter(f => inField(f.id)), moisture: { ...state.moisture },

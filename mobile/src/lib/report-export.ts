@@ -89,11 +89,11 @@ export async function drawReport(report: FarmReport): Promise<{ canvas: HTMLCanv
     text(stamp, 64, 1093 + i * 37, 18, MUTED, 400, 175)
     text(`${event.fieldId} · ${event.title}`, 250, 1093 + i * 37, 22, INK, 400, 760)
   })
-  text('现场记录', 64, 1214, 26, INK, 650)
+  text('用户上传照片', 64, 1214, 26, INK, 650)
   text(`${report.photos.length} 张照片 · 展示最近 3 张`, 697, 1214, 18, MUTED)
   if (!photoItems.length) {
     box(64, 1238, 952, 152, '#f3f6f1')
-    text('完成作业并上传照片后，将自动汇入报告。', 250, 1326, 22, MUTED)
+    text('尚无上传照片；外部参考图不作为作业证据。', 250, 1326, 22, MUTED)
   }
   photoItems.forEach((photo, i) => {
     const x = 64 + i * 322

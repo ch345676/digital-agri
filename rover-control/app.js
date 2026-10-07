@@ -123,6 +123,15 @@ function renderIssueMarkers(){
     marker.addEventListener('click',open);marker.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open()}});group.append(marker);
   }
 }
+function renderCameraReference(){
+  const photo=PHOTO_TYPES[$('capture-type').value]||PHOTO_TYPES.downy;
+  $('camera-reference').src='./assets/'+photo.file;
+  $('camera-reference').alt=photo.title+'实拍参考，非本次巡检采集';
+  const credit=$('camera-credit');credit.replaceChildren();
+  const link=addText(credit,'a',photo.credit+' · '+photo.license+' · 查看原始来源');
+  link.href=photo.source;link.target='_blank';link.rel='noopener noreferrer';
+  addText(credit,'span',' · 外部参考照片，非当前地块现场照片。扫描线为界面动画。');
+}
 function renderAlbum(){
   const list=$('album-list');list.replaceChildren();const all=[...issues].reverse().concat(SAMPLE_ISSUES);
   $('issue-count').textContent=`${all.length} 条记录`;
@@ -222,6 +231,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('keyup',event=>{if(keys[event.key]&&state.inputSource==='keyboard'&&state.direction===keys[event.key])stopDrive()});
   window.addEventListener('blur',stopDrive);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')stopDrive()});
+  renderCameraReference();
+  $('capture-type').addEventListener('change',renderCameraReference);
   $('capture-btn').addEventListener('click',()=>{
     const type=$('capture-type').value;
     const item={id:`capture-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,type,x:Math.round(state.x),y:Math.round(state.y),field:fieldAt(state.x,state.y),time:new Date().toLocaleString('zh-CN',{hour12:false})};
