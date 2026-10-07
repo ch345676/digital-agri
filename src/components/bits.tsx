@@ -73,7 +73,7 @@ export function Modal({
     if(!node||!enabled||matchMedia('(prefers-reduced-motion: reduce)').matches)return
     const rect=node.getBoundingClientRect()
     const anchor=origin??trigger.current
-    const transform=origin?'translate('+(origin.left-rect.left)+'px,'+(origin.top-rect.top)+'px) scale('+origin.width/rect.width+','+origin.height/rect.height+')':'translateY(18px) scale(.95)'
+    const transform=origin?'translate('+(origin.left-rect.left)+'px,'+(origin.top-rect.top)+'px) scale('+origin.width/rect.width+','+origin.height/rect.height+')':'translateY(18px)'
     const frames=[{transform,opacity:.25,borderRadius:'24px'},{transform:'none',opacity:1,borderRadius:'18px'}]
     node.style.transformOrigin=origin?'top left':anchor?`${Math.max(0,Math.min(rect.width,anchor.left+anchor.width/2-rect.left))}px ${Math.max(0,Math.min(rect.height,anchor.top+anchor.height/2-rect.top))}px`:'50% 60%'
     const animation=node.animate(open?frames:frames.slice().reverse(),{duration:open?280:170,easing:'cubic-bezier(.22,1,.36,1)'})

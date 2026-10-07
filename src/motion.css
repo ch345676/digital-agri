@@ -26,7 +26,7 @@ html[data-motion='on'] .motion-pending{opacity:0}
 @keyframes popover-enter{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:none}}
 /* Content and controls retain their own, smaller feedback. */
 button,a,input,select,textarea{transition:background-color 220ms ease,color 220ms ease,border-color 220ms ease,box-shadow 250ms ease,transform 220ms var(--motion-ease)}
-button:active:not(:disabled){transform:scale(.97)}
+button:active:not(:disabled){transform:translateY(1px)}
 .nav-item.active>svg:first-child,.mobile-bottom button.active>svg{animation:nav-pop 400ms var(--motion-ease)}
 @keyframes nav-pop{0%{transform:scale(.75) rotate(-8deg)}65%{transform:scale(1.12)}100%{transform:none}}
 .segmented button,.field-tabs button,.map-field-picker button{transition:background 260ms ease,box-shadow 260ms ease,color 220ms ease,transform 220ms var(--motion-ease)}
@@ -55,7 +55,7 @@ button:focus-visible,a:focus-visible{outline:2px solid #83afd1;outline-offset:4p
  .page-card,.panel{transition:box-shadow 280ms ease,border-color 250ms ease,transform 280ms var(--motion-ease)}
  .crop-reference:hover>img,.scene-media:hover>img{transform:scale(1.035)}
  .primary-btn:hover svg,.text-btn:hover svg,.fresh-hero-bottom button:hover svg{transform:translate(2px,-2px)}
- .nav-item:hover>svg:first-child{transform:scale(1.12)}
+ .nav-item:hover>svg:first-child{transform:translateY(-1px)}
 }
 @media(max-width:760px){.page-stage{animation-duration:320ms}.agri-modal>div{transform-origin:50% 70%}.fresh-hero-photo img{animation-duration:850ms}}
 html[data-motion='off'] .motion-pending{opacity:1}

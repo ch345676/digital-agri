@@ -18,6 +18,7 @@ import HistoryPage from './pages/HistoryPage'
 import AlertsPage from './pages/AlertsPage'
 import InspectionPage from './pages/InspectionPage'
 import HarvestPage from './pages/HarvestPage'
+import './fonts.css'
 import './theme.css'
 import './real-media.css'
 import './photo-layout.css'
@@ -98,7 +99,7 @@ function Shell() {
     {menuPresent && <button className="mobile-scrim" data-closing={!menu} inert={!menu} aria-hidden={!menu} aria-label="关闭菜单" onClick={() => setMenu(false)} />}
     <aside className={`sidebar ${menu ? 'is-open' : ''}`}>
       <button className="brand" onClick={() => go('dashboard')}><span className="brand-mark"><BrandMark/></span><span><b>惠农<span className="brand-dot">.</span></b><small>HUINONG · SMART AGRI</small></span></button>
-      <nav aria-label="平台导航">{NAV.map(n => <div key={n.key}>{n.group && <div className="nav-group">{n.group}</div>}<button className={`nav-item ${page === n.key ? 'active' : ''}`} title={n.label} aria-label={n.label} aria-current={page === n.key ? 'page' : undefined} onClick={() => go(n.key)}><n.icon size={20} strokeWidth={1.6} /><span>{n.label}</span>{n.key === 'alerts' && pending > 0 ? <i>{pending}</i> : page === n.key ? <ChevronRight size={14} /> : null}</button></div>)}</nav>
+      <nav aria-label="平台导航">{NAV.map(n => <div key={n.key}>{n.group && <div className="nav-group">{n.group}</div>}<button className={`nav-item ${page === n.key ? 'active' : ''}`} title={n.label} aria-label={n.label} aria-current={page === n.key ? 'page' : undefined} onClick={() => go(n.key)}><n.icon size={20} strokeWidth={1.8} /><span>{n.label}</span>{n.key === 'alerts' && pending > 0 ? <i>{pending}</i> : page === n.key ? <ChevronRight size={14} /> : null}</button></div>)}</nav>
       <div className="sidebar-foot"><div className="connection"><span className="status-dot" />农业数字孪生 · 演示空间</div><button className="profile" onClick={() => go('settings')}><span className="avatar">{settings.displayName.slice(0, 1)}</span><span><b>{settings.displayName}</b><small>农场管理者</small></span><Settings size={16} /></button></div>
     </aside>
     <div className="workspace">

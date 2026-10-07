@@ -44,7 +44,8 @@ export default function MotionRuntime() {
         observer.unobserve(node); waiting.delete(node)
         node.classList.remove('motion-pending'); node.dataset.motionRevealed = 'true'
         const delay = Math.min(order++ * 35, 140)
-        play(node, [{ opacity: 0, transform: 'translateY(14px) scale(.992)' }, { opacity: 1, transform: 'none' }], 430, delay)
+        // Move text-bearing surfaces without resampling their glyphs through a scale.
+        play(node, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], 430, delay)
         node.querySelectorAll<SVGGeometryElement>('.recharts-line-curve, .recharts-area-curve').forEach(path => {
           const length = path.getTotalLength()
           if (length > 0) play(path, [{ strokeDasharray: String(length), strokeDashoffset: length }, { strokeDasharray: String(length), strokeDashoffset: 0 }], 650, delay)

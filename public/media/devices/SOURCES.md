@@ -1,6 +1,6 @@
 # Device photo references
 
-All seven images are photographs, not generated images. They illustrate device categories; none is represented as a live platform device or verified model match. Original source pages and licenses are accessible from each photo dialog. Portraits are displayed in full; landscape previews may be cropped with CSS, and dialogs show the complete image.
+All seven images are photographs, not generated images. They illustrate device categories; none is represented as a live platform device or verified model match. Original source pages and licenses are accessible from each photo dialog. Card previews fill their frame with device-focused CSS cropping; dialogs show the complete original image.
 
 | Local asset | Creator | License | Source |
 |---|---|---|---|
@@ -28,3 +28,10 @@ Device cards now use only equipment photographed in crop fields or at their edge
 | trap-paddy.jpg | Mehdi | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:Pheromone_insect_traps_-_Amol_-_Iran_01.jpg |
 
 Additional licenses: https://creativecommons.org/licenses/by-sa/3.0/at/ ; https://creativecommons.org/licenses/by-sa/3.0/
+# Delivery variants, 2026-10-08
+
+The `-640.webp` and `-1280.webp` files are responsive encodings of the original
+photos listed below. They preserve the photograph and its aspect ratio; EXIF
+orientation is normalized. The larger variant never enlarges a smaller source.
+Attribution, source links and the original photo remain available in the device
+photo dialog. Generate them with `scripts/build-device-previews.mjs` and sharp.

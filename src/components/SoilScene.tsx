@@ -46,7 +46,7 @@ export default function SoilScene({ selected, value, unit, onSelect }: { selecte
         for (let n = 0; n < 2; n++) {
           const phase = (n / 2 + lane * .11 + t * .065) % 1
           const [x, y] = curvePoint(p, phase)
-          ctx.font = '600 ' + Math.max(10, Math.min(13, w / 45)) + 'px system-ui'
+          ctx.font = '600 ' + Math.max(12, Math.min(14, w / 45)) + 'px "Huinong Sans", sans-serif'
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
           ctx.shadowColor = '#0c201a'; ctx.shadowBlur = 5; ctx.strokeStyle = '#163026'; ctx.lineWidth = 3
           ctx.globalAlpha = .5 + Math.sin(phase * Math.PI) * .45

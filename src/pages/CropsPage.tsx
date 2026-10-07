@@ -139,7 +139,7 @@ export default function CropsPage() {
     <div>
       <PageHeader title="作物管理" desc="按地块跟踪作物生长全过程" />
 
-      <PageCard className="mb-5 flex items-center gap-10">
+      <PageCard className="crop-summary mb-5 flex items-center gap-10">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e4f7ec]">
             <Wheat className="h-5 w-5 text-[#178a45]" />

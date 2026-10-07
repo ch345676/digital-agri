@@ -11,7 +11,7 @@ html[data-route-transition='true'] .page-stage { animation: none; }
 .reading-progress>div { height: 100%; background: linear-gradient(90deg,#426c58,#a4b976); transform: scaleX(0); transform-origin: left; transition: transform 100ms linear; opacity: .7; }
 .interaction-wave { display: block; position: absolute; border-radius: 50%; pointer-events: none; z-index: 3; opacity: 0; background: radial-gradient(circle,#bdd7a54d 0%,#8faf7e1a 58%,transparent 70%); border: 1px solid #99b58926; }
 .primary-btn>.interaction-wave,.nav-item>.interaction-wave { background: radial-gradient(circle,#f0ffe95c 0%,#d8f2c31a 55%,transparent 70%); }
-html[data-motion='on'] button:not(:disabled):active { transform: translateY(1px) scale(.98); }
+html[data-motion='on'] button:not(:disabled):active { transform: translateY(1px); }
 button[aria-expanded] .lucide-chevron-down { transition: rotate 320ms var(--motion-ease); }
 button[aria-expanded='true'] .lucide-chevron-down { rotate: 180deg; }
 .nav-item.active>svg:first-child { filter:none; animation:none; }

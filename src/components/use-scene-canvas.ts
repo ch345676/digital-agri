@@ -28,17 +28,32 @@ export function useSceneCanvas(draw: SceneDraw, paused = false) {
       paint(performance.now())
       if (running) frame = requestAnimationFrame(loop)
     }
+    const resizeBackingStore = () => {
+      if (!width || !height) return
+      // Match physical pixels on Retina/HiDPI screens, with a bounded memory cost.
+      const ratio = Math.min(window.devicePixelRatio || 1, 3, Math.sqrt(4_000_000 / (width * height)))
+      canvas.width = Math.max(1, Math.round(width * ratio)); canvas.height = Math.max(1, Math.round(height * ratio))
+      ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0)
+      sync()
+    }
     const resize = new ResizeObserver(([entry]) => {
       width = entry.contentRect.width; height = entry.contentRect.height
-      const ratio = Math.min(window.devicePixelRatio || 1, 2)
-      canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio)
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
-      sync()
+      resizeBackingStore()
     })
+    // Moving between monitors or browser zoom can change DPR without changing CSS size.
+    let resolution = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+    const densityChanged = () => {
+      resolution.removeEventListener('change', densityChanged)
+      resizeBackingStore()
+      resolution = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+      resolution.addEventListener('change', densityChanged)
+    }
+    resolution.addEventListener('change', densityChanged)
+    window.addEventListener('resize', resizeBackingStore, { passive: true })
     const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync() }, { threshold: .05 })
     resize.observe(canvas); observer.observe(canvas)
     document.addEventListener('visibilitychange', sync)
-    return () => { cancelAnimationFrame(frame); resize.disconnect(); observer.disconnect(); document.removeEventListener('visibilitychange', sync) }
+    return () => { cancelAnimationFrame(frame); resize.disconnect(); observer.disconnect(); resolution.removeEventListener('change', densityChanged); window.removeEventListener('resize', resizeBackingStore); document.removeEventListener('visibilitychange', sync) }
   }, [draw, enabled, paused])
   return ref
 }

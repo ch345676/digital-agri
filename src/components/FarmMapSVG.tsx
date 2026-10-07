@@ -1,4 +1,4 @@
-import {useId} from 'react'
+import {useEffect, useId, useRef, useState} from 'react'
 import { ProjectRoverMarker } from './ProjectRoverMarker'
 import { FIELDS } from '../store'
 import { FARM_IMAGERY } from '../real-media'
@@ -42,13 +42,28 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
   focus?: boolean
 }) {
   const maskId=useId().replaceAll(':','')
+  const mapRef=useRef<SVGSVGElement>(null)
+  const [viewport,setViewport]=useState({width:1000,height:560})
+  useEffect(()=>{
+    const node=mapRef.current
+    if(!node)return
+    const observer=new ResizeObserver(([entry])=>{
+      const {width,height}=entry.contentRect
+      if(width>0&&height>0)setViewport({width,height})
+    })
+    observer.observe(node)
+    return()=>observer.disconnect()
+  },[])
+  const mapScale=(cover?Math.max:Math.min)(viewport.width/1000,viewport.height/560)*zoom
+  const labelScale=1/Math.max(.1,mapScale)
+  const compactLabels=viewport.width<600&&zoom<1.4
   const irrigationPresent=usePresence(layers.irrigation,220)
   const monitorsPresent=usePresence(layers.monitors,220)
   const selected=PLOTS.find(p=>p.id===selectedField)
   const cameraX=focus&&selected ? Math.max(500/zoom, Math.min(1000-500/zoom, selected.x)) : 500
   const info=FIELDS.find(f=>f.id===selectedField)
   const [rx,ry,heading] = routePosition(patrol?.progress ?? 0)
-  return <svg viewBox="0 0 1000 560" className="real-farm-map h-full w-full" preserveAspectRatio={cover ? 'xMidYMid slice' : 'xMidYMid meet'} aria-label={patrol ? '真实农田遥感照片上的仿真巡航路线' : '真实农田卫星影像演示地图'}>
+  return <svg ref={mapRef} viewBox="0 0 1000 560" className="real-farm-map h-full w-full" data-compact-labels={compactLabels} preserveAspectRatio={cover ? 'xMidYMid slice' : 'xMidYMid meet'} aria-label={patrol ? '真实农田遥感照片上的仿真巡航路线' : '真实农田卫星影像演示地图'}>
     <rect width="1000" height="560" fill="#18342e"/>
     <g className="map-zoom-layer" transform={`translate(500 280) scale(${zoom}) translate(${-cameraX} -280)`}>
       <image className="satellite-photo" href={FARM_IMAGERY.image} width="1000" height="560" preserveAspectRatio="none"/>
@@ -67,11 +82,13 @@ export function FarmMapSVG({ layers, zoom=1, selectedField, onFieldClick, patrol
       {monitorsPresent && <g data-closing={!layers.monitors} className="monitor-overlay" pointerEvents="none">{[[180,95],[310,340],[395,100],[490,340],[805,220]].map(([x,y],i)=><g key={i} transform={`translate(${x} ${y})`}><circle r="11" fill="#ecffda" stroke="#285941" strokeWidth="2"/><circle r="3" fill="#2b7955"/><path d="M-6-5Q0-11 6-5M-4-2Q0-6 4-2" stroke="#2b7955" strokeWidth="1.5" fill="none"/></g>)}</g>}
       {patrol && <g pointerEvents="none"><path d={ROUTE_PATH} fill="none" stroke="#143626" strokeWidth="5" strokeLinejoin="round"/><path className="patrol-route" d={ROUTE_PATH} fill="none" stroke="#d9eab8" strokeWidth="1.7" strokeDasharray="6 6"/><path className="patrol-completed" d={ROUTE_PATH} fill="none" stroke="#e0f0c5" strokeWidth="2.2" pathLength="100" strokeDasharray={`${Math.max(0,Math.min(100,patrol.progress))} 100`}/></g>}
       {PLOTS.map(p=>{const field=FIELDS.find(f=>f.id===p.id)!;return <g key={'label-'+p.id}>{layers.fields && <g className={`field-map-label ${selectedField===p.id?'selected':''}`} transform={`translate(${p.x} ${p.y})`} pointerEvents="none" textAnchor="middle">
-            <rect className="field-label-box" x="-49" y="-22" width="98" height="48" rx="6" fill="#16392eef" stroke="#e0efcf88" strokeWidth=".7"/>
-            <text className="field-label-title" y="-2" fill="#f7f8ef" fontSize="16" fontWeight="600"><tspan className="field-label-id">{p.id}</tspan><tspan className="field-label-crop"> {p.id==='C1'?'试验田':field.crop}</tspan></text>
-            <text className="field-label-area" y="16" fill="#d2dfc9" fontSize="12">{field.area} 亩</text>
+            <g transform={`scale(${labelScale})`}>
+              <rect className="field-label-box" x={compactLabels?-21:-49} y={compactLabels?-16:-24} width={compactLabels?42:98} height={compactLabels?32:52} rx="7" fill="#16392eef" stroke="#e0efcf88" strokeWidth="1"/>
+              <text className="field-label-title" y={compactLabels?5:-3} fill="#f7f8ef" fontSize="14" fontWeight="600"><tspan className="field-label-id">{p.id}</tspan>{!compactLabels&&<tspan className="field-label-crop"> {p.id==='C1'?'试验田':field.crop}</tspan>}</text>
+              {!compactLabels&&<text className="field-label-area" y="17" fill="#d2dfc9" fontSize="12">{field.area} 亩</text>}
+            </g>
           </g>}</g>})}
-      {selected&&info&&<g key={'info-'+selected.id} className="field-map-callout" transform={'translate('+selected.x+' '+(selected.id==='B2'?375:423)+')'} pointerEvents="none"><path d="M0-12V-30" stroke="#e8f1dc" strokeWidth="1"/><rect x="-83" y="-11" width="166" height="50" rx="7" fill="#f7f9ef" stroke="#d3dfc4"/><text y="8" textAnchor="middle" fill="#365b42" fontSize="13" fontWeight="600">{selected.id} · 土壤采样</text><text y="27" textAnchor="middle" fill="#55744e" fontSize="12">水分 {info.soilMoisture}% · pH {info.ph}</text></g>}
+      {selected&&info&&!compactLabels&&<g key={'info-'+selected.id} className="field-map-callout" transform={'translate('+selected.x+' '+(selected.id==='B2'?375:423)+')'} pointerEvents="none"><g transform={`scale(${labelScale})`}><path d="M0-12V-30" stroke="#e8f1dc" strokeWidth="1"/><rect x="-83" y="-11" width="166" height="50" rx="7" fill="#f7f9ef" stroke="#d3dfc4"/><text y="8" textAnchor="middle" fill="#365b42" fontSize="13" fontWeight="600">{selected.id} · 土壤采样</text><text y="27" textAnchor="middle" fill="#55744e" fontSize="12">水分 {info.soilMoisture}% · pH {info.ph}</text></g></g>}
       {patrol&&<g className="rover-position" transform={`translate(${rx} ${ry})`}><circle r="20" fill="#d4ff7c12" className={patrol.running?'scan-pulse':''}/><g transform="scale(.85)"><ProjectRoverMarker heading={heading}/></g></g>}
     </g>
   </svg>
